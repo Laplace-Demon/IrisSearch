@@ -1,2 +1,17 @@
+(include_subdirs unqualified)
+
 (executable
- (name main))
+ (modules
+  ast
+  state
+  search
+  lexer
+  parser
+  main)
+ (libraries menhirLib)
+ (name main)
+ (public_name main))
+
+(env
+ (_
+  (flags (:standard -w -a))))
