@@ -7,11 +7,13 @@ type iprop =
   | Wand of iprop * iprop
 
 let rec iprop_eqb (ipr1 : iprop) (ipr2 : iprop) =
-  match ipr1, ipr2 with
+  match (ipr1, ipr2) with
   | False, False -> true
   | Atom s1, Atom s2 -> String.equal s1 s2
-  | Star (ipr11, ipr12), Star (ipr21, ipr22) -> iprop_eqb ipr11 ipr21 && iprop_eqb ipr12 ipr22
-  | Wand (ipr11, ipr12), Wand (ipr21, ipr22) -> iprop_eqb ipr11 ipr21 && iprop_eqb ipr12 ipr22
+  | Star (ipr11, ipr12), Star (ipr21, ipr22) ->
+      iprop_eqb ipr11 ipr21 && iprop_eqb ipr12 ipr22
+  | Wand (ipr11, ipr12), Wand (ipr21, ipr22) ->
+      iprop_eqb ipr11 ipr21 && iprop_eqb ipr12 ipr22
   | _, _ -> false
 
 let rec pp_iprop (fmt : formatter) : iprop -> unit = function

@@ -1,5 +1,5 @@
 (ocamllex
-  (modules lexer))
+ (modules lexer))
 
 (menhir
-  (modules parser))
+ (modules parser))

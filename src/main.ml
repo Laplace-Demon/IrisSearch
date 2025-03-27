@@ -1,20 +1,14 @@
 open Format
 open Lexing
 open Parser
-
 open State
 open Search
 
 let file =
   let file = ref None in
-  let set_file s =
-    file := Some s
-  in
+  let set_file s = file := Some s in
   Arg.parse [] set_file "main input";
-  match !file with
-  | Some f -> f
-  | None ->
-      exit 1
+  match !file with Some f -> f | None -> exit 1
 
 let () =
   let in_channel = open_in file in
