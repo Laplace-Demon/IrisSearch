@@ -1,17 +1,12 @@
 (include_subdirs unqualified)
 
 (executable
- (modules
-  ast
-  state
-  search
-  lexer
-  parser
-  main)
- (libraries menhirLib)
+ (modules ast main multiset lexer parser state search)
+ (libraries menhirLib hashcons)
  (name main)
  (public_name main))
 
 (env
  (_
-  (flags (:standard -w -a))))
+  (flags
+   (:standard -w -a))))
