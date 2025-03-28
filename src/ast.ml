@@ -23,3 +23,5 @@ let rec pp_iprop (fmt : formatter) : iprop -> unit = function
   | Wand (ipr1, ipr2) -> fprintf fmt "(%a -* %a)" pp_iprop ipr1 pp_iprop ipr2
 
 type instance = iprop list
+
+let pp_instance = pp_print_list ~pp_sep:pp_print_newline pp_iprop

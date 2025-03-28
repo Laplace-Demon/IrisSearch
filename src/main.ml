@@ -19,6 +19,22 @@ let () =
     pp_print_bool std_formatter (search_and_print_path (init ins))
   with
   | Lexer.Lexing_error s ->
+      eprintf "lexing error: %s@." s;
+      exit 1
+  | Parser.Error ->
+      eprintf "parsing error@.";
+      exit 1
+  | e ->
+      eprintf "exception: %s\n@." (Printexc.to_string e);
+      exit 1
+
+(* let parse_from_string s =
+  let lexbuf = Lexing.from_string s in
+  try
+    let ins = Parser.instance Lexer.token lexbuf in
+    ins
+  with
+  | Lexer.Lexing_error s ->
       eprintf "lexical error: %s@." s;
       exit 1
   | Parser.Error ->
@@ -26,4 +42,4 @@ let () =
       exit 1
   | e ->
       eprintf "exception: %s\n@." (Printexc.to_string e);
-      exit 1
+      exit 1 *)

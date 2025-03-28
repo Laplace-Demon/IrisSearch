@@ -2,7 +2,7 @@
 
 (executable
  (modules ast main multiset lexer parser state search)
- (libraries menhirLib hashcons)
+ (libraries baby hashcons menhirLib)
  (name main)
  (public_name main))
 

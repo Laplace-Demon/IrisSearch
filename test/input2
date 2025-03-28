@@ -1,3 +1,8 @@
+Atom:
+    A, B, C, D, E, F
+
+%
+
 A
 B
 (A * B) -* (C * D)
