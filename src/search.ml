@@ -188,55 +188,55 @@ struct
         let node = inode.this in
 
         if G.terminate node then Some (path node)
-        else
-        (* Let the user know about this newly discovered node. *)
-        (f (node, inode.path);
+        else (
+          (* Let the user know about this newly discovered node. *)
+          f (node, inode.path);
 
-        (* Otherwise, examine its successors. *)
-        G.successors node (fun edge_cost son ->
-            assert (0 <= edge_cost);
+          (* Otherwise, examine its successors. *)
+          G.successors node (fun edge_cost son ->
+              assert (0 <= edge_cost);
 
-            (* failure means user error *)
+              (* failure means user error *)
 
-            (* Determine the cost of the best known path from the
+              (* Determine the cost of the best known path from the
                start node, through this node, to this son. *)
-            let new_cost = inode.cost + edge_cost in
-            assert (0 <= new_cost);
+              let new_cost = inode.cost + edge_cost in
+              assert (0 <= new_cost);
 
-            (* failure means overflow *)
-            try
-              let ison = M.get son in
-              if new_cost < ison.cost then (
-                (* This son has been visited before, but this new
+              (* failure means overflow *)
+              try
+                let ison = M.get son in
+                if new_cost < ison.cost then (
+                  (* This son has been visited before, but this new
                    path to it is shorter. If it was already open
                    and waiting in the priority queue, increase its
                    priority; otherwise, mark it as open and insert
                    it into the queue. *)
-                let new_fhat = new_cost + ison.estimate in
-                assert (0 <= new_fhat);
-                (* failure means overflow *)
-                P.add_or_decrease ison new_fhat;
-                ison.cost <- new_cost;
-                ison.path <- Edge (son, inode.path))
-            with Not_found ->
-              (* This son was never visited before. Allocate a new
+                  let new_fhat = new_cost + ison.estimate in
+                  assert (0 <= new_fhat);
+                  (* failure means overflow *)
+                  P.add_or_decrease ison new_fhat;
+                  ison.cost <- new_cost;
+                  ison.path <- Edge (son, inode.path))
+              with Not_found ->
+                (* This son was never visited before. Allocate a new
                  status record for it and mark it as open. *)
-              let rec ison =
-                {
-                  this = son;
-                  cost = new_cost;
-                  estimate = estimate son;
-                  path = Edge (son, inode.path);
-                  prev = ison;
-                  next = ison;
-                  priority = -1;
-                }
-              in
-              M.add son ison;
-              let fhat = new_cost + ison.estimate in
-              assert (0 <= fhat);
-              (* failure means overflow *)
-              P.add ison fhat);
+                let rec ison =
+                  {
+                    this = son;
+                    cost = new_cost;
+                    estimate = estimate son;
+                    path = Edge (son, inode.path);
+                    prev = ison;
+                    next = ison;
+                    priority = -1;
+                  }
+                in
+                M.add son ison;
+                let fhat = new_cost + ison.estimate in
+                assert (0 <= fhat);
+                (* failure means overflow *)
+                P.add ison fhat);
 
-        search f)
+          search f)
 end

@@ -4,11 +4,8 @@ module Make (G : sig
   include Hashtbl.HashedType with type t := node
 
   val sources : (node -> unit) -> unit
-
   val successors : node -> (int -> node -> unit) -> unit
-
   val terminate : node -> bool
-
   val estimate : node -> int
 end) : sig
   (* A path (from a target node back to some source node) is described by a
