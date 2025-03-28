@@ -39,6 +39,10 @@ let iWand (nipr1, nipr2) = Niprop.hashcons niprop_table (IWand (nipr1, nipr2))
 
 type state = niprop_node Multiset.R.t
 
+let state_equal : state -> state -> bool = Multiset.R.equal
+
+let state_hash : state -> int = Multiset.R.hash
+
 let rec pp_niprop fmt nipr =
   match nipr.node with
   | IFalse -> fprintf fmt "⊥"
