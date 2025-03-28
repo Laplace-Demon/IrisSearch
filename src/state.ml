@@ -83,7 +83,7 @@ let visited : state -> bool =
   in
   visited_aux
 
-let transfer st =
+let succ st =
   List.filter_map
     (fun nipr ->
       match nipr.node with
