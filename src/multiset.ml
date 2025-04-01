@@ -1,9 +1,7 @@
 open Baby
 
 module type HashedOrderedType = sig
-  type t
-
-  val compare : t -> t -> int
+  include OrderedType
   val hash : t -> int
 end
 
@@ -161,7 +159,7 @@ module Make (HashOrd : HashedOrderedType) = struct
     let equal = Map.equal ( = )
 
     (* Should not be called *)
-    let hash = Hashtbl.hash
+    let hash = fun _ -> assert false
   end
 
   let l2t l = L.to_list l |> T.of_list

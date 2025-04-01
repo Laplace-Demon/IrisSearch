@@ -6,7 +6,6 @@ open Multiset
 (** Definition for hash-consed, normalized iprops and multisets holding them as
     elements. *)
 
-
 let compare_hc x y = compare x.tag y.tag
 let hash_hc x = x.hkey
 
@@ -28,12 +27,7 @@ end = struct
     | IWand of niprop * niprop
 end
 
-and HashedOrderedNiprop : sig
-  type t
-
-  val compare : t -> t -> int
-  val hash : t -> int
-end = struct
+and HashedOrderedNiprop : HashedOrderedType with type t = Niprop.niprop = struct
   type t = Niprop.niprop
 
   let compare = compare_hc
@@ -54,7 +48,7 @@ and MultisetInner : (Multiset with type elt = Niprop.niprop and type t = M.L.t) 
 
 open Niprop
 
-module HashedNipropNode = struct
+module HashedNipropNode : HashedType with type t = niprop_node = struct
   type t = niprop_node
 
   let equal nipr1 nipr2 =
@@ -84,9 +78,6 @@ let iWand (nipr1, nipr2) =
   Niprop_hc.hashcons niprop_table (IWand (nipr1, nipr2))
 
 type state = MultisetOuter.t
-
-let state_equal = MultisetOuter.equal
-let state_hash = MultisetOuter.hash
 
 let rec pp_niprop fmt nipr =
   match nipr.node with

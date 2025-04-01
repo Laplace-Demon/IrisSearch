@@ -1,9 +1,7 @@
 open Baby
 
 module type HashedOrderedType = sig
-  type t
-
-  val compare : t -> t -> int
+  include OrderedType
   val hash : t -> int
 end
 

@@ -3,10 +3,8 @@ open Format
 module Make (G : sig
   type node
 
-  include Hashtbl.HashedType with type t := node
-
-  val sources : (node -> unit) -> unit
-  val successors : node -> (int -> node -> unit) -> unit
+  val source : node
+  val successors : node -> node list
   val terminate : node -> bool
   val estimate : node -> int
 end) =
@@ -14,13 +12,6 @@ struct
   type cost = int
   type priority = cost
   type path = Edge of G.node * path | Source of G.node
-
-  let rec follow labels path =
-    match path with
-    | Source node -> (node, labels)
-    | Edge (label, path) -> follow (label :: labels) path
-
-  let reverse path = follow [] path
 
   type inode = {
     (* Graph node associated with this internal record. *)
@@ -39,40 +30,12 @@ struct
     mutable priority : priority;
   }
 
-  (* This auxiliary module maintains a mapping of graph nodes
-       to internal records. *)
-
-  module M : sig
-    (* Adds a binding to the mapping. *)
-    val add : G.node -> inode -> unit
-
-    (* Retrieves the internal record for this node.
-         Raises [Not_found] no such record exists. *)
-    val get : G.node -> inode
-  end = struct
-    module H = Hashtbl.Make (struct
-      include G
-
-      type t = node
-    end)
-
-    let t = H.create 100003
-    let add node inode = H.add t node inode
-    let get node = H.find t node
-  end
-
   (* This auxiliary module maintains a priority queue of
        internal records. *)
 
   module P : sig
     (* Adds this node to the queue. *)
     val add : inode -> priority -> unit
-
-    (* Adds this node to the queue, or changes its
-         priority, if it already was in the queue. It
-         is assumed, in the second case, that the priority
-         can only decrease. *)
-    val add_or_decrease : inode -> priority -> unit
 
     (* Retrieve a node with lowest priority of the queue. *)
     val get : unit -> inode option
@@ -139,9 +102,6 @@ struct
           remove inode;
           result
 
-    let add_or_decrease inode priority =
-      if inode.priority >= 0 then remove inode;
-      add inode priority
   end
 
   (* Initialization. *)
@@ -153,7 +113,7 @@ struct
     e
 
   let () =
-    G.sources (fun node ->
+      let node = G.source in
         let rec inode =
           {
             this = node;
@@ -165,15 +125,7 @@ struct
             priority = -1;
           }
         in
-        M.add node inode;
-        P.add inode inode.estimate)
-
-  (* Access to the search results (after the search is over). *)
-
-  let distance node = try (M.get node).cost with Not_found -> max_int
-
-  let path node =
-    (M.get node).path (* let [Not_found] escape if no path was found *)
+        P.add inode inode.estimate
 
   (* Search. *)
 
@@ -186,39 +138,20 @@ struct
         None
     | Some inode ->
         let node = inode.this in
-
-        if G.terminate node then Some (path node)
+        if G.terminate node then Some inode.path
         else (
           (* Let the user know about this newly discovered node. *)
           f (node, inode.path);
 
+          List.iter
           (* Otherwise, examine its successors. *)
-          G.successors node (fun edge_cost son ->
-              assert (0 <= edge_cost);
-
-              (* failure means user error *)
+          (fun son ->
 
               (* Determine the cost of the best known path from the
                start node, through this node, to this son. *)
-              let new_cost = inode.cost + edge_cost in
+              let new_cost = inode.cost + 1 in
               assert (0 <= new_cost);
 
-              (* failure means overflow *)
-              try
-                let ison = M.get son in
-                if new_cost < ison.cost then (
-                  (* This son has been visited before, but this new
-                   path to it is shorter. If it was already open
-                   and waiting in the priority queue, increase its
-                   priority; otherwise, mark it as open and insert
-                   it into the queue. *)
-                  let new_fhat = new_cost + ison.estimate in
-                  assert (0 <= new_fhat);
-                  (* failure means overflow *)
-                  P.add_or_decrease ison new_fhat;
-                  ison.cost <- new_cost;
-                  ison.path <- Edge (son, inode.path))
-              with Not_found ->
                 (* This son was never visited before. Allocate a new
                  status record for it and mark it as open. *)
                 let rec ison =
@@ -232,11 +165,10 @@ struct
                     priority = -1;
                   }
                 in
-                M.add son ison;
                 let fhat = new_cost + ison.estimate in
                 assert (0 <= fhat);
                 (* failure means overflow *)
-                P.add ison fhat);
+                P.add ison fhat) (G.successors node);
 
           search f)
 end

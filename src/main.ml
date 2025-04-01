@@ -16,14 +16,11 @@ let () =
   try
     let ins = Parser.instance Lexer.token lexbuf in
     close_in in_channel;
-    let src = init ins in
     let module G = struct
       type node = state
 
-      let equal = state_equal
-      let hash = state_hash
-      let sources = ( |> ) src
-      let successors n f = List.iter (f 1) (succ n)
+      let source = init ins
+      let successors = succ
       let terminate : node -> bool = terminate
       let estimate = fun _ -> 0
     end in
