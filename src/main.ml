@@ -18,22 +18,14 @@ let () =
     close_in in_channel;
     let module G = struct
       type node = state
-
       let source = init ins
       let successors = succ
-      let terminate : node -> bool = terminate
+      let terminate = terminate
       let estimate = fun _ -> 0
     end in
     let open Search.Make (G) in
-    let rec pp_path fmt = function
-      | Source node -> pp_state fmt node
-      | Edge (node, path) ->
-          pp_state fmt node;
-          printf "\n\n↑\n\n";
-          pp_path fmt path
-    in
-    match search (fun (_, _) -> ()) with
-    | Some path -> pp_path std_formatter path
+    match search () with
+    | Some path -> pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt "\n\n↑\n\n") pp_state std_formatter path
     | None -> printf "no\n"
   with
   | Lexer.Lexing_error s ->

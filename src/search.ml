@@ -11,7 +11,6 @@ end) =
 struct
   type cost = int
   type priority = cost
-  type path = Edge of G.node * path | Source of G.node
 
   type inode = {
     (* Graph node associated with this internal record. *)
@@ -21,7 +20,7 @@ struct
     (* Estimated cost of the best path from this node to a goal node. (hhat) *)
     estimate : cost;
     (* Best known path from a source node to this node. *)
-    mutable path : path;
+    mutable path : G.node list;
     (* Previous node on doubly linked priority list *)
     mutable prev : inode;
     (* Next node on doubly linked priority list *)
@@ -103,8 +102,6 @@ struct
           result
   end
 
-  (* Initialization. *)
-
   let estimate node =
     let e = G.estimate node in
     assert (0 <= e);
@@ -118,7 +115,7 @@ struct
         this = node;
         cost = 0;
         estimate = estimate node;
-        path = Source node;
+        path = [ node ];
         prev = inode;
         next = inode;
         priority = -1;
@@ -127,29 +124,22 @@ struct
     P.add inode inode.estimate
 
   (* Search. *)
-
-  let rec search f =
+  let rec search () =
     (* Pick the open node that currently has lowest fhat,
          that is, lowest estimated distance to a goal node. *)
     match P.get () with
     | None ->
-        (* Finished. *)
         None
     | Some inode ->
         let node = inode.this in
         if G.terminate node then Some inode.path
         else (
-          (* Let the user know about this newly discovered node. *)
-          f (node, inode.path);
-
           List.iter
-            (* Otherwise, examine its successors. *)
             (fun son ->
               (* Determine the cost of the best known path from the
                start node, through this node, to this son. *)
               let new_cost = inode.cost + 1 in
               assert (0 <= new_cost);
-
               (* This son was never visited before. Allocate a new
                  status record for it and mark it as open. *)
               let rec ison =
@@ -157,7 +147,7 @@ struct
                   this = son;
                   cost = new_cost;
                   estimate = estimate son;
-                  path = Edge (son, inode.path);
+                  path = son :: inode.path;
                   prev = ison;
                   next = ison;
                   priority = -1;
@@ -168,6 +158,5 @@ struct
               (* failure means overflow *)
               P.add ison fhat)
             (G.successors node);
-
-          search f)
+          search ())
 end
