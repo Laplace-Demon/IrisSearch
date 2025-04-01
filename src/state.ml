@@ -6,21 +6,14 @@ open Multiset
 (** Definition for hash-consed, normalized iprops and multisets holding them as
     elements. *)
 
-let compare_hc x y = compare x.tag y.tag
-let hash_hc x = x.hkey
-
 module rec Niprop : sig
-  type niprop = niprop_node hash_consed
-
-  and niprop_node =
+  type niprop =
     | IFalse
     | IAtom of string
     | IStar of M.t
     | IWand of niprop * niprop
 end = struct
-  type niprop = niprop_node hash_consed
-
-  and niprop_node =
+  type niprop =
     | IFalse
     | IAtom of string
     | IStar of M.t
@@ -31,8 +24,8 @@ and HashedOrderedNiprop : (HashedOrderedType with type t = Niprop.niprop) =
 struct
   type t = Niprop.niprop
 
-  let compare = compare_hc
-  let hash = hash_hc
+  let compare = Stdlib.compare
+  let hash = Hashtbl.hash
 end
 
 and M : (Multiset with type elt = Niprop.niprop) =
@@ -40,39 +33,15 @@ and M : (Multiset with type elt = Niprop.niprop) =
 
 open Niprop
 
-module HashedNipropNode : HashedType with type t = niprop_node = struct
-  type t = niprop_node
-
-  let equal nipr1 nipr2 =
-    match (nipr1, nipr2) with
-    | IFalse, IFalse -> true
-    | IAtom str1, IAtom str2 -> String.equal str1 str2
-    | IStar set1, IStar set2 -> M.equal set1 set2
-    | IWand (nipr11, nipr12), IWand (nipr21, nipr22) ->
-        nipr11 == nipr21 && nipr12 == nipr22
-    | _, _ -> false
-
-  let hash = function
-    | IFalse -> Hashtbl.hash 0
-    | IAtom str -> Hashtbl.hash (1, str)
-    | IStar set -> Hashtbl.hash (2, M.hash set)
-    | IWand (nipr1, nipr2) -> Hashtbl.hash (3, nipr1.hkey, nipr2.hkey)
-end
-
-module Niprop_hc = Hashcons.Make (HashedNipropNode)
-
-let niprop_table = Niprop_hc.create 251
-let iFalse = Niprop_hc.hashcons niprop_table IFalse
-let iAtom str = Niprop_hc.hashcons niprop_table (IAtom str)
-let iStar set = Niprop_hc.hashcons niprop_table (IStar set)
-
-let iWand (nipr1, nipr2) =
-  Niprop_hc.hashcons niprop_table (IWand (nipr1, nipr2))
+let iFalse = IFalse
+let iAtom str = IAtom str
+let iStar set = IStar set
+let iWand (nipr1, nipr2) = IWand (nipr1, nipr2)
 
 type state = M.t
 
 let rec pp_niprop fmt nipr =
-  match nipr.node with
+  match nipr with
   | IFalse -> fprintf fmt "⊥"
   | IAtom str -> fprintf fmt "%s" str
   | IStar set ->
@@ -123,13 +92,13 @@ let rec ipr2nipr ipr =
   | [ ipr ] -> ipr2nipr_aux ipr
   | iprl ->
       let niprl = List.map ipr2nipr_aux iprl in
-      let sorted_niprl = List.sort compare_hc niprl in
+      let sorted_niprl = List.sort Stdlib.compare niprl in
       let grouped_niprl = list_group ( == ) sorted_niprl in
       iStar (M.of_list grouped_niprl)
 
 let init ins =
   List.concat_map divide_star ins
-  |> List.map ipr2nipr |> List.sort compare_hc |> list_group ( == ) |> M.of_list
+  |> List.map ipr2nipr |> List.sort Stdlib.compare |> list_group ( == ) |> M.of_list
 
 let visited : state -> bool =
   let state_list = ref [] in
@@ -144,15 +113,15 @@ let visited : state -> bool =
 let succ st =
   List.filter_map
     (fun (nipr, _) ->
-      match nipr.node with
+      match nipr with
       | IWand (nipr1, nipr2) ->
           let prems =
-            match nipr1.node with
+            match nipr1 with
             | IStar set -> set
             | _ as s -> M.singleton nipr1
           in
           let concls =
-            match nipr2.node with
+            match nipr2 with
             | IStar set -> set
             | _ as s -> M.singleton nipr2
           in
