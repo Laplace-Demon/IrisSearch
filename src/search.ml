@@ -101,7 +101,6 @@ struct
       | Some inode as result ->
           remove inode;
           result
-
   end
 
   (* Initialization. *)
@@ -113,19 +112,19 @@ struct
     e
 
   let () =
-      let node = G.source in
-        let rec inode =
-          {
-            this = node;
-            cost = 0;
-            estimate = estimate node;
-            path = Source node;
-            prev = inode;
-            next = inode;
-            priority = -1;
-          }
-        in
-        P.add inode inode.estimate
+    let node = G.source in
+    let rec inode =
+      {
+        this = node;
+        cost = 0;
+        estimate = estimate node;
+        path = Source node;
+        prev = inode;
+        next = inode;
+        priority = -1;
+      }
+    in
+    P.add inode inode.estimate
 
   (* Search. *)
 
@@ -144,31 +143,31 @@ struct
           f (node, inode.path);
 
           List.iter
-          (* Otherwise, examine its successors. *)
-          (fun son ->
-
+            (* Otherwise, examine its successors. *)
+            (fun son ->
               (* Determine the cost of the best known path from the
                start node, through this node, to this son. *)
               let new_cost = inode.cost + 1 in
               assert (0 <= new_cost);
 
-                (* This son was never visited before. Allocate a new
+              (* This son was never visited before. Allocate a new
                  status record for it and mark it as open. *)
-                let rec ison =
-                  {
-                    this = son;
-                    cost = new_cost;
-                    estimate = estimate son;
-                    path = Edge (son, inode.path);
-                    prev = ison;
-                    next = ison;
-                    priority = -1;
-                  }
-                in
-                let fhat = new_cost + ison.estimate in
-                assert (0 <= fhat);
-                (* failure means overflow *)
-                P.add ison fhat) (G.successors node);
+              let rec ison =
+                {
+                  this = son;
+                  cost = new_cost;
+                  estimate = estimate son;
+                  path = Edge (son, inode.path);
+                  prev = ison;
+                  next = ison;
+                  priority = -1;
+                }
+              in
+              let fhat = new_cost + ison.estimate in
+              assert (0 <= fhat);
+              (* failure means overflow *)
+              P.add ison fhat)
+            (G.successors node);
 
           search f)
 end

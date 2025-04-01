@@ -27,14 +27,15 @@ end = struct
     | IWand of niprop * niprop
 end
 
-and HashedOrderedNiprop : HashedOrderedType with type t = Niprop.niprop = struct
+and HashedOrderedNiprop : (HashedOrderedType with type t = Niprop.niprop) =
+struct
   type t = Niprop.niprop
 
   let compare = compare_hc
   let hash = hash_hc
 end
 
-and M : Multiset with type elt = Niprop.niprop =
+and M : (Multiset with type elt = Niprop.niprop) =
   Multiset.Make (HashedOrderedNiprop)
 
 open Niprop
@@ -84,8 +85,7 @@ and pp_niprop_multiset ~pp_sep fmt set =
   pp_print_list ~pp_sep
     (fun fmt (nipr, cnt) ->
       pp_print_list ~pp_sep pp_niprop fmt (List.init cnt (fun _ -> nipr)))
-    fmt
-    (M.to_list set)
+    fmt (M.to_list set)
 
 let pp_state = pp_niprop_multiset ~pp_sep:pp_print_newline
 
@@ -98,17 +98,16 @@ let rec divide_star = function
 
 let list_group equal l =
   let rec list_group_aux current_opt count = function
-    | [] ->
-      (match current_opt with
-      | Some current -> [ current, count ]
-      | None -> [])
-    | e :: l ->
-      (match current_opt with
-      | Some current ->
-        if equal current e
-        then list_group_aux current_opt (count + 1) l
-        else (current, count) :: list_group_aux (Some e) 1 l
-      | None -> list_group_aux (Some e) 1 l)
+    | [] -> (
+        match current_opt with
+        | Some current -> [ (current, count) ]
+        | None -> [])
+    | e :: l -> (
+        match current_opt with
+        | Some current ->
+            if equal current e then list_group_aux current_opt (count + 1) l
+            else (current, count) :: list_group_aux (Some e) 1 l
+        | None -> list_group_aux (Some e) 1 l)
   in
   list_group_aux None 0 l
 
@@ -123,16 +122,14 @@ let rec ipr2nipr ipr =
   | [] -> assert false
   | [ ipr ] -> ipr2nipr_aux ipr
   | iprl ->
-    let niprl = List.map ipr2nipr_aux iprl in
-    let sorted_niprl = List.sort compare_hc niprl in
-    let grouped_niprl = list_group ( == ) sorted_niprl in
-    iStar (M.of_list grouped_niprl)
+      let niprl = List.map ipr2nipr_aux iprl in
+      let sorted_niprl = List.sort compare_hc niprl in
+      let grouped_niprl = list_group ( == ) sorted_niprl in
+      iStar (M.of_list grouped_niprl)
 
 let init ins =
-  List.concat_map divide_star ins |> List.map ipr2nipr
-  |> List.sort compare_hc
-  |> list_group ( == )
-  |> M.of_list
+  List.concat_map divide_star ins
+  |> List.map ipr2nipr |> List.sort compare_hc |> list_group ( == ) |> M.of_list
 
 let visited : state -> bool =
   let state_list = ref [] in
@@ -160,10 +157,7 @@ let succ st =
             | _ as s -> M.singleton nipr2
           in
           if M.subset prems st then
-            let new_st =
-              M.union concls
-                (M.diff st (M.add nipr prems))
-            in
+            let new_st = M.union concls (M.diff st (M.add nipr prems)) in
             if visited new_st then None else Some new_st
           else None
       | _ -> None)

@@ -2,6 +2,7 @@ open Baby
 
 module type HashedOrderedType = sig
   include OrderedType
+
   val hash : t -> int
 end
 
