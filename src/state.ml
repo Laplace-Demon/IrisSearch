@@ -15,7 +15,7 @@ module rec Niprop : sig
   and niprop_node =
     | IFalse
     | IAtom of string
-    | IStar of MultisetInner.t
+    | IStar of M.t
     | IWand of niprop * niprop
 end = struct
   type niprop = niprop_node hash_consed
@@ -23,7 +23,7 @@ end = struct
   and niprop_node =
     | IFalse
     | IAtom of string
-    | IStar of MultisetInner.t
+    | IStar of M.t
     | IWand of niprop * niprop
 end
 
@@ -34,17 +34,8 @@ and HashedOrderedNiprop : HashedOrderedType with type t = Niprop.niprop = struct
   let hash = hash_hc
 end
 
-and M : sig
-  module L : Multiset with type elt = Niprop.niprop
-  module T : Multiset with type elt = Niprop.niprop
-
-  val l2t : L.t -> T.t
-  val t2l : T.t -> L.t
-end =
+and M : Multiset with type elt = Niprop.niprop =
   Multiset.Make (HashedOrderedNiprop)
-
-and MultisetOuter : (Multiset with type elt = Niprop.niprop and type t = M.T.t) = M.T
-and MultisetInner : (Multiset with type elt = Niprop.niprop and type t = M.L.t) = M.L
 
 open Niprop
 
@@ -55,7 +46,7 @@ module HashedNipropNode : HashedType with type t = niprop_node = struct
     match (nipr1, nipr2) with
     | IFalse, IFalse -> true
     | IAtom str1, IAtom str2 -> String.equal str1 str2
-    | IStar set1, IStar set2 -> MultisetInner.equal set1 set2
+    | IStar set1, IStar set2 -> M.equal set1 set2
     | IWand (nipr11, nipr12), IWand (nipr21, nipr22) ->
         nipr11 == nipr21 && nipr12 == nipr22
     | _, _ -> false
@@ -63,7 +54,7 @@ module HashedNipropNode : HashedType with type t = niprop_node = struct
   let hash = function
     | IFalse -> Hashtbl.hash 0
     | IAtom str -> Hashtbl.hash (1, str)
-    | IStar set -> Hashtbl.hash (2, MultisetInner.hash set)
+    | IStar set -> Hashtbl.hash (2, M.hash set)
     | IWand (nipr1, nipr2) -> Hashtbl.hash (3, nipr1.hkey, nipr2.hkey)
 end
 
@@ -77,7 +68,7 @@ let iStar set = Niprop_hc.hashcons niprop_table (IStar set)
 let iWand (nipr1, nipr2) =
   Niprop_hc.hashcons niprop_table (IWand (nipr1, nipr2))
 
-type state = MultisetOuter.t
+type state = M.t
 
 let rec pp_niprop fmt nipr =
   match nipr.node with
@@ -85,25 +76,18 @@ let rec pp_niprop fmt nipr =
   | IAtom str -> fprintf fmt "%s" str
   | IStar set ->
       fprintf fmt "(%a)"
-        (pp_niprop_multiset_inner ~pp_sep:(fun fmt () -> fprintf fmt " * "))
+        (pp_niprop_multiset ~pp_sep:(fun fmt () -> fprintf fmt " * "))
         set
   | IWand (ipr1, ipr2) -> fprintf fmt "(%a -* %a)" pp_niprop ipr1 pp_niprop ipr2
 
-and pp_niprop_multiset_inner ~pp_sep fmt set =
+and pp_niprop_multiset ~pp_sep fmt set =
   pp_print_list ~pp_sep
     (fun fmt (nipr, cnt) ->
       pp_print_list ~pp_sep pp_niprop fmt (List.init cnt (fun _ -> nipr)))
     fmt
-    (MultisetInner.to_list set)
+    (M.to_list set)
 
-let pp_niprop_multiset_outer ~pp_sep fmt set =
-  pp_print_list ~pp_sep
-    (fun fmt (nipr, cnt) ->
-      pp_print_list ~pp_sep pp_niprop fmt (List.init cnt (fun _ -> nipr)))
-    fmt
-    (MultisetOuter.to_list set)
-
-let pp_state = pp_niprop_multiset_outer ~pp_sep:pp_print_newline
+let pp_state = pp_niprop_multiset ~pp_sep:pp_print_newline
 
 (** Functions used for transition between states. *)
 
@@ -142,18 +126,18 @@ let rec ipr2nipr ipr =
     let niprl = List.map ipr2nipr_aux iprl in
     let sorted_niprl = List.sort compare_hc niprl in
     let grouped_niprl = list_group ( == ) sorted_niprl in
-    iStar (MultisetInner.of_list grouped_niprl)
+    iStar (M.of_list grouped_niprl)
 
 let init ins =
   List.concat_map divide_star ins |> List.map ipr2nipr
   |> List.sort compare_hc
   |> list_group ( == )
-  |> MultisetOuter.of_list
+  |> M.of_list
 
 let visited : state -> bool =
   let state_list = ref [] in
   let visited_aux (st : state) : bool =
-    if List.exists (MultisetOuter.subset st) !state_list then true
+    if List.exists (M.subset st) !state_list then true
     else (
       state_list := st :: !state_list;
       false)
@@ -167,22 +151,22 @@ let succ st =
       | IWand (nipr1, nipr2) ->
           let prems =
             match nipr1.node with
-            | IStar set -> M.l2t set
-            | _ as s -> MultisetOuter.singleton nipr1
+            | IStar set -> set
+            | _ as s -> M.singleton nipr1
           in
           let concls =
             match nipr2.node with
-            | IStar set -> M.l2t set
-            | _ as s -> MultisetOuter.singleton nipr2
+            | IStar set -> set
+            | _ as s -> M.singleton nipr2
           in
-          if MultisetOuter.subset prems st then
+          if M.subset prems st then
             let new_st =
-              MultisetOuter.union concls
-                (MultisetOuter.diff st (MultisetOuter.add nipr prems))
+              M.union concls
+                (M.diff st (M.add nipr prems))
             in
             if visited new_st then None else Some new_st
           else None
       | _ -> None)
-    (MultisetOuter.to_list st)
+    (M.to_list st)
 
-let terminate st = MultisetOuter.mem iFalse st
+let terminate st = M.mem iFalse st

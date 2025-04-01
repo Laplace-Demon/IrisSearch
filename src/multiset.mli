@@ -26,10 +26,4 @@ module type Multiset = sig
   val hash : t -> int
 end
 
-module Make (HashOrd : HashedOrderedType) : sig
-  module L : Multiset with type elt = HashOrd.t
-  module T : Multiset with type elt = HashOrd.t
-
-  val l2t : L.t -> T.t
-  val t2l : T.t -> L.t
-end
+module Make (HashOrd : HashedOrderedType) : Multiset with type elt = HashOrd.t
