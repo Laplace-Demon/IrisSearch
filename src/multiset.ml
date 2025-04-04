@@ -21,6 +21,7 @@ module type Multiset = sig
   val inter : t -> t -> t
   val diff : t -> t -> t
   val subset : t -> t -> bool
+  val partition : (elt -> int -> bool) -> t -> t * t
   val to_list : t -> (elt * int) list
   val of_list : (elt * int) list -> t
   val equal : t -> t -> bool
@@ -51,6 +52,7 @@ module Make (HashOrd : HashedOrderedType) = struct
         | Some i1, Some i2 -> if i1 > i2 then Some (i1 - i2) else None)
 
   let subset = Map.sub ( <= )
+  let partition = Map.partition
   let to_list = Map.to_list
   let of_list = Map.of_list
   let equal = Map.equal ( = )

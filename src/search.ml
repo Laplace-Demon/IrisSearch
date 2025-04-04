@@ -124,14 +124,14 @@ struct
     P.add inode inode.estimate
 
   (* Search. *)
-  let rec search () =
+  let rec search f =
     (* Pick the open node that currently has lowest fhat,
          that is, lowest estimated distance to a goal node. *)
     match P.get () with
-    | None ->
-        None
+    | None -> None
     | Some inode ->
         let node = inode.this in
+        f node;
         if G.terminate node then Some inode.path
         else (
           List.iter
@@ -158,5 +158,5 @@ struct
               (* failure means overflow *)
               P.add ison fhat)
             (G.successors node);
-          search ())
+          search f)
 end

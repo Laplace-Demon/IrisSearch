@@ -3,7 +3,9 @@ open Ast
 
 type state
 
+val pp_state_laws : formatter -> state -> unit
+val pp_state_atoms : formatter -> state -> unit
 val pp_state : formatter -> state -> unit
-val init : instance -> state
-val succ : state -> state list
+val initial : instance -> state
+val successors : state -> state list
 val terminate : state -> bool

@@ -20,6 +20,7 @@ rule token = parse
   | ident as id           { IDENT id }
   | '*'                   { STAR }
   | "-*"                  { WAND }
+  | "□"                   { BOX }
   | '('                   { LPAREN }
   | ')'                   { RPAREN }
   | ')'                   { RPAREN }

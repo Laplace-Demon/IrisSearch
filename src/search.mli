@@ -6,5 +6,5 @@ module Make (G : sig
   val terminate : node -> bool
   val estimate : node -> int
 end) : sig
-  val search : unit -> G.node list option
+  val search : (G.node -> unit) -> G.node list option
 end

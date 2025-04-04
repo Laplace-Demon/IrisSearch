@@ -3,6 +3,6 @@ Atom:
 
 %
 
-A -* (A * A)
-(A * A) -* False
+□ (A -* (A * A))
+□ ((A * A * A * A * A * A * A) -* False)
 A

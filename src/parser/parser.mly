@@ -5,7 +5,7 @@
 %}
 
 %token <string> IDENT
-%token STAR WAND FALSE
+%token STAR WAND BOX FALSE
 %token LPAREN RPAREN COLON COMMA PERCENT
 %token ATOM_DECL
 %token EOF
@@ -41,5 +41,7 @@ iprop:
   { Star ($1, $3) }
 | iprop WAND iprop
   { Wand ($1, $3) }
+| BOX iprop
+  { Box $2 }
 | FALSE
   { False }

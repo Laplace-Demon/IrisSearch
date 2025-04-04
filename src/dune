@@ -1,8 +1,8 @@
 (include_subdirs unqualified)
 
 (executable
- (modules ast main multiset lexer parser state search)
- (libraries baby hashcons menhirLib)
+ (modules ast internal_iprop main multiset lexer parser state search)
+ (libraries baby menhirLib)
  (name main)
  (public_name main))
 

@@ -1,6 +1,7 @@
 open Format
 open Lexing
 open Parser
+open Ast
 open State
 open Search
 
@@ -16,16 +17,21 @@ let () =
   try
     let ins = Parser.instance Lexer.token lexbuf in
     close_in in_channel;
+    assert (valid ins);
     let module G = struct
       type node = state
-      let source = init ins
-      let successors = succ
+
+      let source = initial ins
+      let successors = successors
       let terminate = terminate
       let estimate = fun _ -> 0
     end in
     let open Search.Make (G) in
-    match search () with
-    | Some path -> pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt "\n\n↑\n\n") pp_state std_formatter path
+    match search (fun _ -> ()) with
+    | Some path ->
+        pp_print_list
+          ~pp_sep:(fun fmt () -> fprintf fmt "↑\n\n")
+          pp_state std_formatter path
     | None -> printf "no\n"
   with
   | Lexer.Lexing_error s ->
@@ -37,19 +43,3 @@ let () =
   | e ->
       eprintf "exception: %s\n@." (Printexc.to_string e);
       exit 1
-
-(* let parse_from_string s =
-  let lexbuf = Lexing.from_string s in
-  try
-    let ins = Parser.instance Lexer.token lexbuf in
-    ins
-  with
-  | Lexer.Lexing_error s ->
-      eprintf "lexical error: %s@." s;
-      exit 1
-  | Parser.Error ->
-      eprintf "syntax error@.";
-      exit 1
-  | e ->
-      eprintf "exception: %s\n@." (Printexc.to_string e);
-      exit 1 *)

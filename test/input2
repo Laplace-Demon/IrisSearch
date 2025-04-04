@@ -3,9 +3,8 @@ Atom:
 
 %
 
-A
-B
-(A * B) -* (C * D)
-C -* E
-D -* F
-(F * E) -* False
+B * A
+□ ((A * B) -* (C * D))
+□ (C -* E)
+□ (D -* F)
+□ ((F * E) -* False)

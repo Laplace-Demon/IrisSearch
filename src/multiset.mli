@@ -21,6 +21,7 @@ module type Multiset = sig
   val inter : t -> t -> t
   val diff : t -> t -> t
   val subset : t -> t -> bool
+  val partition : (elt -> int -> bool) -> t -> t * t
   val to_list : t -> (elt * int) list
   val of_list : (elt * int) list -> t
   val equal : t -> t -> bool

@@ -4,7 +4,7 @@ Atom:
 %
 
 A
-A -* B
-B -* C
-C -* D
-D -* False
+□ (A -* B)
+□ (B -* C)
+□ (C -* D)
+□ (D -* False)

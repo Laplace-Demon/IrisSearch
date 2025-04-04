@@ -1,135 +1,54 @@
 open Format
-open Hashcons
 open Ast
-open Multiset
+open Internal_iprop
 
-(** Definition for hash-consed, normalized iprops and multisets holding them as
-    elements. *)
+(** Definition of intermediate searching state and its operations. *)
 
-module rec Niprop : sig
-  type niprop =
-    | IFalse
-    | IAtom of string
-    | IStar of M.t
-    | IWand of niprop * niprop
-end = struct
-  type niprop =
-    | IFalse
-    | IAtom of string
-    | IStar of M.t
-    | IWand of niprop * niprop
-end
+type state = internal_iprop_multiset * internal_iprop_multiset
 
-and HashedOrderedNiprop : (HashedOrderedType with type t = Niprop.niprop) =
-struct
-  type t = Niprop.niprop
+let pp_state_laws fmt (laws, _) =
+  fprintf fmt "@[<v 2>Laws:@,%a@]@."
+    (pp_internal_iprop_multiset ~pp_sep:pp_print_cut)
+    laws
 
-  let compare = Stdlib.compare
-  let hash = Hashtbl.hash
-end
+let pp_state_atoms fmt (_, atoms) =
+  fprintf fmt "@[<v 2>Atoms:@,%a@]@."
+    (pp_internal_iprop_multiset ~pp_sep:pp_print_cut)
+    atoms
 
-and M : (Multiset with type elt = Niprop.niprop) =
-  Multiset.Make (HashedOrderedNiprop)
+let pp_state fmt st = fprintf fmt "%a%a@." pp_state_laws st pp_state_atoms st
 
-open Niprop
-
-let iFalse = IFalse
-let iAtom str = IAtom str
-let iStar set = IStar set
-let iWand (nipr1, nipr2) = IWand (nipr1, nipr2)
-
-type state = M.t
-
-let rec pp_niprop fmt nipr =
-  match nipr with
-  | IFalse -> fprintf fmt "⊥"
-  | IAtom str -> fprintf fmt "%s" str
-  | IStar set ->
-      fprintf fmt "(%a)"
-        (pp_niprop_multiset ~pp_sep:(fun fmt () -> fprintf fmt " * "))
-        set
-  | IWand (ipr1, ipr2) -> fprintf fmt "(%a -* %a)" pp_niprop ipr1 pp_niprop ipr2
-
-and pp_niprop_multiset ~pp_sep fmt set =
-  pp_print_list ~pp_sep
-    (fun fmt (nipr, cnt) ->
-      pp_print_list ~pp_sep pp_niprop fmt (List.init cnt (fun _ -> nipr)))
-    fmt (M.to_list set)
-
-let pp_state = pp_niprop_multiset ~pp_sep:pp_print_newline
-
-(** Functions used for transition between states. *)
-
-(** Invariant: there is no "top-level" Star in the output. *)
-let rec divide_star = function
-  | Star (ipr1, ipr2) -> List.concat [ divide_star ipr1; divide_star ipr2 ]
-  | _ as ipr -> [ ipr ]
-
-let list_group equal l =
-  let rec list_group_aux current_opt count = function
-    | [] -> (
-        match current_opt with
-        | Some current -> [ (current, count) ]
-        | None -> [])
-    | e :: l -> (
-        match current_opt with
-        | Some current ->
-            if equal current e then list_group_aux current_opt (count + 1) l
-            else (current, count) :: list_group_aux (Some e) 1 l
-        | None -> list_group_aux (Some e) 1 l)
-  in
-  list_group_aux None 0 l
-
-let rec ipr2nipr ipr =
-  let ipr2nipr_aux = function
-    | False -> iFalse
-    | Atom str -> iAtom str
-    | Wand (ipr1, ipr2) -> iWand (ipr2nipr ipr1, ipr2nipr ipr2)
-    | _ -> assert false
-  in
-  match divide_star ipr with
-  | [] -> assert false
-  | [ ipr ] -> ipr2nipr_aux ipr
-  | iprl ->
-      let niprl = List.map ipr2nipr_aux iprl in
-      let sorted_niprl = List.sort Stdlib.compare niprl in
-      let grouped_niprl = list_group ( == ) sorted_niprl in
-      iStar (M.of_list grouped_niprl)
-
-let init ins =
-  List.concat_map divide_star ins
-  |> List.map ipr2nipr |> List.sort Stdlib.compare |> list_group ( == ) |> M.of_list
+let initial ipr_list =
+  ipr_list |> iprop_list_to_internal
+  |> M.partition (fun ipr _ -> match ipr with IBox _ -> true | _ -> false)
 
 let visited : state -> bool =
   let state_list = ref [] in
-  let visited_aux (st : state) : bool =
-    if List.exists (M.subset st) !state_list then true
+  let visited_aux ((_, atoms) : state) : bool =
+    if List.exists (M.subset atoms) !state_list then true
     else (
-      state_list := st :: !state_list;
+      state_list := atoms :: !state_list;
       false)
   in
   visited_aux
 
-let succ st =
+let successors (laws, atoms) =
   List.filter_map
-    (fun (nipr, _) ->
-      match nipr with
-      | IWand (nipr1, nipr2) ->
+    (fun (law, _) ->
+      match law with
+      | IBox (IWand (ipr1, ipr2)) ->
           let prems =
-            match nipr1 with
-            | IStar set -> set
-            | _ as s -> M.singleton nipr1
+            match ipr1 with IStar ipr_set -> ipr_set | _ -> M.singleton ipr1
           in
           let concls =
-            match nipr2 with
-            | IStar set -> set
-            | _ as s -> M.singleton nipr2
+            match ipr2 with IStar ipr_set -> ipr_set | _ -> M.singleton ipr2
           in
-          if M.subset prems st then
-            let new_st = M.union concls (M.diff st (M.add nipr prems)) in
+          if M.subset prems atoms then
+            let new_atoms = M.union concls (M.diff atoms prems) in
+            let new_st = (laws, new_atoms) in
             if visited new_st then None else Some new_st
           else None
       | _ -> None)
-    (M.to_list st)
+    (M.to_list laws)
 
-let terminate st = M.mem iFalse st
+let terminate (_, atoms) = M.mem iFalse atoms
