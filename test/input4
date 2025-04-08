@@ -1,0 +1,12 @@
+consts
+    A : iProp
+    W : iProp
+
+laws
+    A * A -* False
+    Persistent W
+    A -* W
+    W -* A
+
+init
+    A

@@ -1,6 +1,14 @@
 open Format
 
-(** Definition of abstract syntax tree of iprops returned by the parser. *)
+(** Definition of abstract syntax tree returned by the parser. *)
+
+type itype = Tiprop
+
+let itype_eqb ity1 ity2 =
+  match (ity1, ity2) with Tiprop, Tiprop -> true | _, _ -> false
+
+let pp_itype fmt = function Tiprop -> fprintf fmt "iProp"
+let pp_typed_id fmt (str, ity) = fprintf fmt "%s : %a" str pp_itype ity
 
 type iprop =
   | False
@@ -9,10 +17,15 @@ type iprop =
   | Wand of iprop * iprop
   | Box of iprop
 
-let rec iprop_eqb (ipr1 : iprop) (ipr2 : iprop) =
+let uncurry_wand (ipr1, ipr2) =
+  match ipr2 with
+  | Wand (ipr21, ipr22) -> Wand (Star (ipr1, ipr21), ipr22)
+  | _ -> Wand (ipr1, ipr2)
+
+let rec iprop_eqb ipr1 ipr2 =
   match (ipr1, ipr2) with
   | False, False -> true
-  | Atom s1, Atom s2 -> String.equal s1 s2
+  | Atom str1, Atom str2 -> String.equal str1 str2
   | Star (ipr11, ipr12), Star (ipr21, ipr22) ->
       iprop_eqb ipr11 ipr21 && iprop_eqb ipr12 ipr22
   | Wand (ipr11, ipr12), Wand (ipr21, ipr22) ->
@@ -20,32 +33,49 @@ let rec iprop_eqb (ipr1 : iprop) (ipr2 : iprop) =
   | Box ipr1, Box ipr2 -> iprop_eqb ipr1 ipr2
   | _, _ -> false
 
-let rec pp_iprop (fmt : formatter) : iprop -> unit = function
+let rec pp_iprop fmt = function
   | False -> fprintf fmt "⊥"
-  | Atom s -> fprintf fmt "%s" s
+  | Atom str -> fprintf fmt "%s" str
   | Star (ipr1, ipr2) -> fprintf fmt "(%a * %a)" pp_iprop ipr1 pp_iprop ipr2
   | Wand (ipr1, ipr2) -> fprintf fmt "(%a -* %a)" pp_iprop ipr1 pp_iprop ipr2
   | Box ipr -> fprintf fmt "□ %a" pp_iprop ipr
 
-(** The problem instance is represented as a list of iprops. *)
+(** The problem instance is represented as a record holding:
+    - type definition of constants
+    - (persistent) laws
+    - initial atoms *)
 
-type instance = iprop list
+type instance = {
+  decl_consts : (string * itype) list;
+  decl_laws : iprop list;
+  decl_init : iprop list;
+}
 
-let pp_instance = pp_print_list ~pp_sep:pp_print_newline pp_iprop
+let pp_instance fmt { decl_consts; decl_laws; decl_init } =
+  fprintf fmt "@[<v>consts@.%a@.laws@.%a@.init@.%a@.@]"
+    (pp_print_list pp_typed_id)
+    decl_consts (pp_print_list pp_iprop) decl_laws (pp_print_list pp_iprop)
+    decl_init
 
-let valid =
-  let rec no_wand = function
-    | False | Atom _ -> true
-    | Star (ipr1, ipr2) -> no_wand ipr1 && no_wand ipr2
-    | Wand _ -> false
-    | Box ipr -> no_wand ipr
+exception DuplicateDeclarationError of string
+
+exception TypeError of string
+
+let validate { decl_consts; decl_laws; decl_init } =
+  let symbol_table = Hashtbl.create 17 in
+  let rec validate_aux = function
+    | False -> ()
+    | Atom str -> if not (Hashtbl.mem symbol_table str) then raise (TypeError str)
+    | Star (ipr1, ipr2) -> validate_aux ipr1; validate_aux ipr2
+    | Wand (ipr1, ipr2) -> validate_aux ipr1; validate_aux ipr2
+    | Box ipr -> validate_aux ipr
   in
-  let rec no_box = function
-    | False | Atom _ -> true
-    | Star (ipr1, ipr2) | Wand (ipr1, ipr2) -> no_box ipr1 && no_box ipr2
-    | Box _ -> false
-  in
-  List.for_all (function
-    | Box (Wand (ipr1, ipr2)) -> no_wand ipr1 && no_wand ipr2
-    | Wand _ | Box _ -> false
-    | _ -> true)
+  List.iter (fun (str, ity) ->
+    if Hashtbl.mem symbol_table str
+    then raise (DuplicateDeclarationError str)
+    else Hashtbl.add symbol_table str ity
+    ) decl_consts;
+    List.iter validate_aux
+    (decl_laws @ decl_init);
+    symbol_table
+  

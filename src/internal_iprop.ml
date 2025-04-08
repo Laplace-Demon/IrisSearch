@@ -9,95 +9,97 @@ module rec InternalIprop : sig
   type internal_iprop =
     | IFalse
     | IAtom of string
-    | IStar of M.t
+    | IStar of Mset.t
     | IWand of internal_iprop * internal_iprop
-    | IBox of internal_iprop
 end = struct
   type internal_iprop =
     | IFalse
     | IAtom of string
-    | IStar of M.t
+    | IStar of Mset.t
     | IWand of internal_iprop * internal_iprop
-    | IBox of internal_iprop
 end
 
 and HashedOrderedInternalIprop :
   (HashedOrderedType with type t = InternalIprop.internal_iprop) = struct
-  type t = InternalIprop.internal_iprop
+  open InternalIprop
 
-  let compare = Stdlib.compare
+  type t = internal_iprop
+
+  let rec compare ipr1 ipr2 =
+    match (ipr1, ipr2) with
+    | IFalse, IFalse -> 0
+    | IAtom str1, IAtom str2 -> String.compare str1 str2
+    | IStar ipr_mset1, IStar ipr_mset2 -> Mset.compare ipr_mset1 ipr_mset2
+    | IWand (ipr11, ipr12), IWand (ipr21, ipr22) ->
+        let tmp = compare ipr11 ipr21 in
+        if tmp = 0 then compare ipr12 ipr22 else tmp
+    | _, _ -> Stdlib.compare ipr1 ipr2
+
   let hash = Hashtbl.hash
 end
 
-and M : (Multiset with type elt = InternalIprop.internal_iprop) =
+and Mset : (Multiset with type elt = InternalIprop.internal_iprop) =
   Multiset.Make (HashedOrderedInternalIprop)
 
 include InternalIprop
 
-type internal_iprop_multiset = M.t
+type internal_iprop_multiset = Mset.t
 
 let rec pp_internal_iprop fmt = function
   | IFalse -> fprintf fmt "⊥"
   | IAtom str -> fprintf fmt "%s" str
-  | IStar ipr_set ->
+  | IStar ipr_mset ->
       fprintf fmt "(%a)"
         (pp_internal_iprop_multiset ~pp_sep:(fun fmt () -> fprintf fmt " * "))
-        ipr_set
+        ipr_mset
   | IWand (ipr1, ipr2) ->
       fprintf fmt "(%a -* %a)" pp_internal_iprop ipr1 pp_internal_iprop ipr2
-  | IBox ipr -> fprintf fmt "□ %a" pp_internal_iprop ipr
 
-and pp_internal_iprop_multiset ?(pp_sep = pp_print_cut) fmt ipr_set =
+and pp_internal_iprop_multiset ?(pp_sep = pp_print_cut) fmt ipr_mset =
   pp_print_list ~pp_sep
     (fun fmt (ipr, cnt) ->
-      pp_print_list ~pp_sep pp_internal_iprop fmt (List.init cnt (fun _ -> ipr)))
-    fmt (M.to_list ipr_set)
+      let open Multiplicity in
+      match cnt with
+      | Finite i ->
+          pp_print_list ~pp_sep pp_internal_iprop fmt
+            (List.init i (fun _ -> ipr))
+      | Infinite -> fprintf fmt "□ %a" pp_internal_iprop ipr)
+    fmt (Mset.to_list ipr_mset)
 
 (** Smart constructors of internal_iprop required for hash-consing. *)
 
 let iFalse = IFalse
 let iAtom str = IAtom str
-let iStar ipr_set = IStar ipr_set
+let iStar ipr_mset = IStar ipr_mset
 let iWand (ipr1, ipr2) = IWand (ipr1, ipr2)
-let iBox ipr = IBox ipr
 
 (** Functions converting iprop to internal_iprop. *)
-
-let rec divide_star = function
-  | Star (ipr1, ipr2) -> List.concat [ divide_star ipr1; divide_star ipr2 ]
-  | _ as ipr -> [ ipr ]
-
-let list_group compare equal l =
-  let rec group_sorted current_opt count = function
-    | [] -> (
-        match current_opt with
-        | Some current ->
-            printf "%i" count;
-            [ (current, count) ]
-        | None -> [])
-    | e :: l -> (
-        match current_opt with
-        | Some current ->
-            if equal current e then group_sorted current_opt (count + 1) l
-            else (current, count) :: group_sorted (Some e) 1 l
-        | None -> group_sorted (Some e) 1 l)
-  in
-  List.sort compare l |> group_sorted None 0
-
-(** Should use physical equality when hash-consing is implemented. *)
 
 let rec iprop_to_internal : iprop -> internal_iprop = function
   | False -> iFalse
   | Atom str -> iAtom str
-  | Star _ as ipr ->
-      let open HashedOrderedInternalIprop in
-      ipr |> divide_star |> List.map iprop_to_internal
-      |> list_group compare ( = ) |> M.of_list |> iStar
+  | Star (ipr1, ipr2) ->
+      let ipr_mset1 =
+        match iprop_to_internal ipr1 with
+        | IStar ipr_mset -> ipr_mset
+        | _ as ipr -> Mset.singleton ipr (Finite 1)
+      in
+      let ipr_mset2 =
+        match iprop_to_internal ipr2 with
+        | IStar ipr_mset -> ipr_mset
+        | _ as ipr -> Mset.singleton ipr (Finite 1)
+      in
+      iStar (Mset.union ipr_mset1 ipr_mset2)
   | Wand (ipr1, ipr2) -> iWand (iprop_to_internal ipr1, iprop_to_internal ipr2)
-  | Box ipr -> iBox (iprop_to_internal ipr)
+  | Box ipr -> iStar (Mset.singleton (iprop_to_internal ipr) Infinite)
 
 let iprop_list_to_internal : iprop list -> internal_iprop_multiset =
  fun iprl ->
-  let open HashedOrderedInternalIprop in
-  iprl |> List.map divide_star |> List.concat |> List.map iprop_to_internal
-  |> list_group compare ( = ) |> M.of_list
+  iprl |> List.map iprop_to_internal
+  |> List.fold_left
+       (fun acc ipr ->
+         Mset.union acc
+           (match ipr with
+           | IStar ipr_mset -> ipr_mset
+           | _ -> Mset.singleton ipr (Finite 1)))
+       Mset.empty

@@ -1,10 +1,16 @@
-Atom:
-    A, B, C, D, E, F
+consts
+    A : iProp
+    B : iProp
+    C : iProp
+    D : iProp
+    E : iProp
+    F : iProp
 
-%
+laws
+    A * B -* C * D
+    C -* E
+    D -* F
+    F * E -* False
 
-B * A
-□ ((A * B) -* (C * D))
-□ (C -* E)
-□ (D -* F)
-□ ((F * E) -* False)
+init
+    A * B

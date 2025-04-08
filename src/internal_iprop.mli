@@ -12,15 +12,13 @@ type internal_iprop = private
   | IAtom of string
   | IStar of internal_iprop_multiset
   | IWand of internal_iprop * internal_iprop
-  | IBox of internal_iprop
 
 val iFalse : internal_iprop
 val iAtom : string -> internal_iprop
 val iStar : internal_iprop_multiset -> internal_iprop
 val iWand : internal_iprop * internal_iprop -> internal_iprop
-val iBox : internal_iprop -> internal_iprop
 
-module M :
+module Mset :
   Multiset with type elt = internal_iprop and type t = internal_iprop_multiset
 
 val pp_internal_iprop : formatter -> internal_iprop -> unit

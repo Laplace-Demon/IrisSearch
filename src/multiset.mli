@@ -1,5 +1,16 @@
 open Baby
 
+module Multiplicity : sig
+  type t = Finite of int | Infinite
+
+  val add : t -> t -> t
+  val sub : t -> t -> t
+  val equal : t -> t -> bool
+  val compare : t -> t -> int
+  val min : t -> t -> t
+  val hash : t -> int
+end
+
 module type HashedOrderedType = sig
   include OrderedType
 
@@ -13,7 +24,7 @@ module type Multiset = sig
   val empty : t
   val is_empty : t -> bool
   val cardinal : t -> int
-  val singleton : elt -> t
+  val singleton : elt -> Multiplicity.t -> t
   val mem : elt -> t -> bool
   val add : elt -> t -> t
   val remove : elt -> t -> t
@@ -21,10 +32,11 @@ module type Multiset = sig
   val inter : t -> t -> t
   val diff : t -> t -> t
   val subset : t -> t -> bool
-  val partition : (elt -> int -> bool) -> t -> t * t
-  val to_list : t -> (elt * int) list
-  val of_list : (elt * int) list -> t
+  val partition : (elt -> Multiplicity.t -> bool) -> t -> t * t
+  val to_list : t -> (elt * Multiplicity.t) list
+  val of_list : (elt * Multiplicity.t) list -> t
   val equal : t -> t -> bool
+  val compare : t -> t -> int
   val hash : t -> int
 end
 

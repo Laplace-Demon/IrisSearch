@@ -1,47 +1,74 @@
 %{
   open Ast
-
-  let atom_table = Hashtbl.create 17
 %}
 
-%token <string> IDENT
-%token STAR WAND BOX FALSE
-%token LPAREN RPAREN COLON COMMA PERCENT
-%token ATOM_DECL
+%token DECL_CONSTS DECL_LAWS DECL_INIT
+%token LPAREN RPAREN COLON
 %token EOF
 
-%left STAR
+%token <string> IDENT
+%token PERSISTENT EXCLUSIVE
+%token TYPE_IPROP
+%token STAR WAND BOX FALSE
+
+(** Low precedence *)
 %right WAND
+%left STAR
+%nonassoc BOX
+(** High precedence *)
 
 %start <instance> instance
 
 %%
 
 instance:
-| atom_decl PERCENT list(iprop) EOF
-  { $3 }
+| decl_consts decl_laws decl_init EOF
+  {
+    { decl_consts = $1;
+      decl_laws = $2;
+      decl_init = $3; }
+  }
 
-atom_decl:
-| ATOM_DECL COLON separated_list(COMMA, IDENT)
-  { List.iter (fun id ->
-    if Hashtbl.mem atom_table id
-    then failwith ("Duplicate atom declaration: " ^ id)
-    else Hashtbl.add atom_table id ()
-    )$3 }
+decl_consts:
+| DECL_CONSTS list(decl_type)
+  { $2 }
+
+decl_laws:
+| DECL_LAWS list(decl_law)
+  { List.map (fun law -> Box law) $2 }
+
+decl_init:
+| DECL_INIT list(iprop)
+  { $2 }
+
+decl_type:
+| IDENT COLON itype
+  { $1, $3 }
+
+itype:
+| TYPE_IPROP
+  { Tiprop }
+
+decl_law:
+| iprop
+  { $1 }
+| PERSISTENT IDENT
+  { let atom = Atom $2 in
+    Wand (atom, Box atom) }
+| EXCLUSIVE IDENT
+  { let atom = Atom $2 in
+    Wand (Star (atom, atom), False) }
 
 iprop:
 | LPAREN iprop RPAREN
   { $2 }
+| FALSE
+  { False }
 | IDENT
-  { let id = $1 in
-    if Hashtbl.mem atom_table id
-    then Atom id
-    else failwith ("Unknown atom: " ^ id) }
+  { Atom $1 }
 | iprop STAR iprop
   { Star ($1, $3) }
 | iprop WAND iprop
-  { Wand ($1, $3) }
+  { uncurry_wand ($1, $3) }
 | BOX iprop
   { Box $2 }
-| FALSE
-  { False }

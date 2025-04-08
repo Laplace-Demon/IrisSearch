@@ -17,7 +17,6 @@ let () =
   try
     let ins = Parser.instance Lexer.token lexbuf in
     close_in in_channel;
-    assert (valid ins);
     let module G = struct
       type node = state
 

@@ -1,8 +1,9 @@
-Atom:
+consts
+    A : iProp
+
+laws
+    A -* A * A
+    A * A * A * A * A * A * A -* False
+
+init
     A
-
-%
-
-□ (A -* (A * A))
-□ ((A * A * A * A * A * A * A) -* False)
-A

@@ -15,19 +15,26 @@ let ident = letter (letter | digit)*
 
 rule token = parse
   | [' ' '\t' '\n']       { token lexbuf }
-  | "Atom"                { ATOM_DECL }
+  | '('                   { LPAREN }
+  | ')'                   { RPAREN }
+  | ')'                   { RPAREN }
+  | ':'                   { COLON }
+  | eof                   { EOF }
+
+  | "consts"              { DECL_CONSTS }
+  | "laws"                { DECL_LAWS }
+  | "init"                { DECL_INIT }
+
+  | "iProp"               { TYPE_IPROP }
+
+  | "Persistent"          { PERSISTENT }
+  | "Exclusive"           { EXCLUSIVE }
+
   | "False"               { FALSE }
   | ident as id           { IDENT id }
   | '*'                   { STAR }
   | "-*"                  { WAND }
   | "□"                   { BOX }
-  | '('                   { LPAREN }
-  | ')'                   { RPAREN }
-  | ')'                   { RPAREN }
-  | ':'                   { COLON }
-  | ','                   { COMMA }
-  | '%'                   { PERCENT }
-  | eof                   { EOF }
   | _ as c                { raise (Lexing_error (sprintf "Unknown character: %c" c)) }
 
 {
