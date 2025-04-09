@@ -5,19 +5,28 @@ Given a set of separation logic formulae, decide whether their separating conjun
 ### Syntax of input
 
 ```
-instance ::= declaration '%' list(iprop)
+instance ::= decl_consts decl_laws decl_init
 
-declaration ::= atom_declaration
+decl_consts ::= 'consts' list(decl_type)
 
-atom_declaration ::= 'Atom:' separated_list(',', id)
+decl_type ::= string ':' itype
 
-simple_iprop ::= 'False'
-  | atom
-  | simple_iprop '*' simple_iprop
+itype ::= 'Prop'
+  | 'iProp'
+
+decl_laws ::= 'laws' list(decl_law)
+
+decl_law ::= iprop
+  | 'Persistent' iprop
+
+decl_init ::= 'init' list(iprop)
 
 iprop ::= simple_iprop
-  | '□' '(' simple_iprop '-*' simple_iprop ')'
+  | simple_iprop '-*' simple_iprop
 
+simple_iprop ::= 'False'
+  | string
+  | simple_iprop '*' simple_iprop
 ```
 
-A problem instance begins with the declaration section, which currently contains a list of atom declarations. A percent symbol `%` is used to end the declaration section. After that, there should be a list of first-order formulae. Here, first-order means magic wands are not nested. For the time being, we only allow persistent rules.
+Law represent either a persistent iprop or a prop.
