@@ -2,4 +2,4 @@
 
 (using menhir 3.0)
 
-(name IrisSearch)
+(name Is)

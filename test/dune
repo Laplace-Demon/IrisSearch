@@ -1,0 +1,8 @@
+(cram
+ (deps
+  %{bin:is}
+  simple1
+  simple2
+  simple3
+  persistent1
+  persistent2))
