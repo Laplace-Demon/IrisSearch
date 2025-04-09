@@ -4,6 +4,7 @@ open Parser
 open Ast
 open State
 open Search
+open Statistics
 
 let file =
   let file = ref None in
@@ -24,13 +25,18 @@ let () =
       let successors = successors
       let terminate = terminate
       let estimate = estimate
+      let maximum_depth = 10
     end) in
-    match search (fun _ -> ()) with
+    let f st =
+      record_state (state_size st)
+    in
+    (match search f with
     | Some path ->
         pp_print_list
           ~pp_sep:(fun fmt () -> fprintf fmt "↑\n\n")
           pp_state std_formatter path
-    | None -> printf "no\n"
+    | None -> printf "no\n");
+    pp_stat std_formatter
   with
   | Lexer.Lexing_error s ->
       eprintf "lexing error: %s@." s;
@@ -45,6 +51,9 @@ let () =
       eprintf "validation error: %s should have type %a, but it has type %a" str
         pp_itype ity1 pp_itype ity2;
       exit 1
+  | Timeout ->
+    eprintf "timeout@.";
+    exit 1
   | e ->
       eprintf "exception: %s\n@." (Printexc.to_string e);
       exit 1

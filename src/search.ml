@@ -1,4 +1,7 @@
 open Format
+open Statistics
+
+exception Timeout
 
 module Make (G : sig
   type node
@@ -123,8 +126,14 @@ struct
     in
     P.add inode inode.estimate
 
+  let start = Sys.time ()
+
+  let check_timeout () =
+    if Sys.time () -. start > 2. then raise Timeout
+
   (* Search. *)
   let rec search f =
+    check_timeout ();
     (* Pick the open node that currently has lowest fhat,
          that is, lowest estimated distance to a goal node. *)
     match P.get () with
@@ -140,8 +149,6 @@ struct
                start node, through this node, to this son. *)
               let new_cost = inode.cost + 1 in
               assert (0 <= new_cost);
-              (* This son was never visited before. Allocate a new
-                 status record for it and mark it as open. *)
               let rec ison =
                 {
                   this = son;
@@ -156,6 +163,7 @@ struct
               let fhat = new_cost + ison.estimate in
               assert (0 <= fhat);
               (* failure means overflow *)
+              record_depth new_cost;
               P.add ison fhat)
             (G.successors node);
           search f)

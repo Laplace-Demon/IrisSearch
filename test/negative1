@@ -1,0 +1,17 @@
+consts
+    A : iProp
+    B : iProp
+    C : iProp
+    D : iProp
+    E : iProp
+
+laws
+    A -* B * C * D
+    A -* B * C
+    A -* C
+    B * D -* C
+    C * C -* A * B * C * D
+    E -* False
+
+init
+    A

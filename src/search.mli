@@ -8,3 +8,5 @@ module Make (G : sig
 end) : sig
   val search : (G.node -> unit) -> G.node list option
 end
+
+exception Timeout

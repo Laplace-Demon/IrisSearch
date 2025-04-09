@@ -1,12 +1,15 @@
 open Format
 open Ast
 open Internal
+open Statistics
 
 (** Definition of state and its operations. *)
 
 let facts : internal_prop_set ref = ref PropSet.empty
 
 type state = internal_iprop_multiset
+
+let state_size = IpropMset.cardinal
 
 let pp_state fmt st =
   fprintf fmt "%a@." (pp_internal_iprop_multiset ~pp_sep:pp_print_newline) st
@@ -19,7 +22,7 @@ let initial ins =
 let visited : state -> bool =
   let state_list = ref [] in
   let visited_aux st =
-    if List.exists (IpropMset.subset st) !state_list then true
+    if List.exists (IpropMset.subset st) !state_list then (record_duplication (); true)
     else (
       state_list := st :: !state_list;
       false)
