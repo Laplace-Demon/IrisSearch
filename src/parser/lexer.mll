@@ -25,6 +25,7 @@ rule token = parse
   | "laws"                { DECL_LAWS }
   | "init"                { DECL_INIT }
 
+  | "Prop"                { TYPE_PROP }
   | "iProp"               { TYPE_IPROP }
 
   | "Persistent"          { PERSISTENT }

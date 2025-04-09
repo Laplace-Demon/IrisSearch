@@ -19,7 +19,6 @@ let () =
     close_in in_channel;
     let module G = struct
       type node = state
-
       let source = initial ins
       let successors = successors
       let terminate = terminate
@@ -38,6 +37,13 @@ let () =
       exit 1
   | Parser.Error ->
       eprintf "parsing error@.";
+      exit 1
+  | DuplicateDeclarationError str ->
+      eprintf "validation error: duplicate declaration of %s@." str;
+      exit 1
+  | TypeError (str, ity1, ity2) ->
+      eprintf "validation error: %s should have type %a, but it has type %a" str
+        pp_itype ity1 pp_itype ity2;
       exit 1
   | e ->
       eprintf "exception: %s\n@." (Printexc.to_string e);

@@ -1,5 +1,6 @@
 %{
   open Ast
+  open Either
 %}
 
 %token DECL_CONSTS DECL_LAWS DECL_INIT
@@ -8,7 +9,7 @@
 
 %token <string> IDENT
 %token PERSISTENT EXCLUSIVE
-%token TYPE_IPROP
+%token TYPE_PROP TYPE_IPROP
 %token STAR WAND BOX FALSE
 
 (** Low precedence *)
@@ -35,7 +36,7 @@ decl_consts:
 
 decl_laws:
 | DECL_LAWS list(decl_law)
-  { List.map (fun law -> Box law) $2 }
+  { $2 }
 
 decl_init:
 | DECL_INIT list(iprop)
@@ -46,18 +47,20 @@ decl_type:
   { $1, $3 }
 
 itype:
+| TYPE_PROP
+  { Tprop }
 | TYPE_IPROP
   { Tiprop }
 
 decl_law:
 | iprop
-  { $1 }
+  { Right (Box $1) }
 | PERSISTENT IDENT
   { let atom = Atom $2 in
-    Wand (atom, Box atom) }
+    Left (Persistent atom) }
 | EXCLUSIVE IDENT
   { let atom = Atom $2 in
-    Wand (Star (atom, atom), False) }
+    Right (Box (Wand (Star (atom, atom), False))) }
 
 iprop:
 | LPAREN iprop RPAREN
