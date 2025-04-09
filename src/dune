@@ -4,7 +4,7 @@
  (modules ast internal main lexer parser set state search)
  (libraries baby menhirLib)
  (name main)
- (public_name main))
+ (public_name is))
 
 (env
  (_
