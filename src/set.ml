@@ -135,7 +135,12 @@ module Multiset = struct
     let cardinal = BabyMap.cardinal
     let singleton e = BabyMap.singleton e
     let mem = BabyMap.mem
-    let add e v = BabyMap.update e (let open Multiplicity in function None -> Some v | Some v' -> Some (add v v'))
+
+    let add e v =
+      BabyMap.update e
+        (let open Multiplicity in
+         function None -> Some v | Some v' -> Some (add v v'))
+
     let remove = BabyMap.remove
     let union = BabyMap.union (fun _ v1 v2 -> Some (Multiplicity.add v1 v2))
     let inter = BabyMap.inter (fun _ v1 v2 -> Some (Multiplicity.min v1 v2))

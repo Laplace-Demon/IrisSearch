@@ -17,14 +17,14 @@ let () =
   try
     let ins = Parser.instance Lexer.token lexbuf in
     close_in in_channel;
-    let module G = struct
+    let open Search.Make (struct
       type node = state
+
       let source = initial ins
       let successors = successors
       let terminate = terminate
-      let estimate = fun _ -> 0
-    end in
-    let open Search.Make (G) in
+      let estimate = estimate
+    end) in
     match search (fun _ -> ()) with
     | Some path ->
         pp_print_list
