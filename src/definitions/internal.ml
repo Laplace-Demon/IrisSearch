@@ -1,6 +1,5 @@
 open Format
 open Ast
-open Set
 
 (** Definition of hash-consed, internal representation of propositions and sets
     holding them. *)
@@ -65,7 +64,7 @@ end = struct
 end
 
 and HashedOrderedInternalProp :
-  (HashedOrderedType with type t = Internal.internal_prop) = struct
+  (Set.HashedOrderedType with type t = Internal.internal_prop) = struct
   type t = Internal.internal_prop
 
   let compare = Internal.compare_internal_prop
@@ -73,7 +72,7 @@ and HashedOrderedInternalProp :
 end
 
 and HashedOrderedInternalIprop :
-  (HashedOrderedType with type t = Internal.internal_iprop) = struct
+  (Multiset.HashedOrderedType with type t = Internal.internal_iprop) = struct
   type t = Internal.internal_iprop
 
   let compare = Internal.compare_internal_iprop
@@ -119,13 +118,11 @@ and pp_internal_prop_set ?(pp_sep = pp_print_cut) fmt pr_set =
 
 and pp_internal_iprop_multiset ?(pp_sep = pp_print_cut) fmt ipr_mset =
   pp_print_list ~pp_sep
-    (fun fmt (ipr, cnt) ->
-      let open Multiset.Multiplicity in
-      match cnt with
-      | Finite i ->
-          pp_print_list ~pp_sep pp_internal_iprop fmt
-            (List.init i (fun _ -> ipr))
-      | Infinite -> fprintf fmt "□ %a" pp_internal_iprop ipr)
+    (fun fmt (ipr, count) ->
+      if Multiplicity.is_finite count then
+        pp_print_seq ~pp_sep pp_internal_iprop fmt
+          (Seq.init (Multiplicity.to_int count) (fun _ -> ipr))
+      else fprintf fmt "□ %a" pp_internal_iprop ipr)
     fmt
     (IpropMset.to_list ipr_mset)
 
@@ -169,16 +166,16 @@ and iprop_to_internal : iprop -> internal_iprop = function
       let ipr_mset1 =
         match iprop_to_internal ipr1 with
         | IStar ipr_mset -> ipr_mset
-        | _ as ipr -> IpropMset.singleton ipr (Finite 1)
+        | _ as ipr -> IpropMset.singleton ipr Multiplicity.one
       in
       let ipr_mset2 =
         match iprop_to_internal ipr2 with
         | IStar ipr_mset -> ipr_mset
-        | _ as ipr -> IpropMset.singleton ipr (Finite 1)
+        | _ as ipr -> IpropMset.singleton ipr Multiplicity.one
       in
       iStar (IpropMset.union ipr_mset1 ipr_mset2)
   | Wand (ipr1, ipr2) -> iWand (iprop_to_internal ipr1, iprop_to_internal ipr2)
-  | Box ipr -> iStar (IpropMset.singleton (iprop_to_internal ipr) Infinite)
+  | Box ipr -> iStar (IpropMset.singleton (iprop_to_internal ipr) Multiplicity.inf)
   | Pure pr -> iPure (prop_to_internal pr)
 
 let prop_list_to_internal : prop list -> internal_prop_set =
@@ -198,5 +195,5 @@ let iprop_list_to_internal : iprop list -> internal_iprop_multiset =
          IpropMset.union acc
            (match ipr with
            | IStar ipr_mset -> ipr_mset
-           | _ -> IpropMset.singleton ipr (Finite 1)))
+           | _ -> IpropMset.singleton ipr Multiplicity.one))
        IpropMset.empty

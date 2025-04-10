@@ -3,8 +3,7 @@ open Ast
 
 type state
 
-val state_size : state -> int
-
+val state_size : state -> int * int
 val pp_state : formatter -> state -> unit
 val initial : instance -> state
 val successors : state -> state list

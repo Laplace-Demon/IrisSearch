@@ -29,7 +29,7 @@ let () =
     (match search (fun _ -> ()) with
     | Some path ->
         pp_print_list
-          ~pp_sep:(fun fmt () -> fprintf fmt "↑\n\n")
+          ~pp_sep:(fun fmt () -> fprintf fmt "\n↑\n\n")
           pp_state std_formatter path
     | None -> printf "no\n");
     pp_stat std_formatter
@@ -48,8 +48,8 @@ let () =
         pp_itype ity1 pp_itype ity2;
       exit 1
   | Timeout ->
-    eprintf "timeout@.";
-    exit 1
+      eprintf "timeout@.";
+      exit 1
   | e ->
       eprintf "exception: %s\n@." (Printexc.to_string e);
       exit 1

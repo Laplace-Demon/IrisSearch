@@ -1,7 +1,18 @@
 (include_subdirs unqualified)
 
 (executable
- (modules ast internal main lexer parser set search state statistics)
+ (modules
+  ast
+  internal
+  main
+  multiset
+  multiplicity
+  lexer
+  parser
+  set
+  search
+  state
+  statistics)
  (libraries baby menhirLib)
  (name main)
  (public_name is))

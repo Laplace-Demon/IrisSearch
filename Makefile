@@ -1,10 +1,10 @@
 .PHONY: build test clean
 
 build:
-	@ dune build
+	@ dune build && dune install
 
-test:
-	@ dune exec main $(INPUT)
+test: build
+	@ is $(INPUT)
 
 clean:
 	@ dune clean

@@ -127,9 +127,7 @@ struct
     P.add inode inode.estimate
 
   let start = Sys.time ()
-
-  let check_timeout () =
-    if Sys.time () -. start > 2. then raise Timeout
+  let check_timeout () = if Sys.time () -. start > 2. then raise Timeout
 
   (* Search. *)
   let rec search f =

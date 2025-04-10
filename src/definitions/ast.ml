@@ -2,9 +2,7 @@ open Format
 
 (** Definition of abstract syntax tree returned by the parser. *)
 
-type itype =
-  | Tprop
-  | Tiprop
+type itype = Tprop | Tiprop
 
 let itype_eqb ity1 ity2 =
   match (ity1, ity2) with
@@ -33,24 +31,32 @@ and iprop =
   | Box of iprop
   | Pure of prop
 
+let uncurry_imply (pr1, pr2) =
+  match pr2 with
+  | Imply (pr21, pr22) -> Imply (And (pr1, pr21), pr22)
+  | _ -> Imply (pr1, pr2)
+
 let uncurry_wand (ipr1, ipr2) =
   match ipr2 with
   | Wand (ipr21, ipr22) -> Wand (Star (ipr1, ipr21), ipr22)
   | _ -> Wand (ipr1, ipr2)
 
 let rec prop_eqb pr1 pr2 =
-  match pr1, pr2 with
+  match (pr1, pr2) with
   | Persistent ipr1, Persistent ipr2 -> iprop_eqb ipr1 ipr2
   | Not pr1, Not pr2 -> prop_eqb pr1 pr2
-  | And (pr11, pr12), And (pr21, pr22) | Or (pr11, pr12), Or (pr21, pr22) | Imply (pr11, pr12), Imply (pr21, pr22) ->
-    prop_eqb pr11 pr21 && prop_eqb pr12 pr22
+  | And (pr11, pr12), And (pr21, pr22)
+  | Or (pr11, pr12), Or (pr21, pr22)
+  | Imply (pr11, pr12), Imply (pr21, pr22) ->
+      prop_eqb pr11 pr21 && prop_eqb pr12 pr22
   | _, _ -> false
 
 and iprop_eqb ipr1 ipr2 =
   match (ipr1, ipr2) with
   | False, False -> true
   | Atom str1, Atom str2 -> String.equal str1 str2
-  | Star (ipr11, ipr12), Star (ipr21, ipr22) | Wand (ipr11, ipr12), Wand (ipr21, ipr22) ->
+  | Star (ipr11, ipr12), Star (ipr21, ipr22)
+  | Wand (ipr11, ipr12), Wand (ipr21, ipr22) ->
       iprop_eqb ipr11 ipr21 && iprop_eqb ipr12 ipr22
   | Box ipr1, Box ipr2 -> iprop_eqb ipr1 ipr2
   | Pure pr1, Pure pr2 -> prop_eqb pr1 pr2
@@ -78,56 +84,74 @@ and pp_iprop fmt = function
 
 type instance = {
   decl_consts : (string * itype) list;
-  decl_laws : (prop, iprop) Either.t list;
+  decl_laws : iprop list;
   decl_init : iprop list;
 }
 
 let pp_instance fmt { decl_consts; decl_laws; decl_init } =
   fprintf fmt "@[<v>consts@.%a@.laws@.%a@.init@.%a@.@]"
     (pp_print_list pp_typed_id)
-    decl_consts (pp_print_list (pp_print_either ~left:pp_prop ~right:pp_iprop)) decl_laws (pp_print_list pp_iprop)
+    decl_consts (pp_print_list pp_iprop) decl_laws (pp_print_list pp_iprop)
     decl_init
 
+(** Validation. *)
+
 exception DuplicateDeclarationError of string
-
 exception TypeError of string * itype * itype
-
 exception NoDeclarationError of string
 
 let validate { decl_consts; decl_laws; decl_init } =
   let symbol_table = Hashtbl.create 17 in
-  let rec check_type = function
+  let rec check_iprop = function
     | False -> ()
-    | Atom str ->
-      (match Hashtbl.find_opt symbol_table str with
-      | Some ity ->
-        if not (itype_eqb ity Tiprop)
-        then raise (TypeError (str, Tiprop, ity))
-      | None ->
-        raise (NoDeclarationError str)
-      )
-    | Star (ipr1, ipr2) -> check_type ipr1; check_type ipr2
-    | Wand (ipr1, ipr2) -> check_type ipr1; check_type ipr2
-    | Box ipr -> check_type ipr
+    | Atom str -> (
+        match Hashtbl.find_opt symbol_table str with
+        | Some ity ->
+            if not (itype_eqb ity Tiprop) then
+              raise (TypeError (str, Tiprop, ity))
+        | None -> raise (NoDeclarationError str))
+    | Star (ipr1, ipr2) ->
+        check_iprop ipr1;
+        check_iprop ipr2
+    | Wand (ipr1, ipr2) ->
+        check_iprop ipr1;
+        check_iprop ipr2
+    | Box ipr -> check_iprop ipr
+    | Pure pr -> check_prop pr
+  and check_prop = function
+    | Persistent ipr -> check_iprop ipr
+    | Not pr -> check_prop pr
+    | And (pr1, pr2) ->
+        check_prop pr1;
+        check_prop pr2
+    | Or (pr1, pr2) ->
+        check_prop pr1;
+        check_prop pr2
+    | Imply (pr1, pr2) ->
+        check_prop pr1;
+        check_prop pr2
   in
   let _ =
-    (** Build symbol table. *)
-    List.iter (fun (str, ity) ->
-    if Hashtbl.mem symbol_table str
-    then raise (DuplicateDeclarationError str)
-    else Hashtbl.add symbol_table str ity
-    ) decl_consts
-  in
-  let prop_list, persistent_laws =
-    (** Separate prop and iprop from decl_laws. *)
-    List.partition_map (fun x -> x) decl_laws
-  in
-  let iprop_list =
-    persistent_laws @ decl_init
+    (* Build symbol table. *)
+    List.iter
+      (fun (str, ity) ->
+        if Hashtbl.mem symbol_table str then
+          raise (DuplicateDeclarationError str)
+        else Hashtbl.add symbol_table str ity)
+      decl_consts
   in
   let _ =
-    (** Check type. *)
-    List.iter check_type iprop_list
+    (* Check type. *)
+    List.iter check_iprop decl_laws;
+    List.iter check_iprop decl_init
   in
-  symbol_table, prop_list, iprop_list
-  
+  let facts, laws =
+    (* Separate prop and iprop from decl_laws. *)
+    List.partition_map
+      (function
+        | Pure pr -> Either.Left pr
+        | Box _ as ipr -> Either.Right ipr
+        | _ -> assert false)
+      decl_laws
+  in
+  (symbol_table, facts, laws, decl_init)

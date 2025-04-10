@@ -1,6 +1,5 @@
 open Format
 open Ast
-open Set
 
 (** Definition of hash-consed, internal representation of iprops and multisets
     holding them. *)

@@ -1,6 +1,5 @@
 %{
   open Ast
-  open Either
 %}
 
 %token DECL_CONSTS DECL_LAWS DECL_INIT
@@ -54,13 +53,13 @@ itype:
 
 decl_law:
 | iprop
-  { Right (Box $1) }
+  { Box $1 }
 | PERSISTENT IDENT
   { let atom = Atom $2 in
-    Left (Persistent atom) }
+    Pure (Persistent atom) }
 | EXCLUSIVE IDENT
   { let atom = Atom $2 in
-    Right (Box (Wand (Star (atom, atom), False))) }
+    Box (Wand (Star (atom, atom), False)) }
 
 iprop:
 | LPAREN iprop RPAREN
