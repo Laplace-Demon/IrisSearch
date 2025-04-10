@@ -1,5 +1,4 @@
 open Format
-open Ast
 open Internal
 open Statistics
 
@@ -16,10 +15,10 @@ let state_size (pr_set, ipr_mset) =
   (PropSet.cardinal pr_set, IpropMset.cardinal ipr_mset)
 
 let pp_state fmt (pr_set, ipr_mset) =
-  fprintf fmt "%a@.%a@."
-    (pp_internal_prop_set ~pp_sep:pp_print_newline)
+  fprintf fmt "@[<v 4>pures@,%a@]@.@[<v 4>props@,%a@]@."
+    (pp_internal_prop_set ~pp_sep:pp_print_cut)
     pr_set
-    (pp_internal_iprop_multiset ~pp_sep:pp_print_newline)
+    (pp_internal_iprop_multiset ~pp_sep:pp_print_cut)
     ipr_mset
 
 (** Goal-directed searching functions. *)
@@ -29,7 +28,7 @@ let is_persistent ipr =
   PropSet.mem (iPersistent ipr) global_pr_set
 
 let initial ins =
-  let symbol_table, facts, laws, atoms = validate ins in
+  let symbol_table, facts, laws, atoms = Ast.validate ins in
   global_state := (prop_list_to_internal facts, iprop_list_to_internal laws);
   (PropSet.empty, iprop_list_to_internal atoms)
 
@@ -68,9 +67,17 @@ let successors (pr_set, ipr_mset) =
               | _ -> IpropMset.singleton ipr2 Multiplicity.one
             in
             if IpropMset.subset prems ipr_mset then
-              let strengthened_concls = concls in
+              let strengthened_concls =
+                IpropMset.map
+                  (fun ipr count ->
+                    if Multiplicity.is_finite count && is_persistent ipr then
+                      Multiplicity.inf
+                    else count)
+                  concls
+              in
               let new_ipr_mset =
-                IpropMset.union concls (IpropMset.diff ipr_mset prems)
+                IpropMset.union strengthened_concls
+                  (IpropMset.diff ipr_mset prems)
               in
               let new_st = (pr_set, new_ipr_mset) in
               if visited new_st then None else Some new_st

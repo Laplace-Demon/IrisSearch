@@ -114,17 +114,20 @@ and pp_internal_iprop fmt = function
   | IPure pr -> fprintf fmt "⌜%a⌝" pp_internal_prop pr
 
 and pp_internal_prop_set ?(pp_sep = pp_print_cut) fmt pr_set =
-  pp_print_list ~pp_sep pp_internal_prop fmt (PropSet.to_list pr_set)
+  if PropSet.is_empty pr_set then pp_print_string fmt "%empty"
+  else pp_print_list ~pp_sep pp_internal_prop fmt (PropSet.to_list pr_set)
 
 and pp_internal_iprop_multiset ?(pp_sep = pp_print_cut) fmt ipr_mset =
-  pp_print_list ~pp_sep
-    (fun fmt (ipr, count) ->
-      if Multiplicity.is_finite count then
-        pp_print_seq ~pp_sep pp_internal_iprop fmt
-          (Seq.init (Multiplicity.to_int count) (fun _ -> ipr))
-      else fprintf fmt "□ %a" pp_internal_iprop ipr)
-    fmt
-    (IpropMset.to_list ipr_mset)
+  if IpropMset.is_empty ipr_mset then pp_print_string fmt "%empty"
+  else
+    pp_print_list ~pp_sep
+      (fun fmt (ipr, count) ->
+        if Multiplicity.is_finite count then
+          pp_print_seq ~pp_sep pp_internal_iprop fmt
+            (Seq.init (Multiplicity.to_int count) (fun _ -> ipr))
+        else fprintf fmt "□ %a" pp_internal_iprop ipr)
+      fmt
+      (IpropMset.to_list ipr_mset)
 
 (** Smart constructors required for hash-consing. *)
 
@@ -175,7 +178,8 @@ and iprop_to_internal : iprop -> internal_iprop = function
       in
       iStar (IpropMset.union ipr_mset1 ipr_mset2)
   | Wand (ipr1, ipr2) -> iWand (iprop_to_internal ipr1, iprop_to_internal ipr2)
-  | Box ipr -> iStar (IpropMset.singleton (iprop_to_internal ipr) Multiplicity.inf)
+  | Box ipr ->
+      iStar (IpropMset.singleton (iprop_to_internal ipr) Multiplicity.inf)
   | Pure pr -> iPure (prop_to_internal pr)
 
 let prop_list_to_internal : prop list -> internal_prop_set =

@@ -65,14 +65,14 @@ and iprop_eqb ipr1 ipr2 =
 let rec pp_prop fmt = function
   | Persistent ipr -> fprintf fmt "Persistent %a" pp_iprop ipr
   | Not pr -> fprintf fmt "¬ %a" pp_prop pr
-  | And (pr1, pr2) -> fprintf fmt "(%a ∧ %a)" pp_prop pr1 pp_prop pr2
-  | Or (pr1, pr2) -> fprintf fmt "(%a ∨ %a)" pp_prop pr1 pp_prop pr2
-  | Imply (pr1, pr2) -> fprintf fmt "(%a → %a)" pp_prop pr1 pp_prop pr2
+  | And (pr1, pr2) -> fprintf fmt "%a ∧ %a" pp_prop pr1 pp_prop pr2
+  | Or (pr1, pr2) -> fprintf fmt "%a ∨ %a" pp_prop pr1 pp_prop pr2
+  | Imply (pr1, pr2) -> fprintf fmt "%a → %a" pp_prop pr1 pp_prop pr2
 
 and pp_iprop fmt = function
   | False -> fprintf fmt "⊥"
   | Atom str -> fprintf fmt "%s" str
-  | Star (ipr1, ipr2) -> fprintf fmt "(%a * %a)" pp_iprop ipr1 pp_iprop ipr2
+  | Star (ipr1, ipr2) -> fprintf fmt "%a * %a" pp_iprop ipr1 pp_iprop ipr2
   | Wand (ipr1, ipr2) -> fprintf fmt "(%a -* %a)" pp_iprop ipr1 pp_iprop ipr2
   | Box ipr -> fprintf fmt "□ %a" pp_iprop ipr
   | Pure pr -> fprintf fmt "⌜%a⌝" pp_prop pr
@@ -89,7 +89,7 @@ type instance = {
 }
 
 let pp_instance fmt { decl_consts; decl_laws; decl_init } =
-  fprintf fmt "@[<v>consts@.%a@.laws@.%a@.init@.%a@.@]"
+  fprintf fmt "@[<v 4>consts@,%a@]@.@[<v 4>laws@,%a@]@.@[<v 4>init@,%a@]@."
     (pp_print_list pp_typed_id)
     decl_consts (pp_print_list pp_iprop) decl_laws (pp_print_list pp_iprop)
     decl_init
@@ -131,7 +131,7 @@ let validate { decl_consts; decl_laws; decl_init } =
         check_prop pr1;
         check_prop pr2
   in
-  let _ =
+  let () =
     (* Build symbol table. *)
     List.iter
       (fun (str, ity) ->
@@ -140,7 +140,7 @@ let validate { decl_consts; decl_laws; decl_init } =
         else Hashtbl.add symbol_table str ity)
       decl_consts
   in
-  let _ =
+  let () =
     (* Check type. *)
     List.iter check_iprop decl_laws;
     List.iter check_iprop decl_init

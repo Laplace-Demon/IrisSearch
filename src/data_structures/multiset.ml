@@ -20,6 +20,7 @@ module type Multiset = sig
   val diff : t -> t -> t
   val subset : t -> t -> bool
   val partition : (elt -> Multiplicity.t -> bool) -> t -> t * t
+  val map : (elt -> Multiplicity.t -> Multiplicity.t) -> t -> t
   val to_list : t -> (elt * Multiplicity.t) list
   val of_list : (elt * Multiplicity.t) list -> t
   val equal : t -> t -> bool
@@ -59,6 +60,7 @@ module Make (HashOrd : HashedOrderedType) = struct
 
   let subset = BabyMap.sub (fun v1 v2 -> Multiplicity.compare v1 v2 <= 0)
   let partition = BabyMap.partition
+  let map = BabyMap.mapi
   let to_list = BabyMap.to_list
   let of_list = BabyMap.of_list
   let equal = BabyMap.equal Multiplicity.equal

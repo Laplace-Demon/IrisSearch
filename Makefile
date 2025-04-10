@@ -1,10 +1,4 @@
-.PHONY: build test clean
+.PHONY: all
 
-build:
+all:
 	@ dune build && dune install
-
-test: build
-	@ is $(INPUT)
-
-clean:
-	@ dune clean

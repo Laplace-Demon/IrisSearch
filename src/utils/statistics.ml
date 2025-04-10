@@ -30,19 +30,12 @@ let record_duplication () =
   stat_recorder.duplication_count <- stat_recorder.duplication_count + 1
 
 let pp_stat fmt =
-  let {
-    state_count;
-    state_size_distribution;
-    maximum_search_depth;
-    duplication_count;
-  } =
+  let { state_count; maximum_search_depth; duplication_count } =
     stat_recorder
   in
-  fprintf fmt "statistics@.";
-  fprintf fmt "state count: %i@." state_count;
-  fprintf fmt "state size distribution: %a@."
-    (pp_print_seq (fun fmt ((size1, size2), count) ->
-         fprintf fmt "(%i %i : %i)" size1 size2 count))
-    (Hashtbl.to_seq state_size_distribution);
-  fprintf fmt "maximum search depth: %i@." maximum_search_depth;
-  fprintf fmt "duplication count: %i@." duplication_count
+  fprintf fmt
+    "@[<v 4>statistics@,\
+     state count: %i@,\
+     maximum search depth: %i@,\
+     duplication count: %i@]@."
+    state_count maximum_search_depth duplication_count
