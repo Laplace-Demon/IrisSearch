@@ -37,20 +37,24 @@ let () =
     Fun.protect ~finally (fun () ->
         try
           let ins = Parser.instance Lexer.token lexbuf in
+          let source = initial ins in
           let () = fprintf formatter "instance@.@.%a@." pp_instance ins in
+          let () = fprintf formatter "global state@.@.%a@." pp_state !global_state in
+          let () = fprintf formatter "initial state@.@.%a@." pp_state source in
           let open Search.Make (struct
             type node = state
 
-            let source = initial ins
+            let source = source
             let successors = successors
             let terminate = terminate
             let estimate = estimate
           end) in
           match search (fun _ -> ()) with
           | Some path ->
-              pp_print_list
+              let () = fprintf formatter "path@.@."in
+              let () = pp_print_list
                 ~pp_sep:(fun fmt () -> fprintf fmt "@.↑@.@.")
-                pp_state formatter path;
+                pp_state formatter path in
               fprintf formatter "@.find solution@.@."
           | None -> fprintf formatter "no solution@.@."
         with Timeout -> fprintf formatter "timeout@.@.")
