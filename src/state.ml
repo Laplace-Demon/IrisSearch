@@ -66,7 +66,9 @@ let successors ipr_mset =
         | _ -> None)
       (IpropMset.to_list ipr_mset)
   in
-  from_facts @ from_laws
+  let generated = from_facts @ from_laws in
+  List.iter (fun st -> record_state (state_size st)) generated;
+  generated
 
 let terminate st = IpropMset.mem iFalse st
 let estimate = fun _ -> 0

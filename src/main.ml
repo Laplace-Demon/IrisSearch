@@ -25,12 +25,8 @@ let () =
       let successors = successors
       let terminate = terminate
       let estimate = estimate
-      let maximum_depth = 10
     end) in
-    let f st =
-      record_state (state_size st)
-    in
-    (match search f with
+    (match search (fun _ -> ()) with
     | Some path ->
         pp_print_list
           ~pp_sep:(fun fmt () -> fprintf fmt "↑\n\n")
