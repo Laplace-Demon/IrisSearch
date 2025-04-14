@@ -7,7 +7,7 @@ let in_channel, out_channel =
   let set_input s = input := Some s in
   let set_output s = output := Some s in
   let speclist = [ ("-o", Arg.String set_output, "Specify output file") ] in
-  let () = Arg.parse speclist set_input "Usage: main input [-o output]" in
+  let () = Arg.parse speclist set_input "Usage: is input [-o output]" in
   let in_channel =
     match !input with
     | Some f -> open_in f

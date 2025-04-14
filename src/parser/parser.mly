@@ -9,7 +9,7 @@
 %token <string> IDENT
 %token PERSISTENT EXCLUSIVE
 %token TYPE_PROP TYPE_IPROP
-%token STAR WAND BOX FALSE
+%token FALSE STAR WAND BOX TOPLEFTCORNER TOPRIGHTCORNER
 
 (** Low precedence *)
 %right WAND
@@ -54,9 +54,8 @@ itype:
 decl_law:
 | iprop
   { Box $1 }
-| PERSISTENT IDENT
-  { let atom = Atom $2 in
-    Pure (Persistent atom) }
+| TOPLEFTCORNER prop TOPRIGHTCORNER
+  { Pure $2 }
 | EXCLUSIVE IDENT
   { let atom = Atom $2 in
     Box (Wand (Star (atom, atom), False)) }
@@ -74,3 +73,8 @@ iprop:
   { uncurry_wand ($1, $3) }
 | BOX iprop
   { Box $2 }
+
+prop:
+| PERSISTENT IDENT
+  { let atom = Atom $2 in
+    Persistent atom }

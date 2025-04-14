@@ -36,6 +36,8 @@ rule token = parse
   | '*'                   { STAR }
   | "-*"                  { WAND }
   | "□"                   { BOX }
+  | "⌜"                   { TOPLEFTCORNER }
+  | "⌝"                   { TOPRIGHTCORNER }
   | _ as c                { raise (Lexing_error (sprintf "Unknown character: %c" c)) }
 
 {

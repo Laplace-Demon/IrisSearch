@@ -1,0 +1,10 @@
+(executable
+ (name fuzzer)
+ (public_name fuzzer)
+ (modules
+  freshname
+  fuzzer
+  negative)
+ (libraries is)
+ (flags
+  (:standard -w -a)))
