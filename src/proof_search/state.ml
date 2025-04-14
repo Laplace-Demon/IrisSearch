@@ -21,23 +21,10 @@ let pp_state fmt (pr_set, ipr_mset) =
     (pp_internal_iprop_multiset ~pp_sep:pp_print_cut)
     ipr_mset
 
-(** Goal-directed searching functions. *)
-
-let is_persistent ipr =
-  let global_pr_set, _ = !global_state in
-  PropSet.mem (iPersistent ipr) global_pr_set
-
-let strengthen_persistent =
-  IpropMset.map
-  (fun ipr count ->
-    if Multiplicity.is_finite count && is_persistent ipr then
-      Multiplicity.inf
-    else count)
-
 let initial ins =
   let symbol_table, facts, laws, atoms = Ast.validate ins in
   global_state := (prop_list_to_internal facts, iprop_list_to_internal laws);
-  (PropSet.empty, strengthen_persistent (iprop_list_to_internal atoms))
+  (PropSet.empty, iprop_list_to_internal atoms)
 
 let visited : state -> bool =
   let state_list = ref [] in
