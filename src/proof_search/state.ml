@@ -7,7 +7,7 @@ open Statistics
 type state = internal_prop_set * internal_iprop_multiset
 
 (** Maybe it's better to use a list because the global state won't change and we
-    don't want to convert *)
+    don't want to convert it to a list every time. *)
 
 let global_state : state ref = ref (PropSet.empty, IpropMset.empty)
 

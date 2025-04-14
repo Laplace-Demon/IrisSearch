@@ -1,10 +1,10 @@
 (include_subdirs unqualified)
 
-(executable
+(library
+ (public_name is)
  (modules
   ast
   internal
-  main
   multiset
   multiplicity
   lexer
@@ -14,10 +14,5 @@
   state
   statistics)
  (libraries baby menhirLib)
- (name main)
- (public_name is))
-
-(env
- (_
-  (flags
-   (:standard -w -a))))
+ (flags
+  (:standard -w -a)))

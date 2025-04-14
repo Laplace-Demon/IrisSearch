@@ -2,4 +2,7 @@
 
 (using menhir 3.0)
 
-(name Is)
+(name is)
+
+(package
+ (name is))

@@ -1,0 +1,9 @@
+(include_subdirs no)
+
+(executable
+ (public_name is)
+ (modules is)
+ (package is)
+ (libraries baby is menhirLib)
+ (flags
+  (:standard -w -a)))
