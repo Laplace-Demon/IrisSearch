@@ -85,6 +85,7 @@ let successors (pr_set, ipr_mset) =
               if visited new_st then None else Some new_st
             else None
         | _ -> None)
+        (* TODO *)
       (IpropMset.to_list ipr_mset @ IpropMset.to_list global_ipr_mset)
   in
   List.iter (fun st -> record_state (state_size st)) new_state_list;

@@ -21,7 +21,9 @@ module type Set = sig
   val subset : t -> t -> bool
   val partition : (elt -> bool) -> t -> t * t
   val to_list : t -> elt list
+  val to_seq : t -> elt Seq.t
   val of_list : elt list -> t
+  val of_seq : elt Seq.t -> t
   val equal : t -> t -> bool
   val compare : t -> t -> int
   val hash : t -> int
@@ -46,7 +48,9 @@ module Make (HashOrd : HashedOrderedType) = struct
   let subset = BabySet.subset
   let partition = BabySet.partition
   let to_list = BabySet.to_list
+  let to_seq = BabySet.to_seq
   let of_list = BabySet.of_list
+  let of_seq = BabySet.of_seq
   let equal = BabySet.equal
   let compare = BabySet.compare
 

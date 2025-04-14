@@ -54,6 +54,8 @@ itype:
 decl_law:
 | iprop
   { Box $1 }
+| prop
+  { Pure $1 }
 | TOPLEFTCORNER prop TOPRIGHTCORNER
   { Pure $2 }
 | EXCLUSIVE IDENT

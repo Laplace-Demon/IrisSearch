@@ -22,7 +22,9 @@ module type Multiset = sig
   val partition : (elt -> Multiplicity.t -> bool) -> t -> t * t
   val map : (elt -> Multiplicity.t -> Multiplicity.t) -> t -> t
   val to_list : t -> (elt * Multiplicity.t) list
+  val to_seq : t -> (elt * Multiplicity.t) Seq.t
   val of_list : (elt * Multiplicity.t) list -> t
+  val of_seq : (elt * Multiplicity.t) Seq.t -> t
   val equal : t -> t -> bool
   val compare : t -> t -> int
   val hash : t -> int

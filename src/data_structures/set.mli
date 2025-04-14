@@ -21,7 +21,9 @@ module type Set = sig
   val subset : t -> t -> bool
   val partition : (elt -> bool) -> t -> t * t
   val to_list : t -> elt list
+  val to_seq : t -> elt Seq.t
   val of_list : elt list -> t
+  val of_seq : elt Seq.t -> t
   val equal : t -> t -> bool
   val compare : t -> t -> int
   val hash : t -> int
