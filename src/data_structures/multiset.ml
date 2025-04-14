@@ -21,6 +21,7 @@ module type Multiset = sig
   val subset : t -> t -> bool
   val partition : (elt -> Multiplicity.t -> bool) -> t -> t * t
   val map : (elt -> Multiplicity.t -> Multiplicity.t) -> t -> t
+  val fold : (elt -> Multiplicity.t -> 'acc -> 'acc) -> t -> 'acc -> 'acc
   val to_list : t -> (elt * Multiplicity.t) list
   val to_seq : t -> (elt * Multiplicity.t) Seq.t
   val of_list : (elt * Multiplicity.t) list -> t
@@ -54,13 +55,15 @@ module Make (HashOrd : HashedOrderedType) = struct
   let diff =
     BabyMap.merge (fun _ o1 o2 ->
         match (o1, o2) with
-        | None, _ -> None
-        | Some _, None -> o1
+        | None, None -> None
+        | None, _ -> raise Multiplicity.Underflow
+        | _, None -> o1
         | Some v1, Some v2 -> Multiplicity.sub v1 v2)
 
   let subset = BabyMap.sub (fun v1 v2 -> Multiplicity.compare v1 v2 <= 0)
   let partition = BabyMap.partition
   let map = BabyMap.mapi
+  let fold = BabyMap.fold
   let to_list = BabyMap.to_list
   let to_seq = BabyMap.to_seq
   let of_list = BabyMap.of_list

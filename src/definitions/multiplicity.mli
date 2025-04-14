@@ -1,5 +1,7 @@
 type t
 
+exception Underflow
+
 val one : t
 val inf : t
 val is_finite : t -> bool

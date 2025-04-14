@@ -1,5 +1,7 @@
 type t = Finite of int | Infinite
 
+exception Underflow
+
 let one = Finite 1
 let inf = Infinite
 let is_finite = function Finite _ -> true | Infinite -> false
@@ -17,8 +19,12 @@ let add t1 t2 =
 let sub t1 t2 =
   match (t1, t2) with
   | Infinite, _ -> Some Infinite
-  | Finite i1, Finite i2 when i1 > i2 -> Some (Finite (i1 - i2))
-  | _, _ -> None
+  | Finite i1, Finite i2 ->
+    let c = Int.compare i1 i2 in
+    if c = 0 then None
+    else if c > 0 then Some (Finite (i1 - i2))
+    else raise Underflow
+  | _, _ -> raise Underflow
 
 let equal t1 t2 =
   match (t1, t2) with

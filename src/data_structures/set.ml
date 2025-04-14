@@ -20,6 +20,7 @@ module type Set = sig
   val diff : t -> t -> t
   val subset : t -> t -> bool
   val partition : (elt -> bool) -> t -> t * t
+  val fold : (elt -> 'acc -> 'acc) -> t -> 'acc -> 'acc
   val to_list : t -> elt list
   val to_seq : t -> elt Seq.t
   val of_list : elt list -> t
@@ -47,6 +48,7 @@ module Make (HashOrd : HashedOrderedType) = struct
   let diff = BabySet.diff
   let subset = BabySet.subset
   let partition = BabySet.partition
+  let fold = BabySet.fold
   let to_list = BabySet.to_list
   let to_seq = BabySet.to_seq
   let of_list = BabySet.of_list
