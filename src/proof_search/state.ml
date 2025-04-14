@@ -45,7 +45,7 @@ let visited : state -> bool =
 
 let apply ipr (pr_set, ipr_mset) =
   match ipr with
-  | IWand (ipr1, ipr2) ->
+  | IWand (ipr1, ipr2) -> (
       let prems =
         match ipr1 with
         | IStar ipr_set -> ipr_set
@@ -58,22 +58,22 @@ let apply ipr (pr_set, ipr_mset) =
       in
       try
         let new_ipr_mset =
-          IpropMset.union concls
-            (IpropMset.diff ipr_mset prems)
+          IpropMset.union concls (IpropMset.diff ipr_mset prems)
         in
         let new_st = (pr_set, new_ipr_mset) in
         if visited new_st then None else Some new_st
-      with Multiplicity.Underflow -> None
-  | _ -> None
+      with
+      | Multiplicity.Underflow -> None
+      | _ -> None)
 
 let successors st =
   let global_pr_set, global_ipr_mset = !global_state in
   let new_state_list =
-    IpropMset.fold (fun ipr _ acc ->
-      match apply ipr st with
-      | Some new_st -> new_st :: acc
-      | None -> acc) global_ipr_mset []
-        (* TODO: infinite application *)
+    IpropMset.fold
+      (fun ipr _ acc ->
+        match apply ipr st with Some new_st -> new_st :: acc | None -> acc)
+      global_ipr_mset []
+    (* TODO: infinite application *)
   in
   List.iter (fun st -> record_state (state_size st)) new_state_list;
   new_state_list

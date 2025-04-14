@@ -32,12 +32,21 @@ let () =
     Fun.protect ~finally (fun () ->
         try
           let ins = Parser.instance Lexer.token lexbuf in
-          let () = fprintf formatter "original instance@.@.%a@." Ast.pp_instance ins in
+          let () =
+            fprintf formatter "original instance@.@.%a@." Ast.pp_instance ins
+          in
           let ins = Ast.replace_persistent_transformation ins in
           let source = State.initial ins in
-          let () = fprintf formatter "transformed instance@.@.%a@." Ast.pp_instance ins in
-          let () = fprintf formatter "global state@.@.%a@." State.pp_state !State.global_state in
-          let () = fprintf formatter "initial state@.@.%a@." State.pp_state source in
+          let () =
+            fprintf formatter "transformed instance@.@.%a@." Ast.pp_instance ins
+          in
+          let () =
+            fprintf formatter "global state@.@.%a@." State.pp_state
+              !State.global_state
+          in
+          let () =
+            fprintf formatter "initial state@.@.%a@." State.pp_state source
+          in
           let open Search.Make (struct
             type node = State.state
 
@@ -48,10 +57,12 @@ let () =
           end) in
           match search (fun _ -> ()) with
           | Some path ->
-              let () = fprintf formatter "path@.@."in
-              let () = pp_print_list
-                ~pp_sep:(fun fmt () -> fprintf fmt "@.↓@.@.")
-                State.pp_state formatter (List.rev path) in
+              let () = fprintf formatter "path@.@." in
+              let () =
+                pp_print_list
+                  ~pp_sep:(fun fmt () -> fprintf fmt "@.↓@.@.")
+                  State.pp_state formatter (List.rev path)
+              in
               fprintf formatter "@.find solution@.@."
           | None -> fprintf formatter "no solution@.@."
         with Search.Timeout -> fprintf formatter "timeout@.@.")
