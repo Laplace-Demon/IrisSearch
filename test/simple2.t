@@ -1,38 +1,81 @@
   $ is ./simple2
-  ⊥
-  □ (C -* E)
-  □ (D -* F)
-  □ ((A * B) -* (C * D))
-  □ ((E * F) -* ⊥)
+  instance
+  
+  consts
+      A : iProp
+      B : iProp
+      C : iProp
+      D : iProp
+      E : iProp
+      F : iProp
+  laws
+      □ (A * B -* C * D)
+      □ (C -* E)
+      □ (D -* F)
+      □ (F * E -* ⊥)
+  init
+      A * B
+  
+  global state
+  
+  pures
+      %empty
+  props
+      □ (C -* E)
+      □ (D -* F)
+      □ ((A * B) -* (C * D))
+      □ ((E * F) -* ⊥)
+  
+  initial state
+  
+  pures
+      %empty
+  props
+      A
+      B
+  
+  path
+  
+  pures
+      %empty
+  props
+      ⊥
+  
   ↑
   
-  E
-  F
-  □ (C -* E)
-  □ (D -* F)
-  □ ((A * B) -* (C * D))
-  □ ((E * F) -* ⊥)
+  pures
+      %empty
+  props
+      E
+      F
+  
   ↑
   
-  D
-  E
-  □ (C -* E)
-  □ (D -* F)
-  □ ((A * B) -* (C * D))
-  □ ((E * F) -* ⊥)
+  pures
+      %empty
+  props
+      D
+      E
+  
   ↑
   
-  C
-  D
-  □ (C -* E)
-  □ (D -* F)
-  □ ((A * B) -* (C * D))
-  □ ((E * F) -* ⊥)
+  pures
+      %empty
+  props
+      C
+      D
+  
   ↑
   
-  A
-  B
-  □ (C -* E)
-  □ (D -* F)
-  □ ((A * B) -* (C * D))
-  □ ((E * F) -* ⊥)
+  pures
+      %empty
+  props
+      A
+      B
+  
+  find solution
+  
+  statistics
+      state count: 5
+      maximum search depth: 4
+      duplication count: 1

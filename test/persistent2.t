@@ -1,176 +1,217 @@
   $ is ./persistent2
-  ⊥
-  □ A
-  □ B
-  □ (A -* C)
-  □ (B -* A)
-  □ ((A * A * A * A * A * A * A * A * A * A * A * A * A * A * A * B * B * B * B * B * B * B * B * B * C * C * C * C * C * C * C * C * C * C * C) -* ⊥)
+  instance
+  
+  consts
+      A : iProp
+      B : iProp
+      C : iProp
+  laws
+      □ (A * A * C * C * C * C * A * A * B * B * A * A * A * A * C * B * A * C * A * B * A * C * C * C * A * B * C * A * B * B * C * B * A * B * A -* ⊥)
+      ⌜Persistent A⌝
+      ⌜Persistent B⌝
+      □ (B -* A)
+      □ (A -* C)
+  init
+      B
+  
+  global state
+  
+  pures
+      Persistent A
+      Persistent B
+  props
+      □ (A -* C)
+      □ (B -* A)
+      □ ((A * A * A * A * A * A * A * A * A * A * A * A * A * A * A * B * B * B * B * B * B * B * B * B * C * C * C * C * C * C * C * C * C * C * C) -* ⊥)
+  
+  initial state
+  
+  pures
+      %empty
+  props
+      □ B
+  
+  path
+  
+  pures
+      %empty
+  props
+      ⊥
+      □ A
+      □ B
+  
   ↑
   
-  □ A
-  □ B
-  C
-  C
-  C
-  C
-  C
-  C
-  C
-  C
-  C
-  C
-  C
-  □ (A -* C)
-  □ (B -* A)
-  □ ((A * A * A * A * A * A * A * A * A * A * A * A * A * A * A * B * B * B * B * B * B * B * B * B * C * C * C * C * C * C * C * C * C * C * C) -* ⊥)
+  pures
+      %empty
+  props
+      □ A
+      □ B
+      C
+      C
+      C
+      C
+      C
+      C
+      C
+      C
+      C
+      C
+      C
+  
   ↑
   
-  □ A
-  □ B
-  C
-  C
-  C
-  C
-  C
-  C
-  C
-  C
-  C
-  C
-  □ (A -* C)
-  □ (B -* A)
-  □ ((A * A * A * A * A * A * A * A * A * A * A * A * A * A * A * B * B * B * B * B * B * B * B * B * C * C * C * C * C * C * C * C * C * C * C) -* ⊥)
+  pures
+      %empty
+  props
+      □ A
+      □ B
+      C
+      C
+      C
+      C
+      C
+      C
+      C
+      C
+      C
+      C
+  
   ↑
   
-  □ A
-  □ B
-  C
-  C
-  C
-  C
-  C
-  C
-  C
-  C
-  C
-  □ (A -* C)
-  □ (B -* A)
-  □ ((A * A * A * A * A * A * A * A * A * A * A * A * A * A * A * B * B * B * B * B * B * B * B * B * C * C * C * C * C * C * C * C * C * C * C) -* ⊥)
+  pures
+      %empty
+  props
+      □ A
+      □ B
+      C
+      C
+      C
+      C
+      C
+      C
+      C
+      C
+      C
+  
   ↑
   
-  □ A
-  □ B
-  C
-  C
-  C
-  C
-  C
-  C
-  C
-  C
-  □ (A -* C)
-  □ (B -* A)
-  □ ((A * A * A * A * A * A * A * A * A * A * A * A * A * A * A * B * B * B * B * B * B * B * B * B * C * C * C * C * C * C * C * C * C * C * C) -* ⊥)
+  pures
+      %empty
+  props
+      □ A
+      □ B
+      C
+      C
+      C
+      C
+      C
+      C
+      C
+      C
+  
   ↑
   
-  □ A
-  □ B
-  C
-  C
-  C
-  C
-  C
-  C
-  C
-  □ (A -* C)
-  □ (B -* A)
-  □ ((A * A * A * A * A * A * A * A * A * A * A * A * A * A * A * B * B * B * B * B * B * B * B * B * C * C * C * C * C * C * C * C * C * C * C) -* ⊥)
+  pures
+      %empty
+  props
+      □ A
+      □ B
+      C
+      C
+      C
+      C
+      C
+      C
+      C
+  
   ↑
   
-  □ A
-  □ B
-  C
-  C
-  C
-  C
-  C
-  C
-  □ (A -* C)
-  □ (B -* A)
-  □ ((A * A * A * A * A * A * A * A * A * A * A * A * A * A * A * B * B * B * B * B * B * B * B * B * C * C * C * C * C * C * C * C * C * C * C) -* ⊥)
+  pures
+      %empty
+  props
+      □ A
+      □ B
+      C
+      C
+      C
+      C
+      C
+      C
+  
   ↑
   
-  □ A
-  □ B
-  C
-  C
-  C
-  C
-  C
-  □ (A -* C)
-  □ (B -* A)
-  □ ((A * A * A * A * A * A * A * A * A * A * A * A * A * A * A * B * B * B * B * B * B * B * B * B * C * C * C * C * C * C * C * C * C * C * C) -* ⊥)
+  pures
+      %empty
+  props
+      □ A
+      □ B
+      C
+      C
+      C
+      C
+      C
+  
   ↑
   
-  □ A
-  □ B
-  C
-  C
-  C
-  C
-  □ (A -* C)
-  □ (B -* A)
-  □ ((A * A * A * A * A * A * A * A * A * A * A * A * A * A * A * B * B * B * B * B * B * B * B * B * C * C * C * C * C * C * C * C * C * C * C) -* ⊥)
+  pures
+      %empty
+  props
+      □ A
+      □ B
+      C
+      C
+      C
+      C
+  
   ↑
   
-  □ A
-  □ B
-  C
-  C
-  C
-  □ (A -* C)
-  □ (B -* A)
-  □ ((A * A * A * A * A * A * A * A * A * A * A * A * A * A * A * B * B * B * B * B * B * B * B * B * C * C * C * C * C * C * C * C * C * C * C) -* ⊥)
+  pures
+      %empty
+  props
+      □ A
+      □ B
+      C
+      C
+      C
+  
   ↑
   
-  □ A
-  □ B
-  C
-  C
-  □ (A -* C)
-  □ (B -* A)
-  □ ((A * A * A * A * A * A * A * A * A * A * A * A * A * A * A * B * B * B * B * B * B * B * B * B * C * C * C * C * C * C * C * C * C * C * C) -* ⊥)
+  pures
+      %empty
+  props
+      □ A
+      □ B
+      C
+      C
+  
   ↑
   
-  □ A
-  □ B
-  C
-  □ (A -* C)
-  □ (B -* A)
-  □ ((A * A * A * A * A * A * A * A * A * A * A * A * A * A * A * B * B * B * B * B * B * B * B * B * C * C * C * C * C * C * C * C * C * C * C) -* ⊥)
+  pures
+      %empty
+  props
+      □ A
+      □ B
+      C
+  
   ↑
   
-  □ A
-  □ B
-  □ (A -* C)
-  □ (B -* A)
-  □ ((A * A * A * A * A * A * A * A * A * A * A * A * A * A * A * B * B * B * B * B * B * B * B * B * C * C * C * C * C * C * C * C * C * C * C) -* ⊥)
+  pures
+      %empty
+  props
+      □ A
+      □ B
+  
   ↑
   
-  A
-  □ B
-  □ (A -* C)
-  □ (B -* A)
-  □ ((A * A * A * A * A * A * A * A * A * A * A * A * A * A * A * B * B * B * B * B * B * B * B * B * C * C * C * C * C * C * C * C * C * C * C) -* ⊥)
-  ↑
+  pures
+      %empty
+  props
+      □ B
   
-  □ B
-  □ (A -* C)
-  □ (B -* A)
-  □ ((A * A * A * A * A * A * A * A * A * A * A * A * A * A * A * B * B * B * B * B * B * B * B * B * C * C * C * C * C * C * C * C * C * C * C) -* ⊥)
-  ↑
+  find solution
   
-  B
-  □ (A -* C)
-  □ (B -* A)
-  □ ((A * A * A * A * A * A * A * A * A * A * A * A * A * A * A * B * B * B * B * B * B * B * B * B * C * C * C * C * C * C * C * C * C * C * C) -* ⊥)
+  statistics
+      state count: 16
+      maximum search depth: 14
+      duplication count: 13
