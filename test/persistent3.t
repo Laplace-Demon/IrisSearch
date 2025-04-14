@@ -48,15 +48,15 @@
   pures
       %empty
   props
-      ⊥
       □ A
       □ B
   
-  ↑
+  ↓
   
   pures
       %empty
   props
+      ⊥
       □ A
       □ B
   

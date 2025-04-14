@@ -56,25 +56,10 @@
   pures
       %empty
   props
-      ⊥
+      A
+      B
   
-  ↑
-  
-  pures
-      %empty
-  props
-      E
-      F
-  
-  ↑
-  
-  pures
-      %empty
-  props
-      C
-      F
-  
-  ↑
+  ↓
   
   pures
       %empty
@@ -82,13 +67,28 @@
       C
       D
   
-  ↑
+  ↓
   
   pures
       %empty
   props
-      A
-      B
+      C
+      F
+  
+  ↓
+  
+  pures
+      %empty
+  props
+      E
+      F
+  
+  ↓
+  
+  pures
+      %empty
+  props
+      ⊥
   
   find solution
   

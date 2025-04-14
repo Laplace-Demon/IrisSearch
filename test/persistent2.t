@@ -48,177 +48,177 @@
   pures
       %empty
   props
+      □ B
+  
+  ↓
+  
+  pures
+      %empty
+  props
+      □ A
+      □ B
+  
+  ↓
+  
+  pures
+      %empty
+  props
+      □ A
+      □ B
+      C
+  
+  ↓
+  
+  pures
+      %empty
+  props
+      □ A
+      □ B
+      C
+      C
+  
+  ↓
+  
+  pures
+      %empty
+  props
+      □ A
+      □ B
+      C
+      C
+      C
+  
+  ↓
+  
+  pures
+      %empty
+  props
+      □ A
+      □ B
+      C
+      C
+      C
+      C
+  
+  ↓
+  
+  pures
+      %empty
+  props
+      □ A
+      □ B
+      C
+      C
+      C
+      C
+      C
+  
+  ↓
+  
+  pures
+      %empty
+  props
+      □ A
+      □ B
+      C
+      C
+      C
+      C
+      C
+      C
+  
+  ↓
+  
+  pures
+      %empty
+  props
+      □ A
+      □ B
+      C
+      C
+      C
+      C
+      C
+      C
+      C
+  
+  ↓
+  
+  pures
+      %empty
+  props
+      □ A
+      □ B
+      C
+      C
+      C
+      C
+      C
+      C
+      C
+      C
+  
+  ↓
+  
+  pures
+      %empty
+  props
+      □ A
+      □ B
+      C
+      C
+      C
+      C
+      C
+      C
+      C
+      C
+      C
+  
+  ↓
+  
+  pures
+      %empty
+  props
+      □ A
+      □ B
+      C
+      C
+      C
+      C
+      C
+      C
+      C
+      C
+      C
+      C
+  
+  ↓
+  
+  pures
+      %empty
+  props
+      □ A
+      □ B
+      C
+      C
+      C
+      C
+      C
+      C
+      C
+      C
+      C
+      C
+      C
+  
+  ↓
+  
+  pures
+      %empty
+  props
       ⊥
       □ A
-      □ B
-  
-  ↑
-  
-  pures
-      %empty
-  props
-      □ A
-      □ B
-      C
-      C
-      C
-      C
-      C
-      C
-      C
-      C
-      C
-      C
-      C
-  
-  ↑
-  
-  pures
-      %empty
-  props
-      □ A
-      □ B
-      C
-      C
-      C
-      C
-      C
-      C
-      C
-      C
-      C
-      C
-  
-  ↑
-  
-  pures
-      %empty
-  props
-      □ A
-      □ B
-      C
-      C
-      C
-      C
-      C
-      C
-      C
-      C
-      C
-  
-  ↑
-  
-  pures
-      %empty
-  props
-      □ A
-      □ B
-      C
-      C
-      C
-      C
-      C
-      C
-      C
-      C
-  
-  ↑
-  
-  pures
-      %empty
-  props
-      □ A
-      □ B
-      C
-      C
-      C
-      C
-      C
-      C
-      C
-  
-  ↑
-  
-  pures
-      %empty
-  props
-      □ A
-      □ B
-      C
-      C
-      C
-      C
-      C
-      C
-  
-  ↑
-  
-  pures
-      %empty
-  props
-      □ A
-      □ B
-      C
-      C
-      C
-      C
-      C
-  
-  ↑
-  
-  pures
-      %empty
-  props
-      □ A
-      □ B
-      C
-      C
-      C
-      C
-  
-  ↑
-  
-  pures
-      %empty
-  props
-      □ A
-      □ B
-      C
-      C
-      C
-  
-  ↑
-  
-  pures
-      %empty
-  props
-      □ A
-      □ B
-      C
-      C
-  
-  ↑
-  
-  pures
-      %empty
-  props
-      □ A
-      □ B
-      C
-  
-  ↑
-  
-  pures
-      %empty
-  props
-      □ A
-      □ B
-  
-  ↑
-  
-  pures
-      %empty
-  props
       □ B
   
   find solution

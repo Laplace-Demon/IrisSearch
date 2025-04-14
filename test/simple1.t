@@ -51,35 +51,35 @@
   pures
       %empty
   props
-      ⊥
+      A
   
-  ↑
-  
-  pures
-      %empty
-  props
-      D
-  
-  ↑
-  
-  pures
-      %empty
-  props
-      C
-  
-  ↑
+  ↓
   
   pures
       %empty
   props
       B
   
-  ↑
+  ↓
   
   pures
       %empty
   props
-      A
+      C
+  
+  ↓
+  
+  pures
+      %empty
+  props
+      D
+  
+  ↓
+  
+  pures
+      %empty
+  props
+      ⊥
   
   find solution
   

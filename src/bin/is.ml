@@ -50,8 +50,8 @@ let () =
           | Some path ->
               let () = fprintf formatter "path@.@."in
               let () = pp_print_list
-                ~pp_sep:(fun fmt () -> fprintf fmt "@.↑@.@.")
-                State.pp_state formatter path in
+                ~pp_sep:(fun fmt () -> fprintf fmt "@.↓@.@.")
+                State.pp_state formatter (List.rev path) in
               fprintf formatter "@.find solution@.@."
           | None -> fprintf formatter "no solution@.@."
         with Search.Timeout -> fprintf formatter "timeout@.@.")

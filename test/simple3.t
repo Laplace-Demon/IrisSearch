@@ -39,77 +39,77 @@
   pures
       %empty
   props
+      A
+  
+  ↓
+  
+  pures
+      %empty
+  props
+      A
+      A
+  
+  ↓
+  
+  pures
+      %empty
+  props
+      A
+      A
+      A
+  
+  ↓
+  
+  pures
+      %empty
+  props
+      A
+      A
+      A
+      A
+  
+  ↓
+  
+  pures
+      %empty
+  props
+      A
+      A
+      A
+      A
+      A
+  
+  ↓
+  
+  pures
+      %empty
+  props
+      A
+      A
+      A
+      A
+      A
+      A
+  
+  ↓
+  
+  pures
+      %empty
+  props
+      A
+      A
+      A
+      A
+      A
+      A
+      A
+  
+  ↓
+  
+  pures
+      %empty
+  props
       ⊥
-  
-  ↑
-  
-  pures
-      %empty
-  props
-      A
-      A
-      A
-      A
-      A
-      A
-      A
-  
-  ↑
-  
-  pures
-      %empty
-  props
-      A
-      A
-      A
-      A
-      A
-      A
-  
-  ↑
-  
-  pures
-      %empty
-  props
-      A
-      A
-      A
-      A
-      A
-  
-  ↑
-  
-  pures
-      %empty
-  props
-      A
-      A
-      A
-      A
-  
-  ↑
-  
-  pures
-      %empty
-  props
-      A
-      A
-      A
-  
-  ↑
-  
-  pures
-      %empty
-  props
-      A
-      A
-  
-  ↑
-  
-  pures
-      %empty
-  props
-      A
   
   find solution
   

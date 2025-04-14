@@ -45,39 +45,39 @@
   pures
       %empty
   props
+      A
+  
+  ↓
+  
+  pures
+      %empty
+  props
+      □ W
+  
+  ↓
+  
+  pures
+      %empty
+  props
+      A
+      □ W
+  
+  ↓
+  
+  pures
+      %empty
+  props
+      A
+      A
+      □ W
+  
+  ↓
+  
+  pures
+      %empty
+  props
       ⊥
       □ W
-  
-  ↑
-  
-  pures
-      %empty
-  props
-      A
-      A
-      □ W
-  
-  ↑
-  
-  pures
-      %empty
-  props
-      A
-      □ W
-  
-  ↑
-  
-  pures
-      %empty
-  props
-      □ W
-  
-  ↑
-  
-  pures
-      %empty
-  props
-      A
   
   find solution
   
