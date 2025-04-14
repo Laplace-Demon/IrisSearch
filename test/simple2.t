@@ -1,5 +1,22 @@
   $ is ./simple2
-  instance
+  original instance
+  
+  consts
+      A : iProp
+      B : iProp
+      C : iProp
+      D : iProp
+      E : iProp
+      F : iProp
+  laws
+      □ (A * B -* C * D)
+      □ (C -* E)
+      □ (D -* F)
+      □ (F * E -* ⊥)
+  init
+      A * B
+  
+  transformed instance
   
   consts
       A : iProp
@@ -54,8 +71,8 @@
   pures
       %empty
   props
-      D
-      E
+      C
+      F
   
   ↑
   

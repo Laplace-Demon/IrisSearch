@@ -1,5 +1,15 @@
   $ is ./simple3
-  instance
+  original instance
+  
+  consts
+      A : iProp
+  laws
+      □ (A -* A * A)
+      □ (A * A * A * A * A * A * A -* ⊥)
+  init
+      A
+  
+  transformed instance
   
   consts
       A : iProp
@@ -104,6 +114,6 @@
   find solution
   
   statistics
-      state count: 10
-      maximum search depth: 8
+      state count: 8
+      maximum search depth: 7
       duplication count: 0

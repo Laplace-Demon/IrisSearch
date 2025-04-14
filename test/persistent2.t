@@ -1,5 +1,5 @@
   $ is ./persistent2
-  instance
+  original instance
   
   consts
       A : iProp
@@ -14,14 +14,26 @@
   init
       B
   
+  transformed instance
+  
+  consts
+      A : iProp
+      B : iProp
+      C : iProp
+  laws
+      □ (A * A * C * C * C * C * A * A * B * B * A * A * A * A * C * B * A * C * A * B * A * C * C * C * A * B * C * A * B * B * C * B * A * B * A -* ⊥)
+      □ (B -* □ A)
+      □ (A -* C)
+  init
+      □ B
+  
   global state
   
   pures
-      Persistent A
-      Persistent B
+      %empty
   props
       □ (A -* C)
-      □ (B -* A)
+      □ (B -* (□ A))
       □ ((A * A * A * A * A * A * A * A * A * A * A * A * A * A * A * B * B * B * B * B * B * B * B * B * C * C * C * C * C * C * C * C * C * C * C) -* ⊥)
   
   initial state
@@ -212,6 +224,6 @@
   find solution
   
   statistics
-      state count: 16
-      maximum search depth: 14
-      duplication count: 13
+      state count: 14
+      maximum search depth: 13
+      duplication count: 12

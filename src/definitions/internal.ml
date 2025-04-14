@@ -179,7 +179,9 @@ and iprop_to_internal : iprop -> internal_iprop = function
       iStar (IpropMset.union ipr_mset1 ipr_mset2)
   | Wand (ipr1, ipr2) -> iWand (iprop_to_internal ipr1, iprop_to_internal ipr2)
   | Box ipr ->
-      iStar (IpropMset.singleton (iprop_to_internal ipr) Multiplicity.inf)
+      (match iprop_to_internal ipr with
+      | IStar ipr_mset -> iStar (IpropMset.map (fun _ _ -> Multiplicity.inf) ipr_mset)
+      | _ as ipr -> iStar (IpropMset.singleton ipr Multiplicity.inf))
   | Pure pr -> iPure (prop_to_internal pr)
 
 let prop_list_to_internal : prop list -> internal_prop_set =

@@ -77,6 +77,51 @@ and pp_iprop fmt = function
   | Box ipr -> fprintf fmt "□ %a" pp_iprop ipr
   | Pure pr -> fprintf fmt "⌜%a⌝" pp_prop pr
 
+let rec prop_subst_var src dest = function
+  | Persistent ipr -> Persistent (iprop_subst_var src dest ipr)
+  | Not pr -> Not (prop_subst_var src dest pr)
+  | And (pr1, pr2) -> And (prop_subst_var src dest pr1, prop_subst_var src dest pr2)
+  | Or (pr1, pr2) -> Or (prop_subst_var src dest pr1, prop_subst_var src dest pr2)
+  | Imply (pr1, pr2) -> Imply (prop_subst_var src dest pr1, prop_subst_var src dest pr2)
+
+and iprop_subst_var src dest = function
+  | False -> False
+  | Atom str -> if String.equal str src then dest else Atom str
+  | Star (ipr1, ipr2) -> Star (iprop_subst_var src dest ipr1, iprop_subst_var src dest ipr2)
+  | Wand (ipr1, ipr2) -> Wand (iprop_subst_var src dest ipr1, iprop_subst_var src dest ipr2)
+  | Box ipr -> Box (iprop_subst_var src dest ipr)
+  | Pure pr -> Pure (prop_subst_var src dest pr)
+
+let rec prop_subst_positive_var src dest = function
+  | Persistent ipr -> Persistent (iprop_subst_positive_var src dest ipr)
+  | Not pr -> Not (prop_subst_positive_var src dest pr)
+  | And (pr1, pr2) -> And (prop_subst_positive_var src dest pr1, prop_subst_positive_var src dest pr2)
+  | Or (pr1, pr2) -> Or (prop_subst_positive_var src dest pr1, prop_subst_positive_var src dest pr2)
+  | Imply (pr1, pr2) -> Imply (prop_subst_positive_var src dest pr1, prop_subst_positive_var src dest pr2)
+
+and prop_subst_negative_var src dest = function
+  | Persistent ipr -> Persistent (iprop_subst_negative_var src dest ipr)
+  | Not pr -> Not (prop_subst_negative_var src dest pr)
+  | And (pr1, pr2) -> And (prop_subst_negative_var src dest pr1, prop_subst_negative_var src dest pr2)
+  | Or (pr1, pr2) -> Or (prop_subst_negative_var src dest pr1, prop_subst_negative_var src dest pr2)
+  | Imply (pr1, pr2) -> Imply (prop_subst_negative_var src dest pr1, prop_subst_negative_var src dest pr2)
+
+and iprop_subst_positive_var src dest = function
+  | False -> False
+  | Atom str -> if String.equal str src then dest else Atom str
+  | Star (ipr1, ipr2) -> Star (iprop_subst_positive_var src dest ipr1, iprop_subst_positive_var src dest ipr2)
+  | Wand (ipr1, ipr2) -> Wand (iprop_subst_negative_var src dest ipr1, iprop_subst_positive_var src dest ipr2)
+  | Box ipr -> Box (iprop_subst_positive_var src dest ipr)
+  | Pure pr -> Pure (prop_subst_positive_var src dest pr)
+
+and iprop_subst_negative_var src dest = function
+  | False -> False
+  | Atom str -> Atom str
+  | Star (ipr1, ipr2) -> Star (iprop_subst_negative_var src dest ipr1, iprop_subst_negative_var src dest ipr2)
+  | Wand (ipr1, ipr2) -> Wand (iprop_subst_positive_var src dest ipr1, iprop_subst_negative_var src dest ipr2)
+  | Box ipr -> Box (iprop_subst_negative_var src dest ipr)
+  | Pure pr -> Pure (prop_subst_negative_var src dest pr)
+
 (** The problem instance is represented as a record holding:
     - type definition of constants
     - (persistent and pure) laws
@@ -93,6 +138,29 @@ let pp_instance fmt { decl_consts; decl_laws; decl_init } =
     (pp_print_list pp_typed_id)
     decl_consts (pp_print_list pp_iprop) decl_laws (pp_print_list pp_iprop)
     decl_init
+
+let instance_subst_var src dest { decl_consts; decl_laws; decl_init } =
+  { decl_consts; decl_laws = List.map (fun ipr -> iprop_subst_var src dest ipr) decl_laws; decl_init = List.map (fun ipr -> iprop_subst_var src dest ipr) decl_init }
+
+let instance_subst_positive_var src dest { decl_consts; decl_laws; decl_init } =
+  { decl_consts; decl_laws = List.map (fun ipr -> iprop_subst_positive_var src dest ipr) decl_laws; decl_init = List.map (fun ipr -> iprop_subst_positive_var src dest ipr) decl_init }
+
+let instance_subst_negative_var src dest { decl_consts; decl_laws; decl_init } =
+  { decl_consts; decl_laws = List.map (fun ipr -> iprop_subst_negative_var src dest ipr) decl_laws; decl_init = List.map (fun ipr -> iprop_subst_negative_var src dest ipr) decl_init }
+
+let replace_persistent_transformation { decl_consts; decl_laws; decl_init } =
+  let facts, laws =
+  List.partition_map
+    (function
+      | Pure pr -> Either.Left pr
+      | Box _ as ipr -> Either.Right ipr
+      | _ -> assert false)
+    decl_laws in
+  let ins = { decl_consts; decl_laws = laws; decl_init } in
+  List.fold_left (fun ins pr ->
+    match pr with
+    | Persistent (Atom str) -> instance_subst_positive_var str (Box (Atom str)) ins
+    | _ -> ins) ins facts
 
 (** Validation. *)
 

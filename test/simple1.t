@@ -1,5 +1,20 @@
   $ is ./simple1
-  instance
+  original instance
+  
+  consts
+      A : iProp
+      B : iProp
+      C : iProp
+      D : iProp
+  laws
+      □ (A -* B)
+      □ (B -* C)
+      □ (C -* D)
+      □ (D -* ⊥)
+  init
+      A
+  
+  transformed instance
   
   consts
       A : iProp
