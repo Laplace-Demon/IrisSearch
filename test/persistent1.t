@@ -1,6 +1,8 @@
   $ is ./persistent1
   original instance
   
+  types
+      
   consts
       A : iProp
       W : iProp
@@ -14,6 +16,8 @@
   
   transformed instance
   
+  types
+      
   consts
       A : iProp
       W : iProp

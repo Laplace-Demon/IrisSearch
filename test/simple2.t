@@ -1,6 +1,8 @@
   $ is ./simple2
   original instance
   
+  types
+      
   consts
       A : iProp
       B : iProp
@@ -18,6 +20,8 @@
   
   transformed instance
   
+  types
+      
   consts
       A : iProp
       B : iProp

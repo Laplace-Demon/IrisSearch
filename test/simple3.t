@@ -1,6 +1,8 @@
   $ is ./simple3
   original instance
   
+  types
+      
   consts
       A : iProp
   laws
@@ -11,6 +13,8 @@
   
   transformed instance
   
+  types
+      
   consts
       A : iProp
   laws
