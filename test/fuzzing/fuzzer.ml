@@ -28,28 +28,35 @@ let mode, out_channel =
   (mode, out_channel)
 
 let () =
-  let tmp = "tmp" in
-  let tmp_out_channel = open_out tmp in
-  let tmp_formatter = formatter_of_out_channel tmp_out_channel in
   let formatter = formatter_of_out_channel out_channel in
-  let finally () =
-    close_out tmp_out_channel;
-    close_out out_channel
-  in
+  let finally () = close_out out_channel in
   try
     Fun.protect ~finally (fun () ->
-        let ins =
-          match mode with
-          | "negative" -> Negative.generate ()
-          | _ ->
-              eprintf
-                "Invalid argument: %s@.Usage: fuzz mode=negative [-o output]@."
-                mode;
-              exit 1
-        in
-        let () = Ast.pp_instance tmp_formatter ins in
-        let _ = Sys.command (String.concat " " [ "is"; tmp ]) in
-        ())
+        match mode with
+        | "negative" ->
+            let module Fuzzer = Negative.Negative in
+            let law_num_list = List.init 10 (fun i -> (i + 1) * 10) in
+            let law_size_list = List.init 9 (fun i -> i + 2) in
+            List.iter
+              (fun law_num ->
+                List.iter
+                  (fun law_size ->
+                    Statistics.reset ();
+                    Fuzzer.set_law_num law_num;
+                    Fuzzer.set_law_size law_size;
+                    for _ = 1 to 10 do
+                      let ins = Fuzzer.generate () in
+                      Main.solve std_formatter ins
+                    done;
+                    fprintf formatter "law_num:%i@.law_size:%i@.@." law_num law_size;
+                    Statistics.pp_stat ~avg:10 formatter)
+                  law_size_list)
+              law_num_list
+        | _ ->
+            eprintf
+              "Invalid argument: %s@.Usage: fuzz mode=negative [-o output]@."
+              mode;
+            exit 1)
   with e ->
     eprintf "exception: %s\n@." (Printexc.to_string e);
     exit 1

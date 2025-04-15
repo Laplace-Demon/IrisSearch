@@ -5,6 +5,7 @@
  (modules
   ast
   internal
+  main
   multiset
   multiplicity
   lexer

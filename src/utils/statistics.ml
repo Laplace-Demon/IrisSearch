@@ -60,7 +60,7 @@ let record_operation oper =
       Hashtbl.replace stat_recorder.operation_distribution oper (count + 1)
   | None -> Hashtbl.add stat_recorder.operation_distribution oper 1
 
-let pp_stat fmt =
+let pp_stat ?(avg = 1) fmt =
   let {
     generated_state_count;
     generated_state_size_distribution;
@@ -80,7 +80,10 @@ let pp_stat fmt =
      duplication count: %i@,\
      @]@[<v 8>operations count:@,\
      %a@]@.\n"
-    generated_state_count visited_state_count maximum_search_depth
-    duplication_count
-    (pp_print_seq (fun fmt (oper, count) -> fprintf fmt "%s: %i" oper count))
+    (Int.div generated_state_count avg)
+    (Int.div visited_state_count avg)
+    (Int.div maximum_search_depth avg)
+    (Int.div duplication_count avg)
+    (pp_print_seq (fun fmt (oper, count) ->
+         fprintf fmt "%s: %i" oper (Int.div count avg)))
     (Hashtbl.to_seq operation_distribution)
