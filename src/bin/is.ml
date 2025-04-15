@@ -39,11 +39,20 @@ let () =
   | Parser.Error ->
       eprintf "parsing error@.";
       exit 1
-  | Ast.DuplicateDeclarationError str ->
-      eprintf "validation error: duplicate declaration of %s@." str;
+  | Ast.DuplicateTypeDeclarationError str ->
+      eprintf "validation error: duplicate type declaration of %s@." str;
+      exit 1
+  | Ast.DuplicateConstDeclarationError str ->
+      eprintf "validation error: duplicate const declaration of %s@." str;
+      exit 1
+  | Ast.MissingTypeDeclarationError str ->
+      eprintf "validation error: missing type declaration of %s@." str;
+      exit 1
+  | Ast.MissingConstDeclarationError str ->
+      eprintf "validation error: missing const declaration of %s@." str;
       exit 1
   | Ast.TypeError (str, ity1, ity2) ->
-      eprintf "validation error: %s should have type %a, but it has type %a" str
+      eprintf "validation error: %s should have type %a, but has type %a@." str
         Ast.pp_itype ity1 Ast.pp_itype ity2;
       exit 1
   | e ->

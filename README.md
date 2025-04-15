@@ -5,14 +5,19 @@ Given a set of separation logic formulae, decide whether their separating conjun
 ### Syntax of input
 
 ```
-instance ::= decl_consts decl_laws decl_init
+instance ::= decl_types decl_consts decl_laws decl_init
 
-decl_consts ::= 'consts' list(decl_type)
+decl_types ::= 'types' list(decl_type)
 
-decl_type ::= string ':' itype
+decl_type ::= string
+
+decl_consts ::= 'consts' list(decl_const)
+
+decl_const ::= string ':' itype
 
 itype ::= 'Prop'
   | 'iProp'
+  | string
 
 decl_laws ::= 'laws' list(decl_law)
 

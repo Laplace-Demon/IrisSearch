@@ -1,0 +1,11 @@
+types
+    loc
+
+consts
+    A : loc
+    B : int
+
+laws
+
+init
+    False

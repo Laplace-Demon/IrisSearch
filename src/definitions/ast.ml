@@ -2,17 +2,22 @@ open Format
 
 (** Definition of abstract syntax tree returned by the parser. *)
 
-type itype = Tprop | Tiprop
+type itype =
+  | Tprop
+  | Tiprop
+  | Tcustom of string
 
 let itype_eqb ity1 ity2 =
   match (ity1, ity2) with
   | Tprop, Tprop -> true
   | Tiprop, Tiprop -> true
+  | Tcustom str1, Tcustom str2 -> String.equal str1 str2
   | _, _ -> false
 
 let pp_itype fmt = function
   | Tprop -> fprintf fmt "Prop"
   | Tiprop -> fprintf fmt "iProp"
+  | Tcustom str -> fprintf fmt "%s" str
 
 let pp_typed_id fmt (str, ity) = fprintf fmt "%s : %a" str pp_itype ity
 
@@ -163,26 +168,31 @@ and iprop_subst_negative_var src dest = function
     - initial atoms *)
 
 type instance = {
+  decl_types : string list;
   decl_consts : (string * itype) list;
   decl_laws : iprop list;
   decl_init : iprop list;
 }
 
-let pp_instance fmt { decl_consts; decl_laws; decl_init } =
-  fprintf fmt "@[<v 4>consts@,%a@]@.@[<v 4>laws@,%a@]@.@[<v 4>init@,%a@]@."
+let pp_instance fmt { decl_types; decl_consts; decl_laws; decl_init } =
+  fprintf fmt "@[<v 4>types@,%a@]@.@[<v 4>consts@,%a@]@.@[<v 4>laws@,%a@]@.@[<v 4>init@,%a@]@."
+    (pp_print_list pp_print_string)
+    decl_types
     (pp_print_list pp_typed_id)
     decl_consts (pp_print_list pp_iprop) decl_laws (pp_print_list pp_iprop)
     decl_init
 
-let instance_subst_var src dest { decl_consts; decl_laws; decl_init } =
+let instance_subst_var src dest { decl_types; decl_consts; decl_laws; decl_init } =
   {
+    decl_types;
     decl_consts;
     decl_laws = List.map (fun ipr -> iprop_subst_var src dest ipr) decl_laws;
     decl_init = List.map (fun ipr -> iprop_subst_var src dest ipr) decl_init;
   }
 
-let instance_subst_positive_var src dest { decl_consts; decl_laws; decl_init } =
+let instance_subst_positive_var src dest { decl_types; decl_consts; decl_laws; decl_init } =
   {
+    decl_types;
     decl_consts;
     decl_laws =
       List.map (fun ipr -> iprop_subst_positive_var src dest ipr) decl_laws;
@@ -190,8 +200,9 @@ let instance_subst_positive_var src dest { decl_consts; decl_laws; decl_init } =
       List.map (fun ipr -> iprop_subst_positive_var src dest ipr) decl_init;
   }
 
-let instance_subst_negative_var src dest { decl_consts; decl_laws; decl_init } =
+let instance_subst_negative_var src dest { decl_types; decl_consts; decl_laws; decl_init } =
   {
+    decl_types;
     decl_consts;
     decl_laws =
       List.map (fun ipr -> iprop_subst_negative_var src dest ipr) decl_laws;
@@ -199,7 +210,7 @@ let instance_subst_negative_var src dest { decl_consts; decl_laws; decl_init } =
       List.map (fun ipr -> iprop_subst_negative_var src dest ipr) decl_init;
   }
 
-let replace_persistent_transformation { decl_consts; decl_laws; decl_init } =
+let replace_persistent_transformation { decl_types; decl_consts; decl_laws; decl_init } =
   let facts, laws =
     List.partition_map
       (function
@@ -208,7 +219,7 @@ let replace_persistent_transformation { decl_consts; decl_laws; decl_init } =
         | _ -> assert false)
       decl_laws
   in
-  let ins = { decl_consts; decl_laws = laws; decl_init } in
+  let ins = { decl_types; decl_consts; decl_laws = laws; decl_init } in
   List.fold_left
     (fun ins pr ->
       match pr with
@@ -219,11 +230,14 @@ let replace_persistent_transformation { decl_consts; decl_laws; decl_init } =
 
 (** Validation. *)
 
-exception DuplicateDeclarationError of string
+exception DuplicateTypeDeclarationError of string
+exception DuplicateConstDeclarationError of string
+exception MissingTypeDeclarationError of string
+exception MissingConstDeclarationError of string
 exception TypeError of string * itype * itype
-exception NoDeclarationError of string
 
-let validate { decl_consts; decl_laws; decl_init } =
+let validate { decl_types; decl_consts; decl_laws; decl_init } =
+  let type_table   = Hashtbl.create 17 in
   let symbol_table = Hashtbl.create 17 in
   let rec check_iprop = function
     | False -> ()
@@ -232,7 +246,7 @@ let validate { decl_consts; decl_laws; decl_init } =
         | Some ity ->
             if not (itype_eqb ity Tiprop) then
               raise (TypeError (str, Tiprop, ity))
-        | None -> raise (NoDeclarationError str))
+        | None -> raise (MissingConstDeclarationError str))
     | Star (ipr1, ipr2) ->
         check_iprop ipr1;
         check_iprop ipr2
@@ -255,12 +269,33 @@ let validate { decl_consts; decl_laws; decl_init } =
         check_prop pr2
   in
   let () =
-    (* Build symbol table. *)
+    (* Check type declaration. *)
+    List.iter
+      (fun ty_str ->
+        match ty_str with
+        | "Prop" | "iProp" -> raise (DuplicateTypeDeclarationError ty_str)
+        | _ -> if Hashtbl.mem type_table ty_str
+          then raise (DuplicateTypeDeclarationError ty_str)
+          else Hashtbl.add type_table ty_str ())
+      decl_types
+  in
+  let () =
+    (* Check const declaration. *)
     List.iter
       (fun (str, ity) ->
+        let () =
+        (* Check if the type is declared. *)
+          match ity with
+          | Tcustom ty_str ->
+            if not (Hashtbl.mem type_table ty_str)
+              then raise (MissingTypeDeclarationError ty_str)
+          | _ -> ()
+        in
         if Hashtbl.mem symbol_table str then
-          raise (DuplicateDeclarationError str)
-        else Hashtbl.add symbol_table str ity)
+          raise (DuplicateConstDeclarationError str)
+        else
+          (* Build symbol table. *)
+          Hashtbl.add symbol_table str ity)
       decl_consts
   in
   let () =

@@ -2,14 +2,15 @@
   open Ast
 %}
 
-%token DECL_CONSTS DECL_LAWS DECL_INIT
+%token DECL_TYPES DECL_CONSTS DECL_LAWS DECL_INIT
 %token LPAREN RPAREN COLON
 %token EOF
 
-%token <string> IDENT
 %token PERSISTENT EXCLUSIVE
 %token TYPE_PROP TYPE_IPROP
 %token FALSE STAR WAND BOX TOPLEFTCORNER TOPRIGHTCORNER
+
+%token <string> IDENT
 
 (** Low precedence *)
 %right WAND
@@ -22,16 +23,30 @@
 %%
 
 instance:
-| decl_consts decl_laws decl_init EOF
+| option(decl_types) decl_consts decl_laws decl_init EOF
   {
-    { decl_consts = $1;
-      decl_laws = $2;
-      decl_init = $3; }
+    let decl_types = 
+      match $1 with
+      | Some decl_types -> decl_types
+      | None -> []
+    in
+    { decl_types;
+      decl_consts = $2;
+      decl_laws = $3;
+      decl_init = $4; }
   }
 
-decl_consts:
-| DECL_CONSTS list(decl_type)
+decl_types:
+| DECL_TYPES list(IDENT)
   { $2 }
+
+decl_consts:
+| DECL_CONSTS list(decl_const)
+  { $2 }
+
+decl_const:
+| IDENT COLON itype
+  { $1, $3 }
 
 decl_laws:
 | DECL_LAWS list(decl_law)
@@ -41,15 +56,13 @@ decl_init:
 | DECL_INIT list(iprop)
   { $2 }
 
-decl_type:
-| IDENT COLON itype
-  { $1, $3 }
-
 itype:
 | TYPE_PROP
   { Tprop }
 | TYPE_IPROP
   { Tiprop }
+| IDENT
+  { Tcustom $1 }
 
 decl_law:
 | iprop

@@ -21,6 +21,7 @@ rule token = parse
   | ':'                   { COLON }
   | eof                   { EOF }
 
+  | "types"               { DECL_TYPES }
   | "consts"              { DECL_CONSTS }
   | "laws"                { DECL_LAWS }
   | "init"                { DECL_INIT }
@@ -32,12 +33,13 @@ rule token = parse
   | "Exclusive"           { EXCLUSIVE }
 
   | "False"               { FALSE }
-  | ident as id           { IDENT id }
   | '*'                   { STAR }
   | "-*"                  { WAND }
   | "□"                   { BOX }
   | "⌜"                   { TOPLEFTCORNER }
   | "⌝"                   { TOPRIGHTCORNER }
+
+  | ident as id           { IDENT id }
   | _ as c                { raise (Lexing_error (sprintf "Unknown character: %c" c)) }
 
 {

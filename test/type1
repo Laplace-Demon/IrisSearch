@@ -1,0 +1,19 @@
+types
+    loc
+    value
+    int
+    expr
+
+consts
+    A : loc
+    B : value
+    C : int
+    D : expr
+    E : Prop
+    F : iProp
+
+laws
+    F -* False
+
+init
+    F
