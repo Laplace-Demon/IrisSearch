@@ -46,7 +46,11 @@ module Make (HashOrd : HashedOrderedType) = struct
   let union = BabySet.union
   let inter = BabySet.inter
   let diff = BabySet.diff
-  let subset = BabySet.subset
+
+  let subset s1 s2 =
+    Statistics.record_operation "Set.subset";
+    BabySet.subset s1 s2
+
   let partition = BabySet.partition
   let fold = BabySet.fold
   let to_list = BabySet.to_list

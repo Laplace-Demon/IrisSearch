@@ -34,10 +34,7 @@
   pures
       %empty
   props
-      □ (A -* B)
-      □ (B -* C)
-      □ (C -* D)
-      □ (D -* ⊥)
+      %empty
   
   initial state
   
@@ -84,6 +81,12 @@
   find solution
   
   statistics
-      state count: 4
+      generated state count: 4
+      visited state count: 5
       maximum search depth: 4
       duplication count: 0
+      operations count:
+              Set.subset: 6
+              Multiset.union: 9
+              Multiset.subset: 6
+              Multiset.diff: 16

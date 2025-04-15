@@ -49,18 +49,28 @@ module Make (HashOrd : HashedOrderedType) = struct
       | Some v' -> Some (Multiplicity.add v v'))
 
   let remove = BabyMap.remove
-  let union = BabyMap.union (fun _ v1 v2 -> Some (Multiplicity.add v1 v2))
+
+  let union s1 s2 =
+    Statistics.record_operation "Multiset.union";
+    BabyMap.union (fun _ v1 v2 -> Some (Multiplicity.add v1 v2)) s1 s2
+
   let inter = BabyMap.inter (fun _ v1 v2 -> Some (Multiplicity.min v1 v2))
 
-  let diff =
-    BabyMap.merge (fun _ o1 o2 ->
+  let diff s1 s2 =
+    Statistics.record_operation "Multiset.diff";
+    BabyMap.merge
+      (fun _ o1 o2 ->
         match (o1, o2) with
         | None, None -> None
         | None, _ -> raise Multiplicity.Underflow
         | _, None -> o1
         | Some v1, Some v2 -> Multiplicity.sub v1 v2)
+      s1 s2
 
-  let subset = BabyMap.sub (fun v1 v2 -> Multiplicity.compare v1 v2 <= 0)
+  let subset s1 s2 =
+    Statistics.record_operation "Multiset.subset";
+    BabyMap.sub (fun v1 v2 -> Multiplicity.compare v1 v2 <= 0) s1 s2
+
   let partition = BabyMap.partition
   let map = BabyMap.mapi
   let fold = BabyMap.fold

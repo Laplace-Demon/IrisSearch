@@ -1,5 +1,4 @@
 open Format
-open Statistics
 
 exception Timeout
 
@@ -136,6 +135,7 @@ struct
       | None -> None
       | Some inode ->
           let node = inode.this in
+          Statistics.record_visited_state ();
           if G.terminate node then Some inode.path
           else (
             List.iter
@@ -159,7 +159,7 @@ struct
                   let fhat = new_cost + ison.estimate in
                   assert (0 <= fhat);
                   (* failure means overflow *)
-                  record_depth new_cost;
+                  Statistics.record_depth new_cost;
                   P.add ison fhat))
               (G.successors node);
             aux ())

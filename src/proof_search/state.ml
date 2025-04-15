@@ -1,6 +1,5 @@
 open Format
 open Internal
-open Statistics
 
 (** Definition of state and its operations. *)
 
@@ -35,7 +34,7 @@ let visited : state -> bool =
           PropSet.subset pr_set pr_set' && IpropMset.subset ipr_mset ipr_mset')
         !state_list
     then (
-      record_duplication ();
+      Statistics.record_duplication ();
       true)
     else (
       state_list := st :: !state_list;
@@ -68,15 +67,15 @@ let apply ipr (pr_set, ipr_mset) =
 
 let successors st =
   let global_pr_set, global_ipr_mset = !global_state in
-  let new_state_list =
-    IpropMset.fold
-      (fun ipr _ acc ->
-        match apply ipr st with Some new_st -> new_st :: acc | None -> acc)
-      global_ipr_mset []
-    (* TODO: infinite application *)
-  in
-  List.iter (fun st -> record_state (state_size st)) new_state_list;
-  new_state_list
+  IpropMset.fold
+    (fun ipr _ acc ->
+      match apply ipr st with
+      | Some new_st ->
+          Statistics.record_generated_state (state_size new_st);
+          new_st :: acc
+      | None -> acc)
+    global_ipr_mset []
+(* TODO: infinite application *)
 
 let terminate (_, ipr_mset) = IpropMset.mem iFalse ipr_mset
 let estimate = fun _ -> 0

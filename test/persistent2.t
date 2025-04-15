@@ -32,9 +32,7 @@
   pures
       %empty
   props
-      □ (A -* C)
-      □ (B -* (□ A))
-      □ ((A * A * A * A * A * A * A * A * A * A * A * A * A * A * A * B * B * B * B * B * B * B * B * B * C * C * C * C * C * C * C * C * C * C * C) -* ⊥)
+      %empty
   
   initial state
   
@@ -43,187 +41,15 @@
   props
       □ B
   
-  path
-  
-  pures
-      %empty
-  props
-      □ B
-  
-  ↓
-  
-  pures
-      %empty
-  props
-      □ A
-      □ B
-  
-  ↓
-  
-  pures
-      %empty
-  props
-      □ A
-      □ B
-      C
-  
-  ↓
-  
-  pures
-      %empty
-  props
-      □ A
-      □ B
-      C
-      C
-  
-  ↓
-  
-  pures
-      %empty
-  props
-      □ A
-      □ B
-      C
-      C
-      C
-  
-  ↓
-  
-  pures
-      %empty
-  props
-      □ A
-      □ B
-      C
-      C
-      C
-      C
-  
-  ↓
-  
-  pures
-      %empty
-  props
-      □ A
-      □ B
-      C
-      C
-      C
-      C
-      C
-  
-  ↓
-  
-  pures
-      %empty
-  props
-      □ A
-      □ B
-      C
-      C
-      C
-      C
-      C
-      C
-  
-  ↓
-  
-  pures
-      %empty
-  props
-      □ A
-      □ B
-      C
-      C
-      C
-      C
-      C
-      C
-      C
-  
-  ↓
-  
-  pures
-      %empty
-  props
-      □ A
-      □ B
-      C
-      C
-      C
-      C
-      C
-      C
-      C
-      C
-  
-  ↓
-  
-  pures
-      %empty
-  props
-      □ A
-      □ B
-      C
-      C
-      C
-      C
-      C
-      C
-      C
-      C
-      C
-  
-  ↓
-  
-  pures
-      %empty
-  props
-      □ A
-      □ B
-      C
-      C
-      C
-      C
-      C
-      C
-      C
-      C
-      C
-      C
-  
-  ↓
-  
-  pures
-      %empty
-  props
-      □ A
-      □ B
-      C
-      C
-      C
-      C
-      C
-      C
-      C
-      C
-      C
-      C
-      C
-  
-  ↓
-  
-  pures
-      %empty
-  props
-      ⊥
-      □ A
-      □ B
-  
-  find solution
+  no solution
   
   statistics
-      state count: 14
-      maximum search depth: 13
-      duplication count: 12
+      generated state count: 11
+      visited state count: 11
+      maximum search depth: 10
+      duplication count: 10
+      operations count:
+              Set.subset: 65
+              Multiset.union: 59
+              Multiset.subset: 65
+              Multiset.diff: 33

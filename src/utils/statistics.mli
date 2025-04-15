@@ -2,7 +2,10 @@ open Format
 
 type stat
 
-val record_state : int * int -> unit
+val reset : unit -> unit
+val record_generated_state : int * int -> unit
+val record_visited_state : unit -> unit
 val record_depth : int -> unit
 val record_duplication : unit -> unit
+val record_operation : string -> unit
 val pp_stat : formatter -> unit

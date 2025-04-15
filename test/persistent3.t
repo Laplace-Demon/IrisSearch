@@ -33,7 +33,7 @@
   pures
       %empty
   props
-      □ ((A * A * A * B * B) -* ⊥)
+      %empty
   
   initial state
   
@@ -63,6 +63,10 @@
   find solution
   
   statistics
-      state count: 1
+      generated state count: 1
+      visited state count: 2
       maximum search depth: 1
       duplication count: 0
+      operations count:
+              Multiset.union: 8
+              Multiset.diff: 1
