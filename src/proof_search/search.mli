@@ -6,7 +6,9 @@ module Make (G : sig
   val terminate : node -> bool
   val estimate : node -> int
 end) : sig
-  val search : (G.node -> unit) -> G.node list option
+  val set_timeout : int -> unit
+  val set_max_depth : int -> unit
+  val search : unit -> G.node list option
 end
 
 exception Timeout

@@ -105,19 +105,13 @@ struct
           result
   end
 
-  let estimate node =
-    let e = G.estimate node in
-    assert (0 <= e);
-    (* failure means user error *)
-    e
-
   let () =
     let node = G.source in
     let rec inode =
       {
         this = node;
         cost = 0;
-        estimate = estimate node;
+        estimate = G.estimate node;
         path = [ node ];
         prev = inode;
         next = inode;
@@ -126,43 +120,49 @@ struct
     in
     P.add inode inode.estimate
 
-  let start = Sys.time ()
-  let check_timeout () = if Sys.time () -. start > 2. then raise Timeout
+  let timeout = ref 2
+  let max_depth = ref 10
+  let set_timeout t = timeout := t
+  let set_max_depth d = max_depth := d
 
-  (* Search. *)
-  let rec search f =
-    check_timeout ();
-    (* Pick the open node that currently has lowest fhat,
+  let search () =
+    let start = Sys.time () in
+    let check_timeout () = if Sys.time () -. start > 2. then raise Timeout in
+    let rec aux () =
+      check_timeout ();
+      (* Pick the open node that currently has lowest fhat,
          that is, lowest estimated distance to a goal node. *)
-    match P.get () with
-    | None -> None
-    | Some inode ->
-        let node = inode.this in
-        f node;
-        if G.terminate node then Some inode.path
-        else (
-          List.iter
-            (fun son ->
-              (* Determine the cost of the best known path from the
+      match P.get () with
+      | None -> None
+      | Some inode ->
+          let node = inode.this in
+          if G.terminate node then Some inode.path
+          else (
+            List.iter
+              (fun son ->
+                (* Determine the cost of the best known path from the
                start node, through this node, to this son. *)
-              let new_cost = inode.cost + 1 in
-              assert (0 <= new_cost);
-              let rec ison =
-                {
-                  this = son;
-                  cost = new_cost;
-                  estimate = estimate son;
-                  path = son :: inode.path;
-                  prev = ison;
-                  next = ison;
-                  priority = -1;
-                }
-              in
-              let fhat = new_cost + ison.estimate in
-              assert (0 <= fhat);
-              (* failure means overflow *)
-              record_depth new_cost;
-              P.add ison fhat)
-            (G.successors node);
-          search f)
+                let new_cost = inode.cost + 1 in
+                assert (0 <= new_cost);
+                if new_cost <= !max_depth then (
+                  let rec ison =
+                    {
+                      this = son;
+                      cost = new_cost;
+                      estimate = G.estimate son;
+                      path = son :: inode.path;
+                      prev = ison;
+                      next = ison;
+                      priority = -1;
+                    }
+                  in
+                  let fhat = new_cost + ison.estimate in
+                  assert (0 <= fhat);
+                  (* failure means overflow *)
+                  record_depth new_cost;
+                  P.add ison fhat))
+              (G.successors node);
+            aux ())
+    in
+    aux ()
 end

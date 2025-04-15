@@ -36,7 +36,6 @@ let () =
             fprintf formatter "original instance@.@.%a@." Ast.pp_instance ins
           in
           let ins = Ast.replace_persistent_transformation ins in
-          let source = State.initial ins in
           let () =
             fprintf formatter "transformed instance@.@.%a@." Ast.pp_instance ins
           in
@@ -44,6 +43,7 @@ let () =
             fprintf formatter "global state@.@.%a@." State.pp_state
               !State.global_state
           in
+          let source = State.initial ins in
           let () =
             fprintf formatter "initial state@.@.%a@." State.pp_state source
           in
@@ -55,7 +55,7 @@ let () =
             let terminate = State.terminate
             let estimate = State.estimate
           end) in
-          match search (fun _ -> ()) with
+          match search () with
           | Some path ->
               let () = fprintf formatter "path@.@." in
               let () =
