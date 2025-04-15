@@ -39,14 +39,23 @@ let () =
   | Parser.Error ->
       eprintf "parsing error@.";
       exit 1
+  | Ast.IllegalPredicateDeclarationError str ->
+      eprintf "validation error: illegal predicate declaration of %s@." str;
+      exit 1
   | Ast.DuplicateTypeDeclarationError str ->
       eprintf "validation error: duplicate type declaration of %s@." str;
+      exit 1
+  | Ast.DuplicatePredicateDeclarationError str ->
+      eprintf "validation error: duplicate predicate declaration of %s@." str;
       exit 1
   | Ast.DuplicateConstDeclarationError str ->
       eprintf "validation error: duplicate const declaration of %s@." str;
       exit 1
   | Ast.MissingTypeDeclarationError str ->
       eprintf "validation error: missing type declaration of %s@." str;
+      exit 1
+  | Ast.MissingPredicateDeclarationError str ->
+      eprintf "validation error: missing predicate declaration of %s@." str;
       exit 1
   | Ast.MissingConstDeclarationError str ->
       eprintf "validation error: missing const declaration of %s@." str;

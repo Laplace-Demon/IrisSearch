@@ -1,12 +1,13 @@
 open Format
 open Internal
 
+(** Definition of symbol table. *)
+
+let symbol_table : (string, Ast.itype) Hashtbl.t = Hashtbl.create 17
+
 (** Definition of state and its operations. *)
 
 type state = internal_prop_set * internal_iprop_multiset
-
-(** Maybe it's better to use a list because the global state won't change and we
-    don't want to convert it to a list every time. *)
 
 let global_state : state ref = ref (PropSet.empty, IpropMset.empty)
 
@@ -21,7 +22,7 @@ let pp_state fmt (pr_set, ipr_mset) =
     ipr_mset
 
 let initial ins =
-  let symbol_table, facts, laws, atoms = Ast.validate ins in
+  let facts, laws, atoms = Ast.validate symbol_table ins in
   global_state := (prop_list_to_internal facts, iprop_list_to_internal laws);
   (PropSet.empty, iprop_list_to_internal atoms)
 

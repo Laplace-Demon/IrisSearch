@@ -22,6 +22,7 @@ rule token = parse
   | eof                   { EOF }
 
   | "types"               { DECL_TYPES }
+  | "preds"               { DECL_PREDS }
   | "consts"              { DECL_CONSTS }
   | "laws"                { DECL_LAWS }
   | "init"                { DECL_INIT }
@@ -38,6 +39,10 @@ rule token = parse
   | "□"                   { BOX }
   | "⌜"                   { TOPLEFTCORNER }
   | "⌝"                   { TOPRIGHTCORNER }
+  | "¬"                   { NOT }
+  | "∧"                   { AND }
+  | "∨"                   { OR }
+  | "->"                  { ARROW }
 
   | ident as id           { IDENT id }
   | _ as c                { raise (Lexing_error (sprintf "Unknown character: %c" c)) }

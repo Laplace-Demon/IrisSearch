@@ -48,7 +48,8 @@ let () =
                       let ins = Fuzzer.generate () in
                       Main.solve std_formatter ins
                     done;
-                    fprintf formatter "law_num:%i@.law_size:%i@.@." law_num law_size;
+                    fprintf formatter "law_num:%i@.law_size:%i@.@." law_num
+                      law_size;
                     Statistics.pp_stat ~avg:10 formatter)
                   law_size_list)
               law_num_list
