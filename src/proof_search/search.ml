@@ -118,7 +118,7 @@ struct
     P.add inode inode.estimate
 
   let timeout = ref 2
-  let max_depth = ref 10
+  let max_depth = ref 20
   let set_timeout t = timeout := t
   let set_max_depth d = max_depth := d
 

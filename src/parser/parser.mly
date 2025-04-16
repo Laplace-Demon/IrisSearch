@@ -130,7 +130,7 @@ iprop:
 | iprop STAR iprop
   { Star ($1, $3) }
 | iprop WAND iprop
-  { uncurry_wand ($1, $3) }
+  { Wand ($1, $3) }
 | BOX iprop
   { Box $2 }
 | TOPLEFTCORNER prop TOPRIGHTCORNER

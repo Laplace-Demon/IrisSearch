@@ -53,16 +53,6 @@ and iprop =
   | Pure of prop
   | HPred of string * term list
 
-let uncurry_imply (pr1, pr2) =
-  match pr2 with
-  | Imply (pr21, pr22) -> Imply (And (pr1, pr21), pr22)
-  | _ -> Imply (pr1, pr2)
-
-let uncurry_wand (ipr1, ipr2) =
-  match ipr2 with
-  | Wand (ipr21, ipr22) -> Wand (Star (ipr1, ipr21), ipr22)
-  | _ -> Wand (ipr1, ipr2)
-
 let rec prop_eqb pr1 pr2 =
   match (pr1, pr2) with
   | Persistent ipr1, Persistent ipr2 -> iprop_eqb ipr1 ipr2
@@ -205,7 +195,8 @@ and iprop_subst_negative_var src dest = function
     - type declarations
     - predicate declarations
     - constant declarations
-    - (persistent and pure) laws
+    - pure facts
+    - persistent laws
     - initial atoms *)
 
 type instance = {
@@ -275,12 +266,41 @@ let instance_subst_negative_var src dest
       List.map (fun ipr -> iprop_subst_negative_var src dest ipr) decl_init;
   }
 
-let replace_persistent_transformation
+  (** Transformations on ast. *)
+
+let rec uncurry_prop = function
+  | Persistent ipr -> Persistent (uncurry_iprop ipr)
+  | Not pr -> Not (uncurry_prop pr)
+  | And (pr1, pr2) -> And (uncurry_prop pr1, uncurry_prop pr2)
+  | Or (pr1, pr2) -> Or (uncurry_prop pr1, uncurry_prop pr2)
+  | Imply (pr1, Imply(pr21, pr22)) -> uncurry_prop (Imply (And (pr1, pr21), pr22))
+  | Imply (pr1, pr2) -> Imply (uncurry_prop pr1, uncurry_prop pr2)
+  | _ as pr -> pr
+
+and uncurry_iprop = function
+| Star (ipr1, ipr2) -> Star (uncurry_iprop ipr1, uncurry_iprop ipr2)
+| Wand (ipr1, Wand(ipr21, ipr22)) -> uncurry_iprop (Wand (Star (ipr1, ipr21), ipr22))
+| Wand (ipr1, ipr2) -> Wand (uncurry_iprop ipr1, uncurry_iprop ipr2)
+| Box ipr -> Box (uncurry_iprop ipr)
+| Pure pr -> Pure (uncurry_prop pr)
+| _ as ipr -> ipr
+
+let uncurry_transformation
     ({ decl_types; decl_preds; decl_consts; decl_facts; decl_laws; decl_init } as ins) =
-  List.fold_left
-    (fun ins pr ->
+    let decl_facts = List.map uncurry_prop decl_facts in
+    let decl_laws = List.map uncurry_iprop decl_laws in
+    let decl_init = List.map uncurry_iprop decl_init in
+    { decl_types; decl_preds; decl_consts; decl_facts; decl_laws; decl_init }
+
+let eliminate_persistent_transformation
+    ({ decl_types; decl_preds; decl_consts; decl_facts; decl_laws; decl_init } as ins) =
+  List.fold_right
+    (fun pr ins ->
       match pr with
       | Persistent (Atom str) ->
           instance_subst_positive_var str (Box (Atom str)) ins
-      | _ -> ins)
-    ins decl_facts
+      | _ ->
+        { ins with decl_facts = pr :: ins.decl_facts }
+        )
+      decl_facts
+      { ins with decl_facts = [] }
