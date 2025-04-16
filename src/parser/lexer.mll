@@ -48,6 +48,8 @@ rule token = parse
   | "∧"                   { AND }
   | "∨"                   { OR }
   | "->"                  { ARROW }
+  | '='                   { EQ }
+  | "≠"                   { NEQ }
 
   | ident as id           { IDENT id }
   | _ as c                { raise (Lexing_error (sprintf "Unknown character: %c" c)) }

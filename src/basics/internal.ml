@@ -15,6 +15,8 @@ module rec Internal : sig
     | IOr of internal_prop * internal_prop
     | IImply of internal_prop * internal_prop
     | IPred of string * internal_term list
+    | IEq of internal_term * internal_term
+    | INeq of internal_term * internal_term
 
   and internal_iprop =
     | IFalse
@@ -41,6 +43,8 @@ end = struct
     | IOr of internal_prop * internal_prop
     | IImply of internal_prop * internal_prop
     | IPred of string * internal_term list
+    | IEq of internal_term * internal_term
+    | INeq of internal_term * internal_term
 
   and internal_iprop =
     | IFalse
@@ -62,10 +66,14 @@ end = struct
     | IOr (pr11, pr12), IOr (pr21, pr22)
     | IImply (pr11, pr12), IImply (pr21, pr22) ->
         let tmp = compare_internal_prop pr11 pr21 in
-        if tmp = 0 then compare_internal_prop pr21 pr22 else tmp
+        if tmp = 0 then compare_internal_prop pr12 pr22 else tmp
     | IPred (str1, param_list1), IPred (str2, param_list2) ->
       let tmp = String.compare str1 str2 in
       if tmp = 0 then List.compare compare_internal_term param_list1 param_list2 else tmp
+    | IEq (tm11, tm12), IEq (tm21, tm22)
+    | INeq (tm11, tm12), INeq (tm21, tm22) ->
+      let tmp = compare_internal_term tm11 tm21 in
+      if tmp = 0 then compare_internal_term tm12 tm22 else tmp
     | _, _ -> Stdlib.compare pr1 pr2
 
   and compare_internal_iprop ipr1 ipr2 =
@@ -128,6 +136,10 @@ let rec pp_internal_prop fmt = function
       fprintf fmt "(%a → %a)" pp_internal_prop pr1 pp_internal_prop pr2
   | IPred (str, param_list) ->
       fprintf fmt "%s %a" str (pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt " ") pp_internal_term) param_list
+      | IEq (tm1, tm2) ->
+        fprintf fmt "%a = %a" pp_internal_term tm1 pp_internal_term tm2
+    | INeq (tm1, tm2) ->
+      fprintf fmt "%a ≠ %a" pp_internal_term tm1 pp_internal_term tm2
 
 and pp_internal_iprop fmt = function
   | IFalse -> fprintf fmt "⊥"
@@ -167,6 +179,8 @@ let iAnd pr_set = IAnd pr_set
 let iOr (pr1, pr2) = IOr (pr1, pr2)
 let iImply (ipr1, ipr2) = IImply (ipr1, ipr2)
 let iPred (str, param_list) = IPred (str, param_list)
+let iEq (tm1, tm2) = IEq (tm1, tm2)
+let iNeq (tm1, tm2) = INeq (tm1, tm2)
 let iFalse = IFalse
 let iAtom str = IAtom str
 let iStar ipr_mset = IStar ipr_mset
@@ -197,6 +211,8 @@ let rec prop_to_internal : prop -> internal_prop = function
   | Or (pr1, pr2) -> iOr (prop_to_internal pr1, prop_to_internal pr2)
   | Imply (pr1, pr2) -> iImply (prop_to_internal pr1, prop_to_internal pr2)
   | Pred (str, param_list) -> iPred (str, List.map term_to_internal param_list)
+  | Eq (tm1, tm2) -> iEq (term_to_internal tm1, term_to_internal tm2)
+  | Neq (tm1, tm2) -> iNeq (term_to_internal tm1, term_to_internal tm2)
 
 and iprop_to_internal : iprop -> internal_iprop = function
   | False -> iFalse

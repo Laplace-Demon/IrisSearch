@@ -10,6 +10,7 @@
 %token TYPE_PROP TYPE_IPROP
 %token FALSE STAR WAND BOX TOPLEFTCORNER TOPRIGHTCORNER
 %token NOT AND OR ARROW
+%token EQ NEQ
 
 %token <string> IDENT
 
@@ -153,6 +154,10 @@ prop:
   { Imply ($1, $3) }
 | IDENT nonempty_list(term) 
   { Pred ($1, $2) }
+| term EQ term
+  { Eq ($1, $3) }
+| term NEQ term
+  { Neq ($1, $3) }
 
 term:
 | IDENT

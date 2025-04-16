@@ -1,0 +1,17 @@
+types
+    int
+
+consts
+    a : int
+    b : int
+    c : int
+    d : int
+
+facts
+    a = b,
+    a = c,
+    d = c,
+    b ≠ d
+
+init
+    False

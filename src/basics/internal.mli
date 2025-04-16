@@ -17,6 +17,8 @@ type internal_prop = private
   | IOr of internal_prop * internal_prop
   | IImply of internal_prop * internal_prop
   | IPred of string * internal_term list
+  | IEq of internal_term * internal_term
+  | INeq of internal_term * internal_term
 
 and internal_iprop = private
   | IFalse
@@ -26,13 +28,20 @@ and internal_iprop = private
   | IPure of internal_prop
   | IHPred of string * internal_term list
 
+(** Smart internal_term constructors. *)
 val iVar : string -> internal_term
+
+(** Smart internal_prop constructors. *)
 val iPersistent : internal_iprop -> internal_prop
 val iNot : internal_prop -> internal_prop
 val iAnd : internal_prop_set -> internal_prop
 val iOr : internal_prop * internal_prop -> internal_prop
 val iImply : internal_prop * internal_prop -> internal_prop
 val iPred : string * internal_term list -> internal_prop
+val iEq : internal_term * internal_term -> internal_prop
+val iNeq : internal_term * internal_term -> internal_prop
+
+(** Smart internal_iprop constructors. *)
 val iFalse : internal_iprop
 val iAtom : string -> internal_iprop
 val iStar : internal_iprop_multiset -> internal_iprop

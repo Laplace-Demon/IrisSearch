@@ -48,17 +48,13 @@ let rec check_iprop symbol_table = function
 and check_prop symbol_table = function
   | Persistent ipr -> check_iprop symbol_table ipr
   | Not pr -> check_prop symbol_table pr
-  | And (pr1, pr2) ->
-      check_prop symbol_table pr1;
-      check_prop symbol_table pr2
-  | Or (pr1, pr2) ->
-      check_prop symbol_table pr1;
-      check_prop symbol_table pr2
+  | And (pr1, pr2)
+  | Or (pr1, pr2)
   | Imply (pr1, pr2) ->
       check_prop symbol_table pr1;
       check_prop symbol_table pr2
   | Pred (str, param_list) ->
-    match Hashtbl.find_opt symbol_table str with
+    (match Hashtbl.find_opt symbol_table str with
     | Some ity ->
       (match ity with
       | Tarrow (param_ity_list, Tprop) ->
@@ -68,7 +64,13 @@ and check_prop symbol_table = function
           then raise (TypeError (asprintf "%a" pp_term param, param_ity, arg_ity))
           ) param_list param_ity_list
       | _ -> raise (TypeError (str, Tarrow ([], Tprop), ity)))
-    | None -> raise (MissingPredicateDeclarationError str)
+    | None -> raise (MissingPredicateDeclarationError str))
+  | Eq (tm1, tm2)
+  | Neq (tm1, tm2) ->
+    let ity1 = check_term symbol_table tm1 in
+    let ity2 = check_term symbol_table tm2 in
+    if not (itype_eqb ity1 ity2) then
+    raise (TypeError (asprintf "%a" pp_term tm2, ity1, ity2))
 
 let validate symbol_table
     { decl_types; decl_preds; decl_consts; decl_facts; decl_laws; decl_init } =

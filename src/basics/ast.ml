@@ -41,6 +41,8 @@ type prop =
   | Or of prop * prop
   | Imply of prop * prop
   | Pred of string * term list
+  | Eq of term * term
+  | Neq of term * term
 
 and iprop =
   | False
@@ -71,6 +73,9 @@ let rec prop_eqb pr1 pr2 =
       prop_eqb pr11 pr21 && prop_eqb pr12 pr22
   | Pred (str1, param_list1), Pred (str2, param_list2) ->
       String.equal str1 str2 && List.equal term_eqb param_list1 param_list2
+  | Eq (tm11, tm12), Eq (tm21, tm22)
+  | Neq (tm11, tm12), Neq (tm21, tm22) ->
+      term_eqb tm11 tm21 && term_eqb tm12 tm22
   | _, _ -> false
 
 and iprop_eqb ipr1 ipr2 =
@@ -94,6 +99,10 @@ let rec pp_prop fmt = function
   | Imply (pr1, pr2) -> fprintf fmt "%a → %a" pp_prop pr1 pp_prop pr2
   | Pred (str, param_list) ->
       fprintf fmt "%s %a" str (pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt " ") pp_term) param_list
+  | Eq (tm1, tm2) ->
+      fprintf fmt "%a = %a" pp_term tm1 pp_term tm2
+  | Neq (tm1, tm2) ->
+    fprintf fmt "%a ≠ %a" pp_term tm1 pp_term tm2
 
 and pp_iprop fmt = function
   | False -> fprintf fmt "⊥"
@@ -106,6 +115,8 @@ and pp_iprop fmt = function
       fprintf fmt "%s %a" str (pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt " ") pp_term) param_list
 
 (** Substitution. *)
+
+(* These functions are not general enough, need to be changed in the future. *)
 
 let rec prop_subst_var src dest = function
   | Persistent ipr -> Persistent (iprop_subst_var src dest ipr)
