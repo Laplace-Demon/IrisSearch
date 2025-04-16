@@ -1,0 +1,5 @@
+facts
+    A = B,
+    Persistent C
+
+init

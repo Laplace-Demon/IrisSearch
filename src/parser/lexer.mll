@@ -45,11 +45,11 @@ rule token = parse
   | "⌜"                   { TOPLEFTCORNER }
   | "⌝"                   { TOPRIGHTCORNER }
   | "¬"                   { NOT }
-  | "∧"                   { AND }
-  | "∨"                   { OR }
-  | "->"                  { ARROW }
+  | "∧" | "/\\"           { AND }
+  | "∨" | "\\/"           { OR }
+  | "→" | "->"            { ARROW }
   | '='                   { EQ }
-  | "≠"                   { NEQ }
+  | "≠" | "!="            { NEQ }
 
   | ident as id           { IDENT id }
   | _ as c                { raise (Lexing_error (sprintf "Unknown character: %c" c)) }

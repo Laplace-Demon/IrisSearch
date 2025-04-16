@@ -153,7 +153,7 @@ and pp_internal_iprop fmt = function
         ipr_mset
   | IWand (ipr1, ipr2) ->
       fprintf fmt "(%a -* %a)" pp_internal_iprop ipr1 pp_internal_iprop ipr2
-  | IPure pr -> fprintf fmt "⌜%a⌝" pp_internal_prop pr
+  | IPure pr -> fprintf fmt "⌜ %a ⌝" pp_internal_prop pr
   | IHPred (str, param_list) ->
       fprintf fmt "%s %a" str
         (pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt " ") pp_internal_term)

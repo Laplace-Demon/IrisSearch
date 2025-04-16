@@ -1,0 +1,3 @@
+types
+    loc value expr int float bool heap
+init

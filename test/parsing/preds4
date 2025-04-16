@@ -1,0 +1,7 @@
+types
+    val
+
+preds
+    emptyleft : val -> val
+
+init

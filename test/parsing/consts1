@@ -1,0 +1,8 @@
+consts
+    A : iProp
+    A : iProp
+    B : Prop
+    B : Prop
+    C : int
+
+init

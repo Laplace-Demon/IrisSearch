@@ -102,7 +102,7 @@ and pp_iprop fmt = function
   | Star (ipr1, ipr2) -> fprintf fmt "%a * %a" pp_iprop ipr1 pp_iprop ipr2
   | Wand (ipr1, ipr2) -> fprintf fmt "(%a -* %a)" pp_iprop ipr1 pp_iprop ipr2
   | Box ipr -> fprintf fmt "□ %a" pp_iprop ipr
-  | Pure pr -> fprintf fmt "⌜%a⌝" pp_prop pr
+  | Pure pr -> fprintf fmt "⌜ %a ⌝" pp_prop pr
   | HPred (str, param_list) ->
       fprintf fmt "%s %a" str
         (pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt " ") pp_term)
@@ -214,22 +214,35 @@ type instance = {
 
 let pp_instance fmt
     { decl_types; decl_preds; decl_consts; decl_facts; decl_laws; decl_init } =
-  fprintf fmt
-    "@[<v 4>types@,\
-     %a@]@.@[<v 4>preds@,\
-     %a@]@.@[<v 4>consts@,\
-     %a@]@.@[<v 4>facts@,\
-     %a@]@.@[<v 4>laws@,\
-     %a@]@.@[<v 4>init@,\
-     %a@]@."
-    (pp_print_list pp_print_string)
-    decl_types
-    (pp_print_list (fun fmt (str, ity) ->
-         fprintf fmt "%s : %a" str pp_itype ity))
-    decl_preds
-    (pp_print_list pp_typed_ident)
-    decl_consts (pp_print_list pp_prop) decl_facts (pp_print_list pp_iprop)
-    decl_laws (pp_print_list pp_iprop) decl_init
+  let () =
+    if not (List.is_empty decl_types) then
+      fprintf fmt "@[<v 4>types@,%a@]@."
+        (pp_print_list pp_print_string)
+        decl_types
+  in
+  let () =
+    if not (List.is_empty decl_preds) then
+      fprintf fmt "@[<v 4>preds@,%a@]@."
+        (pp_print_list (fun fmt (str, ity) ->
+             fprintf fmt "%s : %a" str pp_itype ity))
+        decl_preds
+  in
+  let () =
+    if not (List.is_empty decl_consts) then
+      fprintf fmt "@[<v 4>consts@,%a@]@."
+        (pp_print_list pp_typed_ident)
+        decl_consts
+  in
+  let () =
+    if not (List.is_empty decl_facts) then
+      fprintf fmt "@[<v 4>facts@,%a@]@." (pp_print_list pp_prop) decl_facts
+  in
+  let () =
+    if not (List.is_empty decl_laws) then
+      fprintf fmt "@[<v 4>laws@,%a@]@." (pp_print_list pp_iprop) decl_laws
+  in
+  if List.is_empty decl_init then fprintf fmt "@[<v 4>init@,%%empty@]@."
+  else fprintf fmt "@[<v 4>init@,%a@]@." (pp_print_list pp_iprop) decl_init
 
 let instance_subst_var src dest
     { decl_types; decl_preds; decl_consts; decl_facts; decl_laws; decl_init } =

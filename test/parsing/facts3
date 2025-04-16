@@ -1,0 +1,4 @@
+facts
+    Persistent A /\ Persistent B \/ Persistent C /\ Persistent D \/ Persistent E -> ¬ Persistent A
+
+init

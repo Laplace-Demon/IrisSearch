@@ -79,10 +79,14 @@ let () =
   try
     Fun.protect ~finally (fun () ->
         let ins = Parser.instance Lexer.token lexbuf in
+        let () =
+          if !show_instance then
+            fprintf formatter "original instance@.@.%a@." Ast.pp_instance ins
+        in
         if !until_parsing then fprintf formatter "@.Parsing succeeds.@.@."
         else
           Main.solve ~until_transformation:!until_transformation
-            ~until_validation:!until_validation ~show_instance:!show_instance
+            ~until_validation:!until_validation
             ~show_transformed_instance:!show_transformed_instance
             ~show_global_state:!show_global_state
             ~show_initial_state:!show_initial_state ~show_path:!show_path

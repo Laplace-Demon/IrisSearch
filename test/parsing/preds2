@@ -1,0 +1,4 @@
+preds
+    pure : Prop -> iProp
+
+init

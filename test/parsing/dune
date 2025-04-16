@@ -1,0 +1,20 @@
+(cram
+ (deps
+  %{bin:is}
+  section1
+  section2
+  types1
+  types2
+  preds1
+  preds2
+  preds3
+  preds4
+  consts1
+  consts2
+  facts1
+  facts2
+  facts3
+  facts4
+  laws1
+  laws2
+  laws3))

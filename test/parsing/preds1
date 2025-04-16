@@ -1,0 +1,12 @@
+types
+    loc
+    value
+
+preds
+    pointsto : loc * value -> iProp
+    pointsto : loc * value -> iProp
+    pointsto : loc * value -> iProp
+    pointsto : loc * value -> iProp
+    pointsto : loc * value -> iProp
+
+init

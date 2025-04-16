@@ -4,13 +4,8 @@ open State
 open Search
 
 let solve ?(until_transformation = false) ?(until_validation = false)
-    ?(show_instance = false) ?(show_transformed_instance = false)
-    ?(show_global_state = false) ?(show_initial_state = false)
-    ?(show_path = false) fmt ins =
-  let () =
-    if show_instance then
-      fprintf fmt "original instance@.@.%a@." pp_instance ins
-  in
+    ?(show_transformed_instance = false) ?(show_global_state = false)
+    ?(show_initial_state = false) ?(show_path = false) fmt ins =
   let ins = uncurry_transformation ins in
   let () =
     if show_transformed_instance then

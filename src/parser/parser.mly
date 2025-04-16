@@ -70,6 +70,8 @@ decl_types:
   { $2 }
 
 decl_type:
+| predefiend_itype
+  { raise (Validate.DuplicateTypeDeclarationError (Format.asprintf "%a" pp_itype $1)) }
 | IDENT
   { $1 }
 
@@ -113,12 +115,16 @@ decl_init:
   { $2 }
 
 itype:
+| predefiend_itype
+  { $1 }
+| IDENT
+  { Tcustom $1 }
+
+predefiend_itype:
 | TYPE_PROP
   { Tprop }
 | TYPE_IPROP
   { Tiprop }
-| IDENT
-  { Tcustom $1 }
 
 iprop:
 | LPAREN iprop RPAREN
