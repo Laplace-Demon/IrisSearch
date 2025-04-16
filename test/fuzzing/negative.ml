@@ -27,8 +27,7 @@ module Negative = struct
     in
     let decl_facts =
       repeat
-        (fun () ->
-          Persistent (Atom consts_array.(Random.int !const_num)))
+        (fun () -> Persistent (Atom consts_array.(Random.int !const_num)))
         !pure_num
     in
     let decl_laws =

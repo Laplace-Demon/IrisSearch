@@ -1,28 +1,64 @@
 open Format
 open Is
 
-(*
-
---only-parsing
---only-validation
---show-instance
---show-instance-transformation
---show-global-state
---show-path
---show-statistics
-
-*)
+let until_parsing = ref false
+let until_transformation = ref false
+let until_validation = ref false
+let show_instance = ref false
+let show_transformed_instance = ref false
+let show_global_state = ref false
+let show_initial_state = ref false
+let show_path = ref false
+let show_statistics = ref false
 
 let input_filename, in_channel, out_channel =
   let input = ref None in
   let output = ref None in
   let set_input s = input := Some s in
   let set_output s = output := Some s in
-  let speclist = [ ("-o", Arg.String set_output, "Specify output file") ] in
+  let speclist =
+    [
+      ("-o", Arg.String set_output, "\n\tSpecify output file.\n");
+      ("--until-parsing", Arg.Set until_parsing, "\n\tStop after parsing.\n");
+      ( "--until-transformation",
+        Arg.Set until_transformation,
+        "\n\ttop after transformation.\n" );
+      ( "--until-validation",
+        Arg.Set until_validation,
+        "\n\tStop after validation.\n" );
+      ("--show-instance", Arg.Set show_instance, "\n\tPrint problem instance.\n");
+      ( "--show-transformed-instance",
+        Arg.Set show_transformed_instance,
+        "\n\tPrint transformed problem instance.\n" );
+      ( "--show-global-state",
+        Arg.Set show_global_state,
+        "\n\tPrint the global state.\n" );
+      ( "--show-initial-state",
+        Arg.Set show_initial_state,
+        "\n\tPrint the initial state.\n" );
+      ( "--show-path",
+        Arg.Set show_path,
+        "\n\tPrint the path when searching succeeds.\n" );
+      ( "--show-statistics",
+        Arg.Set show_statistics,
+        "\n\tPrint the statistics.\n" );
+      ( "--show-all",
+        Arg.Tuple
+          [
+            Arg.Set show_instance;
+            Arg.Set show_transformed_instance;
+            Arg.Set show_global_state;
+            Arg.Set show_initial_state;
+            Arg.Set show_path;
+            Arg.Set show_statistics;
+          ],
+        "\n\tPrint all the information above.\n" );
+    ]
+  in
   let () = Arg.parse speclist set_input "Usage: is input [-o output]" in
   let input_filename, in_channel =
     match !input with
-    | Some f -> f, open_in f
+    | Some f -> (f, open_in f)
     | None ->
         eprintf "input file missing@.";
         exit 1
@@ -36,17 +72,24 @@ let () =
   let lexbuf = Lexing.from_channel in_channel in
   let formatter = formatter_of_out_channel out_channel in
   let finally () =
-    Statistics.pp_stat formatter;
+    if !show_statistics then Statistics.pp_stat formatter;
     close_in in_channel;
     close_out out_channel
   in
   try
     Fun.protect ~finally (fun () ->
         let ins = Parser.instance Lexer.token lexbuf in
-        Main.solve formatter ins)
+        if !until_parsing then fprintf formatter "Parsing succeeds."
+        else
+          Main.solve ~until_transformation:!until_transformation
+            ~until_validation:!until_validation ~show_instance:!show_instance
+            ~show_transformed_instance:!show_transformed_instance
+            ~show_global_state:!show_global_state
+            ~show_initial_state:!show_initial_state ~show_path:!show_path
+            formatter ins)
   with
   | Lexer.Lexing_error s ->
-      eprintf "lexing error: %s@." s;
+      eprintf "%s: lexing error: %s@." input_filename s;
       exit 1
   | Parser.Error ->
       eprintf "%s%a: parsing error@." input_filename Lexer.print_position lexbuf;

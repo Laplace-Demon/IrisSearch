@@ -5,8 +5,7 @@ open Ast
     holding them. *)
 
 module rec Internal : sig
-  type internal_term =
-    | IVar of string
+  type internal_term = IVar of string
 
   type internal_prop =
     | IPersistent of internal_iprop
@@ -33,8 +32,7 @@ module rec Internal : sig
   val hash_internal_prop : internal_prop -> int
   val hash_internal_iprop : internal_iprop -> int
 end = struct
-  type internal_term =
-  | IVar of string
+  type internal_term = IVar of string
 
   type internal_prop =
     | IPersistent of internal_iprop
@@ -55,8 +53,7 @@ end = struct
     | IHPred of string * internal_term list
 
   let compare_internal_term tm1 tm2 =
-    match tm1, tm2 with
-    | IVar str1, IVar str2 -> String.compare str1 str2
+    match (tm1, tm2) with IVar str1, IVar str2 -> String.compare str1 str2
 
   let rec compare_internal_prop pr1 pr2 =
     match (pr1, pr2) with
@@ -68,12 +65,14 @@ end = struct
         let tmp = compare_internal_prop pr11 pr21 in
         if tmp = 0 then compare_internal_prop pr12 pr22 else tmp
     | IPred (str1, param_list1), IPred (str2, param_list2) ->
-      let tmp = String.compare str1 str2 in
-      if tmp = 0 then List.compare compare_internal_term param_list1 param_list2 else tmp
-    | IEq (tm11, tm12), IEq (tm21, tm22)
-    | INeq (tm11, tm12), INeq (tm21, tm22) ->
-      let tmp = compare_internal_term tm11 tm21 in
-      if tmp = 0 then compare_internal_term tm12 tm22 else tmp
+        let tmp = String.compare str1 str2 in
+        if tmp = 0 then
+          List.compare compare_internal_term param_list1 param_list2
+        else tmp
+    | IEq (tm11, tm12), IEq (tm21, tm22) | INeq (tm11, tm12), INeq (tm21, tm22)
+      ->
+        let tmp = compare_internal_term tm11 tm21 in
+        if tmp = 0 then compare_internal_term tm12 tm22 else tmp
     | _, _ -> Stdlib.compare pr1 pr2
 
   and compare_internal_iprop ipr1 ipr2 =
@@ -85,8 +84,10 @@ end = struct
         let tmp = compare_internal_iprop ipr11 ipr21 in
         if tmp = 0 then compare_internal_iprop ipr12 ipr22 else tmp
     | IHPred (str1, param_list1), IHPred (str2, param_list2) ->
-      let tmp = String.compare str1 str2 in
-      if tmp = 0 then List.compare compare_internal_term param_list1 param_list2 else tmp
+        let tmp = String.compare str1 str2 in
+        if tmp = 0 then
+          List.compare compare_internal_term param_list1 param_list2
+        else tmp
     | _, _ -> Stdlib.compare ipr1 ipr2
 
   let hash_internal_term = Hashtbl.hash
@@ -135,10 +136,12 @@ let rec pp_internal_prop fmt = function
   | IImply (pr1, pr2) ->
       fprintf fmt "(%a → %a)" pp_internal_prop pr1 pp_internal_prop pr2
   | IPred (str, param_list) ->
-      fprintf fmt "%s %a" str (pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt " ") pp_internal_term) param_list
-      | IEq (tm1, tm2) ->
-        fprintf fmt "%a = %a" pp_internal_term tm1 pp_internal_term tm2
-    | INeq (tm1, tm2) ->
+      fprintf fmt "%s %a" str
+        (pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt " ") pp_internal_term)
+        param_list
+  | IEq (tm1, tm2) ->
+      fprintf fmt "%a = %a" pp_internal_term tm1 pp_internal_term tm2
+  | INeq (tm1, tm2) ->
       fprintf fmt "%a ≠ %a" pp_internal_term tm1 pp_internal_term tm2
 
 and pp_internal_iprop fmt = function
@@ -152,7 +155,9 @@ and pp_internal_iprop fmt = function
       fprintf fmt "(%a -* %a)" pp_internal_iprop ipr1 pp_internal_iprop ipr2
   | IPure pr -> fprintf fmt "⌜%a⌝" pp_internal_prop pr
   | IHPred (str, param_list) ->
-    fprintf fmt "%s %a" str (pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt " ") pp_internal_term) param_list
+      fprintf fmt "%s %a" str
+        (pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt " ") pp_internal_term)
+        param_list
 
 and pp_internal_prop_set ?(pp_sep = pp_print_cut) fmt pr_set =
   if PropSet.is_empty pr_set then pp_print_string fmt "%empty"
@@ -190,8 +195,7 @@ let iHPred (str, param_list) = IHPred (str, param_list)
 
 (** Functions converting to internal representation. *)
 
-let term_to_internal : term -> internal_term = function
-  | Var str -> iVar str
+let term_to_internal : term -> internal_term = function Var str -> iVar str
 
 let rec prop_to_internal : prop -> internal_prop = function
   | Persistent ipr -> iPersistent (iprop_to_internal ipr)
