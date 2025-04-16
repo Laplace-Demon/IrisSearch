@@ -23,7 +23,7 @@ let solve ?(until_transformation = false) ?(until_validation = false)
       fprintf fmt "instance after eliminate_persistent_transformation@.@.%a@."
         pp_instance ins
   in
-  if until_transformation then fprintf fmt "Transformation succeeds."
+  if until_transformation then fprintf fmt "@.Transformation succeeds.@.@."
   else
     let () =
       if show_global_state then
@@ -34,7 +34,7 @@ let solve ?(until_transformation = false) ?(until_validation = false)
       if show_initial_state then
         fprintf fmt "initial state@.@.%a@." pp_state source
     in
-    if until_validation then fprintf fmt "Validation succeeds."
+    if until_validation then fprintf fmt "@.Validation succeeds.@.@."
     else
       let open Make (struct
         type node = state
@@ -56,5 +56,5 @@ let solve ?(until_transformation = false) ?(until_validation = false)
                   (List.rev path)
             in
             fprintf fmt "@.find solution@.@."
-        | None -> fprintf fmt "no solution@.@."
-      with Timeout -> fprintf fmt "timeout@.@."
+        | None -> fprintf fmt "@.no solution@.@."
+      with Timeout -> fprintf fmt "@.timeout@.@."

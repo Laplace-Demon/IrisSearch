@@ -79,7 +79,7 @@ let () =
   try
     Fun.protect ~finally (fun () ->
         let ins = Parser.instance Lexer.token lexbuf in
-        if !until_parsing then fprintf formatter "Parsing succeeds."
+        if !until_parsing then fprintf formatter "@.Parsing succeeds.@.@."
         else
           Main.solve ~until_transformation:!until_transformation
             ~until_validation:!until_validation ~show_instance:!show_instance
