@@ -4,7 +4,10 @@ open Format
 open Lexing
 open Parser
 
-(* TODO: add lexing position *)
+let print_position outx lexbuf =
+  let pos = lexbuf.lex_curr_p in
+  fprintf outx "%s:%d:%d" pos.pos_fname
+    pos.pos_lnum (pos.pos_cnum - pos.pos_bol + 1)
 
 exception Lexing_error of string
 }
@@ -14,16 +17,18 @@ let letter = [ 'a' - 'z' 'A' - 'Z' '_' ]
 let ident = letter (letter | digit)*
 
 rule token = parse
-  | [' ' '\t' '\n']       { token lexbuf }
+  | [' ' '\t']            { token lexbuf }
+  | ['\n']                { new_line lexbuf; token lexbuf }
   | '('                   { LPAREN }
   | ')'                   { RPAREN }
-  | ')'                   { RPAREN }
   | ':'                   { COLON }
+  | ','                   { COMMA }
   | eof                   { EOF }
 
   | "types"               { DECL_TYPES }
   | "preds"               { DECL_PREDS }
   | "consts"              { DECL_CONSTS }
+  | "facts"               { DECL_FACTS }
   | "laws"                { DECL_LAWS }
   | "init"                { DECL_INIT }
 

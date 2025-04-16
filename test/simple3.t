@@ -3,8 +3,12 @@
   
   types
       
+  preds
+      
   consts
       A : iProp
+  facts
+      
   laws
       □ (A -* A * A)
       □ (A * A * A * A * A * A * A -* ⊥)
@@ -15,8 +19,12 @@
   
   types
       
+  preds
+      
   consts
       A : iProp
+  facts
+      
   laws
       □ (A -* A * A)
       □ (A * A * A * A * A * A * A -* ⊥)

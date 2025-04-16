@@ -2,10 +2,12 @@ consts
     A : iProp
     W : iProp
 
-laws
-    A * A -* False
+facts
     Persistent W
-    A -* W
+
+laws
+    A * A -* False,
+    A -* W,
     W -* A
 
 init

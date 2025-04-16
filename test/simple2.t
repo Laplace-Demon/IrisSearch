@@ -3,6 +3,8 @@
   
   types
       
+  preds
+      
   consts
       A : iProp
       B : iProp
@@ -10,6 +12,8 @@
       D : iProp
       E : iProp
       F : iProp
+  facts
+      
   laws
       □ (A * B -* C * D)
       □ (C -* E)
@@ -22,6 +26,8 @@
   
   types
       
+  preds
+      
   consts
       A : iProp
       B : iProp
@@ -29,6 +35,8 @@
       D : iProp
       E : iProp
       F : iProp
+  facts
+      
   laws
       □ (A * B -* C * D)
       □ (C -* E)

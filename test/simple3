@@ -2,7 +2,7 @@ consts
     A : iProp
 
 laws
-    A -* A * A
+    A -* A * A,
     A * A * A * A * A * A * A -* False
 
 init

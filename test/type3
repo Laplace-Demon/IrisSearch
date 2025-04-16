@@ -2,9 +2,5 @@ types
     loc
     loc
 
-consts
-
-laws
-
 init
     False

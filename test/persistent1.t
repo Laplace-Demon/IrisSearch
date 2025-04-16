@@ -3,12 +3,15 @@
   
   types
       
+  preds
+      
   consts
       A : iProp
       W : iProp
+  facts
+      Persistent W
   laws
       □ (A * A -* ⊥)
-      ⌜Persistent W⌝
       □ (A -* W)
       □ (W -* A)
   init
@@ -18,9 +21,13 @@
   
   types
       
+  preds
+      
   consts
       A : iProp
       W : iProp
+  facts
+      Persistent □ W
   laws
       □ (A * A -* ⊥)
       □ (A -* □ W)

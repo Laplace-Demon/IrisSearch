@@ -1,0 +1,18 @@
+types
+    loc
+    value
+
+preds
+    pointsto : loc * value -> iProp
+
+consts
+    A : loc
+    B : value
+    C : iProp
+
+laws
+    C -* False,
+    pointsto A B -* C
+
+init
+    pointsto A B

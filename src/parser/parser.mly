@@ -2,8 +2,8 @@
   open Ast
 %}
 
-%token DECL_TYPES DECL_PREDS DECL_CONSTS DECL_LAWS DECL_INIT
-%token LPAREN RPAREN COLON
+%token DECL_TYPES DECL_PREDS DECL_CONSTS DECL_FACTS DECL_LAWS DECL_INIT
+%token LPAREN RPAREN COLON COMMA
 %token EOF
 
 %token PERSISTENT EXCLUSIVE
@@ -29,7 +29,7 @@
 %%
 
 instance:
-| option(decl_types) option(decl_preds) decl_consts decl_laws decl_init EOF
+| option(decl_types) option(decl_preds) option(decl_consts) option(decl_facts) option(decl_laws) decl_init EOF
   {
     let decl_types = 
       match $1 with
@@ -41,11 +41,27 @@ instance:
       | Some decl_preds -> decl_preds
       | None -> []
     in
+    let decl_consts =
+      match $3 with
+      | Some decl_consts -> decl_consts
+      | None -> []
+    in
+    let decl_facts =
+      match $4 with
+      | Some decl_facts -> decl_facts
+      | None -> []
+    in
+    let decl_laws =
+      match $5 with
+      | Some decl_laws -> decl_laws
+      | None -> []
+    in
     { decl_types;
       decl_preds;
-      decl_consts = $3;
-      decl_laws = $4;
-      decl_init = $5; }
+      decl_consts;
+      decl_facts;
+      decl_laws;
+      decl_init = $6; }
   }
 
 decl_types:
@@ -72,21 +88,27 @@ decl_const:
 | IDENT COLON itype
   { $1, $3 }
 
+decl_facts:
+| DECL_FACTS separated_list(COMMA, decl_fact)
+  { $2 }
+
+decl_fact:
+| prop
+  { $1 }
+
 decl_laws:
-| DECL_LAWS list(decl_law)
+| DECL_LAWS separated_list(COMMA, decl_law)
   { $2 }
 
 decl_law:
 | iprop
   { Box $1 }
-| prop
-  { Pure $1 }
 | EXCLUSIVE IDENT
   { let atom = Atom $2 in
     Box (Wand (Star (atom, atom), False)) }
 
 decl_init:
-| DECL_INIT list(iprop)
+| DECL_INIT separated_list(COMMA, iprop)
   { $2 }
 
 itype:
@@ -112,6 +134,8 @@ iprop:
   { Box $2 }
 | TOPLEFTCORNER prop TOPRIGHTCORNER
   { Pure $2 }
+| IDENT nonempty_list(term) 
+  { HPred ($1, $2) }
 
 prop:
 | LPAREN prop RPAREN
@@ -127,6 +151,8 @@ prop:
   { Or ($1, $3) }
 | prop ARROW prop
   { Imply ($1, $3) }
+| IDENT nonempty_list(term) 
+  { Pred ($1, $2) }
 
 term:
 | IDENT

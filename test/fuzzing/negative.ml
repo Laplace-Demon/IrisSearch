@@ -25,7 +25,13 @@ module Negative = struct
     let decl_consts =
       List.map (fun str -> (str, Tiprop)) (Array.to_list consts_array)
     in
-    let persistent_laws =
+    let decl_facts =
+      repeat
+        (fun () ->
+          Persistent (Atom consts_array.(Random.int !const_num)))
+        !pure_num
+    in
+    let decl_laws =
       repeat
         (fun () ->
           let left_size = 1 + Random.int (!law_size - 1) in
@@ -53,15 +59,8 @@ module Negative = struct
           Box (Wand (left, right)))
         !law_num
     in
-    let pure_laws =
-      repeat
-        (fun () ->
-          Pure (Persistent (Atom consts_array.(Random.int !const_num))))
-        !pure_num
-    in
-    let decl_laws = persistent_laws @ pure_laws in
     let decl_init =
       repeat (fun () -> Atom consts_array.(Random.int !const_num)) !init_num
     in
-    { decl_types; decl_preds; decl_consts; decl_laws; decl_init }
+    { decl_types; decl_preds; decl_consts; decl_facts; decl_laws; decl_init }
 end

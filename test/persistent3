@@ -2,16 +2,18 @@ consts
     A : iProp
     B : iProp
 
-laws
-    A * A * A * B * B -* False
-    Persistent A
-    Persistent A
-    Persistent A
-    Persistent B
-    Persistent B
-    Persistent B
+facts
+    Persistent A,
+    Persistent A,
+    Persistent A,
+    Persistent B,
+    Persistent B,
+    Persistent B,
     Persistent B
 
+laws
+    A * A * A * B * B -* False
+
 init
-    A
+    A,
     B

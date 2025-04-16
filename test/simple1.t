@@ -3,11 +3,15 @@
   
   types
       
+  preds
+      
   consts
       A : iProp
       B : iProp
       C : iProp
       D : iProp
+  facts
+      
   laws
       □ (A -* B)
       □ (B -* C)
@@ -20,11 +24,15 @@
   
   types
       
+  preds
+      
   consts
       A : iProp
       B : iProp
       C : iProp
       D : iProp
+  facts
+      
   laws
       □ (A -* B)
       □ (B -* C)

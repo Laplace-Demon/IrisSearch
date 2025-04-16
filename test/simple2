@@ -7,9 +7,9 @@ consts
     F : iProp
 
 laws
-    A * B -* C * D
-    C -* E
-    D -* F
+    A * B -* C * D,
+    C -* E,
+    D -* F,
     F * E -* False
 
 init

@@ -22,7 +22,7 @@ let pp_state fmt (pr_set, ipr_mset) =
     ipr_mset
 
 let initial ins =
-  let facts, laws, atoms = Ast.validate symbol_table ins in
+  let facts, laws, atoms = Validate.validate symbol_table ins in
   global_state := (prop_list_to_internal facts, iprop_list_to_internal laws);
   (PropSet.empty, iprop_list_to_internal atoms)
 

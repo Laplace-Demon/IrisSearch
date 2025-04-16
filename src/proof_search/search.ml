@@ -1,5 +1,3 @@
-open Format
-
 exception Timeout
 
 module Make (G : sig

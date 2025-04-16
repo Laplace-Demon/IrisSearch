@@ -3,14 +3,17 @@
   
   types
       
+  preds
+      
   consts
       A : iProp
       B : iProp
       C : iProp
+  facts
+      Persistent A
+      Persistent B
   laws
       □ (A * A * C * C * C * C * A * A * B * B * A * A * A * A * C * B * A * C * A * B * A * C * C * C * A * B * C * A * B * B * C * B * A * B * A -* ⊥)
-      ⌜Persistent A⌝
-      ⌜Persistent B⌝
       □ (B -* A)
       □ (A -* C)
   init
@@ -20,10 +23,15 @@
   
   types
       
+  preds
+      
   consts
       A : iProp
       B : iProp
       C : iProp
+  facts
+      Persistent □ A
+      Persistent □ B
   laws
       □ (A * A * C * C * C * C * A * A * B * B * A * A * A * A * C * B * A * C * A * B * A * C * C * C * A * B * C * A * B * B * C * B * A * B * A -* ⊥)
       □ (B -* □ A)

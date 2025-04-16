@@ -7,12 +7,16 @@ open Ast
 type internal_prop_set
 type internal_iprop_multiset
 
+type internal_term = private
+| IVar of string
+
 type internal_prop = private
   | IPersistent of internal_iprop
   | INot of internal_prop
   | IAnd of internal_prop_set
   | IOr of internal_prop * internal_prop
   | IImply of internal_prop * internal_prop
+  | IPred of string * internal_term list
 
 and internal_iprop = private
   | IFalse
@@ -20,17 +24,21 @@ and internal_iprop = private
   | IStar of internal_iprop_multiset
   | IWand of internal_iprop * internal_iprop
   | IPure of internal_prop
+  | IHPred of string * internal_term list
 
+val iVar : string -> internal_term
 val iPersistent : internal_iprop -> internal_prop
 val iNot : internal_prop -> internal_prop
 val iAnd : internal_prop_set -> internal_prop
 val iOr : internal_prop * internal_prop -> internal_prop
 val iImply : internal_prop * internal_prop -> internal_prop
+val iPred : string * internal_term list -> internal_prop
 val iFalse : internal_iprop
 val iAtom : string -> internal_iprop
 val iStar : internal_iprop_multiset -> internal_iprop
 val iWand : internal_iprop * internal_iprop -> internal_iprop
 val iPure : internal_prop -> internal_iprop
+val iHPred : string * internal_term list -> internal_iprop
 
 module PropSet :
   Set.Set with type elt = internal_prop and type t = internal_prop_set

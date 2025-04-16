@@ -3,18 +3,21 @@
   
   types
       
+  preds
+      
   consts
       A : iProp
       B : iProp
+  facts
+      Persistent A
+      Persistent A
+      Persistent A
+      Persistent B
+      Persistent B
+      Persistent B
+      Persistent B
   laws
       □ (A * A * A * B * B -* ⊥)
-      ⌜Persistent A⌝
-      ⌜Persistent A⌝
-      ⌜Persistent A⌝
-      ⌜Persistent B⌝
-      ⌜Persistent B⌝
-      ⌜Persistent B⌝
-      ⌜Persistent B⌝
   init
       A
       B
@@ -23,9 +26,19 @@
   
   types
       
+  preds
+      
   consts
       A : iProp
       B : iProp
+  facts
+      Persistent □ □ □ A
+      Persistent □ □ □ A
+      Persistent □ □ □ A
+      Persistent □ □ □ □ B
+      Persistent □ □ □ □ B
+      Persistent □ □ □ □ B
+      Persistent □ □ □ □ B
   laws
       □ (A * A * A * B * B -* ⊥)
   init

@@ -5,9 +5,9 @@ consts
     D : iProp
 
 laws
-    A -* B
-    B -* C
-    C -* D
+    A -* B,
+    B -* C,
+    C -* D,
     D -* False
 
 init

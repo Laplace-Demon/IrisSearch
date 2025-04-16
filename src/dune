@@ -13,7 +13,8 @@
   set
   search
   state
-  statistics)
+  statistics
+  validate)
  (libraries baby menhirLib)
  (flags
   (:standard -w -a)))
