@@ -1,0 +1,7 @@
+types
+    val
+
+preds
+    pointsto : loc * val -> iProp
+
+init

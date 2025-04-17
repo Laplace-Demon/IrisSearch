@@ -1,0 +1,5 @@
+consts
+    pr : Prop
+
+init
+    pr -* pr

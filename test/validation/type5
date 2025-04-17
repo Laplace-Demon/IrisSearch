@@ -1,0 +1,11 @@
+types
+    val
+
+preds
+    add : val * val * val -> Prop
+
+consts
+    v : val
+
+init
+    add v v v

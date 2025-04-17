@@ -1,0 +1,7 @@
+types
+    val
+
+preds
+    add : val * val -> val
+
+init

@@ -1,0 +1,4 @@
+preds
+    star : iProp * iProp -> iProp
+
+init

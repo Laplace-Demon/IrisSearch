@@ -1,0 +1,12 @@
+types
+    val loc
+
+preds
+    pointsto : loc * val -> iProp
+
+consts
+    v : val
+    l : loc
+
+init
+    pointsto v l

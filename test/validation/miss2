@@ -1,0 +1,8 @@
+types
+    val
+
+preds
+    p : val -> iProp
+
+init
+    p v

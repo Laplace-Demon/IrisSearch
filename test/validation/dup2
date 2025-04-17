@@ -1,0 +1,13 @@
+types
+    val
+
+preds
+    p1 : val -> Prop
+    p2 : val -> iProp
+    p3 : val -> Prop
+    p4 : val -> iProp
+    p5 : val -> Prop
+    p6 : val -> iProp
+    p1 : val -> iProp
+
+init

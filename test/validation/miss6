@@ -1,0 +1,8 @@
+types
+    val
+
+consts
+    v : val
+    l : loc
+
+init

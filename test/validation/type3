@@ -1,0 +1,16 @@
+types
+    val loc
+
+preds
+    add : val * val * val -> Prop
+
+consts
+    v : val
+    l : loc
+
+facts
+    add v v v,
+    add v v l
+
+init
+    
