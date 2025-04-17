@@ -61,7 +61,7 @@
   original instance
   
   laws
-      □ (A * B * C * D -* □ ⌜ Persistent E ∧ iris search ⌝)
+      □ (A * B * C * D -* □ ⌜ Persistent E ∧ iris search ⌝),
       □ (A * B * C * D -* □ ⌜ Persistent E ∧ iris search ⌝)
   init
       %empty
