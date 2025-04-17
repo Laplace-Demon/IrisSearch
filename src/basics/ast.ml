@@ -235,14 +235,33 @@ let pp_instance fmt
   in
   let () =
     if not (List.is_empty decl_facts) then
-      fprintf fmt "@[<v 4>facts@,%a@]@." (pp_print_list pp_prop) decl_facts
+      fprintf fmt "@[<v 4>facts@,%a@]@."
+        (pp_print_list
+           ~pp_sep:(fun fmt () ->
+             pp_print_char fmt ',';
+             pp_print_cut fmt ())
+           pp_prop)
+        decl_facts
   in
   let () =
     if not (List.is_empty decl_laws) then
-      fprintf fmt "@[<v 4>laws@,%a@]@." (pp_print_list pp_iprop) decl_laws
+      fprintf fmt "@[<v 4>laws@,%a@]@."
+        (pp_print_list
+           ~pp_sep:(fun fmt () ->
+             pp_print_char fmt ',';
+             pp_print_cut fmt ())
+           pp_iprop)
+        decl_laws
   in
   if List.is_empty decl_init then fprintf fmt "@[<v 4>init@,%%empty@]@."
-  else fprintf fmt "@[<v 4>init@,%a@]@." (pp_print_list pp_iprop) decl_init
+  else
+    fprintf fmt "@[<v 4>init@,%a@]@."
+      (pp_print_list
+         ~pp_sep:(fun fmt () ->
+           pp_print_char fmt ',';
+           pp_print_cut fmt ())
+         pp_iprop)
+      decl_init
 
 let instance_subst_var src dest
     { decl_types; decl_preds; decl_consts; decl_facts; decl_laws; decl_init } =
