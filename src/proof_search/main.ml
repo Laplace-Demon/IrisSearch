@@ -1,6 +1,7 @@
 open Format
 open Ast
 open State
+open State_operations
 open Search
 
 let solve ?(until_validation = false) ?(until_transformation = false)

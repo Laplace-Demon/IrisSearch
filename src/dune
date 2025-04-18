@@ -4,6 +4,7 @@
  (public_name is)
  (modules
   ast
+  duplication_checker
   internal
   interned_string
   main
@@ -14,6 +15,7 @@
   set
   search
   state
+  state_operations
   statistics
   validate)
  (libraries baby menhirLib)
