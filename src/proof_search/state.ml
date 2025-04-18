@@ -64,8 +64,8 @@ let apply ipr (pr_set, ipr_mset) =
         let new_st = (pr_set, new_ipr_mset) in
         if visited new_st then None else Some new_st
       with
-      | Multiplicity.Underflow -> None
-      | _ -> None)
+      | Multiplicity.Underflow -> None)
+      | _ -> None
 
 (** apply_multiple tries to apply the wand as many times as possible. *)
 
@@ -96,10 +96,8 @@ let apply_multiple ipr count (pr_set, ipr_mset) =
         in
         let new_st = (pr_set, new_ipr_mset) in
         if visited new_st then None else Some new_st
-      with
-      | Multiplicity.Underflow ->
-          None)
-    | _ -> None
+      with Multiplicity.Underflow -> None)
+  | _ -> None
 
 let successors st =
   let global_pr_set, global_ipr_mset = !global_state in
