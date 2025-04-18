@@ -63,9 +63,8 @@ let apply ipr (pr_set, ipr_mset) =
         let new_ipr_mset = IpropMset.union concls ipr_mset_prems_elim in
         let new_st = (pr_set, new_ipr_mset) in
         if visited new_st then None else Some new_st
-      with
-      | Multiplicity.Underflow -> None)
-      | _ -> None
+      with Multiplicity.Underflow -> None)
+  | _ -> None
 
 (** apply_multiple tries to apply the wand as many times as possible. *)
 
