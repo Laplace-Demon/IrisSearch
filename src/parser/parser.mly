@@ -85,10 +85,10 @@ decl_pred:
 
 decl_consts:
 | DECL_CONSTS list(decl_const)
-  { $2 }
+  { List.concat_map (fun (id_list, ity) -> List.map (fun id -> (id, ity)) id_list) $2 }
 
 decl_const:
-| IDENT COLON itype
+| nonempty_list(IDENT) COLON itype
   { $1, $3 }
 
 decl_facts:

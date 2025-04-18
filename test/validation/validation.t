@@ -49,3 +49,7 @@
   $ is ./type6 --until-validation
   validation error: v1 should have type loc, but has type val
   [1]
+  $ is ./multiple_const --until-validation
+  
+  Validation succeeds.
+  
