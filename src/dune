@@ -5,6 +5,7 @@
  (modules
   ast
   internal
+  interned_string
   main
   multiset
   multiplicity

@@ -11,19 +11,19 @@ exception MissingConstDeclarationError of string
 exception TypeError of string * itype * itype
 
 let check_term symbol_table = function
-  | Var str -> (
-      match Hashtbl.find_opt symbol_table str with
+  | Var var -> (
+      match Hashtbl.find_opt symbol_table var with
       | Some ity -> ity
-      | None -> raise (MissingConstDeclarationError str))
+      | None -> raise (MissingConstDeclarationError var))
 
 let rec check_iprop symbol_table = function
   | False -> ()
-  | Atom str -> (
-      match Hashtbl.find_opt symbol_table str with
+  | Atom atom -> (
+      match Hashtbl.find_opt symbol_table atom with
       | Some ity ->
           if not (itype_eqb ity Tiprop) then
-            raise (TypeError (str, Tiprop, ity))
-      | None -> raise (MissingConstDeclarationError str))
+            raise (TypeError (atom, Tiprop, ity))
+      | None -> raise (MissingConstDeclarationError atom))
   | Star (ipr1, ipr2) ->
       check_iprop symbol_table ipr1;
       check_iprop symbol_table ipr2
@@ -32,8 +32,8 @@ let rec check_iprop symbol_table = function
       check_iprop symbol_table ipr2
   | Box ipr -> check_iprop symbol_table ipr
   | Pure pr -> check_prop symbol_table pr
-  | HPred (str, param_list) -> (
-      match Hashtbl.find_opt symbol_table str with
+  | HPred (hpred, param_list) -> (
+      match Hashtbl.find_opt symbol_table hpred with
       | Some ity -> (
           match ity with
           | Tarrow (param_ity_list, Tiprop) ->
@@ -45,8 +45,8 @@ let rec check_iprop symbol_table = function
                       (TypeError
                          (asprintf "%a" pp_term param, param_ity, arg_ity)))
                 param_list param_ity_list
-          | _ -> raise (TypeError (str, Tarrow ([], Tiprop), ity)))
-      | None -> raise (MissingPredicateDeclarationError str))
+          | _ -> raise (TypeError (hpred, Tarrow ([], Tiprop), ity)))
+      | None -> raise (MissingPredicateDeclarationError hpred))
 
 and check_prop symbol_table = function
   | Persistent ipr -> check_iprop symbol_table ipr
@@ -54,8 +54,8 @@ and check_prop symbol_table = function
   | And (pr1, pr2) | Or (pr1, pr2) | Imply (pr1, pr2) ->
       check_prop symbol_table pr1;
       check_prop symbol_table pr2
-  | Pred (str, param_list) -> (
-      match Hashtbl.find_opt symbol_table str with
+  | Pred (pred, param_list) -> (
+      match Hashtbl.find_opt symbol_table pred with
       | Some ity -> (
           match ity with
           | Tarrow (param_ity_list, Tprop) ->
@@ -67,8 +67,8 @@ and check_prop symbol_table = function
                       (TypeError
                          (asprintf "%a" pp_term param, param_ity, arg_ity)))
                 param_list param_ity_list
-          | _ -> raise (TypeError (str, Tarrow ([], Tprop), ity)))
-      | None -> raise (MissingPredicateDeclarationError str))
+          | _ -> raise (TypeError (pred, Tarrow ([], Tprop), ity)))
+      | None -> raise (MissingPredicateDeclarationError pred))
   | Eq (tm1, tm2) | Neq (tm1, tm2) ->
       let ity1 = check_term symbol_table tm1 in
       let ity2 = check_term symbol_table tm2 in
@@ -81,19 +81,19 @@ let validate symbol_table
   let () =
     (* Check type declarations. *)
     List.iter
-      (fun ty_str ->
-        match ty_str with
-        | "Prop" | "iProp" -> raise (DuplicateTypeDeclarationError ty_str)
+      (fun typ ->
+        match typ with
+        | "Prop" | "iProp" -> raise (DuplicateTypeDeclarationError typ)
         | _ ->
-            if Hashtbl.mem type_table ty_str then
-              raise (DuplicateTypeDeclarationError ty_str)
-            else Hashtbl.add type_table ty_str ())
+            if Hashtbl.mem type_table typ then
+              raise (DuplicateTypeDeclarationError typ)
+            else Hashtbl.add type_table typ ())
       decl_types
   in
   let () =
     (* Check predicate declarations. *)
     List.iter
-      (fun (str, ity) ->
+      (fun (pred, ity) ->
         let param_ity_list, res_ity =
           match ity with
           | Tarrow (param_ity_list, res_ity) -> (param_ity_list, res_ity)
@@ -103,45 +103,45 @@ let validate symbol_table
           (* Check if the result type of the predicate is either iProp or Prop. *)
           match res_ity with
           | Tiprop | Tprop -> ()
-          | _ -> raise (IllegalPredicateDeclarationError str)
+          | _ -> raise (IllegalPredicateDeclarationError pred)
         in
         let () =
           (* Check if the parameter types of the predicate is declared, first-order, and different from iProp and Prop *)
           List.iter
             (function
               | Tiprop | Tprop | Tarrow _ ->
-                  raise (IllegalPredicateDeclarationError str)
-              | Tcustom ty_str ->
-                  if not (Hashtbl.mem type_table ty_str) then
-                    raise (MissingTypeDeclarationError ty_str))
+                  raise (IllegalPredicateDeclarationError pred)
+              | Tcustom typ ->
+                  if not (Hashtbl.mem type_table typ) then
+                    raise (MissingTypeDeclarationError typ))
             param_ity_list
         in
         (* Check if the predicate is already declared. *)
-        if Hashtbl.mem symbol_table str then
-          raise (DuplicatePredicateDeclarationError str)
+        if Hashtbl.mem symbol_table pred then
+          raise (DuplicatePredicateDeclarationError pred)
         else
           (* Build the symbol table. *)
-          Hashtbl.add symbol_table str ity)
+          Hashtbl.add symbol_table pred ity)
       decl_preds
   in
   let () =
     (* Check constant declarations. *)
     List.iter
-      (fun (str, ity) ->
+      (fun (const, ity) ->
         let () =
           (* Check if the type of the constant is declared. *)
           match ity with
-          | Tcustom ty_str ->
-              if not (Hashtbl.mem type_table ty_str) then
-                raise (MissingTypeDeclarationError ty_str)
+          | Tcustom typ ->
+              if not (Hashtbl.mem type_table typ) then
+                raise (MissingTypeDeclarationError typ)
           | _ -> ()
         in
         (* Check if the constant is already declared. *)
-        if Hashtbl.mem symbol_table str then
-          raise (DuplicateConstDeclarationError str)
+        if Hashtbl.mem symbol_table const then
+          raise (DuplicateConstDeclarationError const)
         else
           (* Build the symbol table. *)
-          Hashtbl.add symbol_table str ity)
+          Hashtbl.add symbol_table const ity)
       decl_consts
   in
   (* Check type. *)
