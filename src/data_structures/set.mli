@@ -21,6 +21,9 @@ module type Set = sig
   val subset : t -> t -> bool
   val partition : (elt -> bool) -> t -> t * t
   val fold : (elt -> 'acc -> 'acc) -> t -> 'acc -> 'acc
+  val exists : (elt -> bool) -> t -> bool
+  val iter : (elt -> unit) -> t -> unit
+  val get : t -> int -> elt
   val to_list : t -> elt list
   val to_seq : t -> elt Seq.t
   val of_list : elt list -> t

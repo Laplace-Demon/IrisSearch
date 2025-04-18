@@ -19,7 +19,7 @@ module type InternedString = sig
 end
 
 module Make () : InternedString = struct
-  (* Create a new service for assigning unique integer codes to strings. *)
+  (** Create a new service for assigning unique integer codes to strings. *)
 
   type t = int
 

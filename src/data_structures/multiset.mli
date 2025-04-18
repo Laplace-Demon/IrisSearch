@@ -24,6 +24,8 @@ module type Multiset = sig
   val partition : (elt -> Multiplicity.t -> bool) -> t -> t * t
   val map : (elt -> Multiplicity.t -> Multiplicity.t) -> t -> t
   val fold : (elt -> Multiplicity.t -> 'acc -> 'acc) -> t -> 'acc -> 'acc
+  val iter : (elt -> Multiplicity.t -> unit) -> t -> unit
+  val get : t -> int -> elt * Multiplicity.t
   val to_list : t -> (elt * Multiplicity.t) list
   val to_seq : t -> (elt * Multiplicity.t) Seq.t
   val of_list : (elt * Multiplicity.t) list -> t

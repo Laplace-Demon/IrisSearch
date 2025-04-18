@@ -24,6 +24,8 @@ module type Multiset = sig
   val partition : (elt -> Multiplicity.t -> bool) -> t -> t * t
   val map : (elt -> Multiplicity.t -> Multiplicity.t) -> t -> t
   val fold : (elt -> Multiplicity.t -> 'acc -> 'acc) -> t -> 'acc -> 'acc
+  val iter : (elt -> Multiplicity.t -> unit) -> t -> unit
+  val get : t -> int -> elt * Multiplicity.t
   val to_list : t -> (elt * Multiplicity.t) list
   val to_seq : t -> (elt * Multiplicity.t) Seq.t
   val of_list : (elt * Multiplicity.t) list -> t
@@ -43,20 +45,28 @@ module Make (HashOrd : HashedOrderedType) = struct
   let is_empty = BabyMap.is_empty
   let cardinal = BabyMap.cardinal
   let singleton e = BabyMap.singleton e
-  let mem = BabyMap.mem
 
-  let add e v =
-    BabyMap.update e (function
-      | None -> Some v
-      | Some v' -> Some (Multiplicity.add v v'))
+  let mem e s =
+    Statistics.record_operation "Multiset.mem";
+    BabyMap.mem e s
 
-  let remove = BabyMap.remove
+  let add e v s =
+    Statistics.record_operation "Multiset.add";
+    BabyMap.update e
+      (function None -> Some v | Some v' -> Some (Multiplicity.add v v'))
+      s
+
+  let remove e s =
+    Statistics.record_operation "Multiset.remove";
+    BabyMap.remove e s
 
   let union s1 s2 =
     Statistics.record_operation "Multiset.union";
     BabyMap.union (fun _ v1 v2 -> Some (Multiplicity.add v1 v2)) s1 s2
 
-  let inter = BabyMap.inter (fun _ v1 v2 -> Some (Multiplicity.min v1 v2))
+  let inter s1 s2 =
+    Statistics.record_operation "Multiset.inter";
+    BabyMap.inter (fun _ v1 v2 -> Some (Multiplicity.min v1 v2)) s1 s2
 
   let factor s1 s2 =
     Statistics.record_operation "Multiset.factor";
@@ -102,17 +112,52 @@ module Make (HashOrd : HashedOrderedType) = struct
     Statistics.record_operation "Multiset.subset";
     BabyMap.sub (fun v1 v2 -> Multiplicity.compare v1 v2 <= 0) s1 s2
 
-  let partition = BabyMap.partition
-  let map = BabyMap.mapi
-  let fold = BabyMap.fold
-  let to_list = BabyMap.to_list
-  let to_seq = BabyMap.to_seq
-  let of_list = BabyMap.of_list
-  let of_seq = BabyMap.of_seq
-  let equal = BabyMap.equal Multiplicity.equal
-  let compare = BabyMap.compare Multiplicity.compare
+  let partition f s =
+    Statistics.record_operation "Multiset.partition";
+    BabyMap.partition f s
+
+  let map f s =
+    Statistics.record_operation "Multiset.map";
+    BabyMap.mapi f s
+
+  let fold f s init =
+    Statistics.record_operation "Multiset.fold";
+    BabyMap.fold f s init
+
+  let iter f s =
+    Statistics.record_operation "Multiset.iter";
+    BabyMap.iter f s
+
+  let get s i =
+    Statistics.record_operation "Multiset.get";
+    BabyMap.get s i
+
+  let to_list s =
+    Statistics.record_operation "Multiset.to_list";
+    BabyMap.to_list s
+
+  let to_seq s =
+    Statistics.record_operation "Multiset.to_seq";
+    BabyMap.to_seq s
+
+  let of_list el =
+    Statistics.record_operation "Multiset.of_list";
+    BabyMap.of_list el
+
+  let of_seq el =
+    Statistics.record_operation "Multiset.of_seq";
+    BabyMap.of_seq el
+
+  let equal s1 s2 =
+    Statistics.record_operation "Multiset.equal";
+    BabyMap.equal Multiplicity.equal s1 s2
+
+  let compare s1 s2 =
+    Statistics.record_operation "Multiset.compare";
+    BabyMap.compare Multiplicity.compare s1 s2
 
   let hash m =
+    Statistics.record_operation "Multiset.hash";
     let c = 42 in
     let card = BabyMap.cardinal m in
     let len = min c card in
