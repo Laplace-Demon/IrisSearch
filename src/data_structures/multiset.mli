@@ -17,7 +17,9 @@ module type Multiset = sig
   val remove : elt -> t -> t
   val union : t -> t -> t
   val inter : t -> t -> t
+  val factor : t -> t -> Multiplicity.t
   val diff : t -> t -> t
+  val diff_multiple : Multiplicity.t -> t -> t -> t
   val subset : t -> t -> bool
   val partition : (elt -> Multiplicity.t -> bool) -> t -> t * t
   val map : (elt -> Multiplicity.t -> Multiplicity.t) -> t -> t

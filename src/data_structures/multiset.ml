@@ -17,7 +17,9 @@ module type Multiset = sig
   val remove : elt -> t -> t
   val union : t -> t -> t
   val inter : t -> t -> t
+  val factor : t -> t -> Multiplicity.t
   val diff : t -> t -> t
+  val diff_multiple : Multiplicity.t -> t -> t -> t
   val subset : t -> t -> bool
   val partition : (elt -> Multiplicity.t -> bool) -> t -> t * t
   val map : (elt -> Multiplicity.t -> Multiplicity.t) -> t -> t
@@ -56,6 +58,24 @@ module Make (HashOrd : HashedOrderedType) = struct
 
   let inter = BabyMap.inter (fun _ v1 v2 -> Some (Multiplicity.min v1 v2))
 
+  let factor s1 s2 =
+    Statistics.record_operation "Multiset.factor";
+    let factor = ref Multiplicity.inf in
+    let _ =
+      BabyMap.merge
+        (fun _ o1 o2 ->
+          let () =
+            match (o1, o2) with
+            | _, None -> ()
+            | None, _ -> raise Multiplicity.Underflow
+            | Some v1, Some v2 ->
+                factor := Multiplicity.min !factor (Multiplicity.div v1 v2)
+          in
+          None)
+        s1 s2
+    in
+    !factor
+
   let diff s1 s2 =
     Statistics.record_operation "Multiset.diff";
     BabyMap.merge
@@ -65,6 +85,17 @@ module Make (HashOrd : HashedOrderedType) = struct
         | None, _ -> raise Multiplicity.Underflow
         | _, None -> o1
         | Some v1, Some v2 -> Multiplicity.sub v1 v2)
+      s1 s2
+
+  let diff_multiple factor s1 s2 =
+    Statistics.record_operation "Multiset.diff_multiple";
+    BabyMap.merge
+      (fun _ o1 o2 ->
+        match (o1, o2) with
+        | None, None -> None
+        | None, _ -> raise Multiplicity.Underflow
+        | _, None -> o1
+        | Some v1, Some v2 -> Multiplicity.sub v1 (Multiplicity.mul v2 factor))
       s1 s2
 
   let subset s1 s2 =

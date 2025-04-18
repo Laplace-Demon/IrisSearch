@@ -11,6 +11,8 @@ let to_int = function
   | Finite i -> i
   | Infinite -> raise (Invalid_argument "Multiplicity.to_int")
 
+let to_string = function Finite i -> Int.to_string i | Infinite -> "inf"
+
 let add t1 t2 =
   match (t1, t2) with
   | Infinite, _ | _, Infinite -> Infinite
@@ -25,6 +27,19 @@ let sub t1 t2 =
       else if c > 0 then Some (Finite (i1 - i2))
       else raise Underflow
   | _, _ -> raise Underflow
+
+let mul t1 t2 =
+  match (t1, t2) with
+  | Infinite, _ | _, Infinite -> Infinite
+  | Finite i1, Finite i2 -> Finite (i1 * i2)
+
+let div t1 t2 =
+  match (t1, t2) with
+  | Infinite, _ -> Infinite
+  | _, Infinite -> raise Underflow
+  | Finite i1, Finite i2 ->
+      let c = Int.div i1 i2 in
+      if c >= 1 then Finite c else raise Underflow
 
 let equal t1 t2 =
   match (t1, t2) with
