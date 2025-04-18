@@ -175,19 +175,19 @@ and pp_internal_iprop fmt = function
 
 and pp_internal_prop_set ?(pp_sep = pp_print_cut) fmt pr_set =
   if PropSet.is_empty pr_set then pp_print_string fmt "%empty"
-  else pp_print_list ~pp_sep pp_internal_prop fmt (PropSet.to_list pr_set)
+  else pp_print_seq ~pp_sep pp_internal_prop fmt (PropSet.to_seq pr_set)
 
 and pp_internal_iprop_multiset ?(pp_sep = pp_print_cut) fmt ipr_mset =
   if IpropMset.is_empty ipr_mset then pp_print_string fmt "%empty"
   else
-    pp_print_list ~pp_sep
+    pp_print_seq ~pp_sep
       (fun fmt (ipr, count) ->
         if Multiplicity.is_finite count then
           pp_print_seq ~pp_sep pp_internal_iprop fmt
             (Seq.init (Multiplicity.to_int count) (fun _ -> ipr))
         else fprintf fmt "□ %a" pp_internal_iprop ipr)
       fmt
-      (IpropMset.to_list ipr_mset)
+      (IpropMset.to_seq ipr_mset)
 
 (** Smart constructors required for hash-consing. *)
 

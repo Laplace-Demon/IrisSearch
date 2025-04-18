@@ -64,6 +64,12 @@ val iWand : internal_iprop * internal_iprop -> internal_iprop
 val iPure : internal_prop -> internal_iprop
 val iHPred : string * internal_term list -> internal_iprop
 
+module HashedOrderedInternalProp :
+  Set.HashedOrderedType with type t = internal_prop
+
+module HashedOrderedInternalIprop :
+  Multiset.HashedOrderedType with type t = internal_iprop
+
 module PropSet :
   Set.Set with type elt = internal_prop and type t = internal_prop_set
 

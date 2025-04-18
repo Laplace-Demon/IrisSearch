@@ -55,7 +55,7 @@ module Negative = struct
               (fun acc ipr -> Star (acc, ipr))
               (List.hd right_list) (List.tl right_list)
           in
-          Box (Wand (left, right)))
+          Wand (left, right))
         !law_num
     in
     let decl_init =
