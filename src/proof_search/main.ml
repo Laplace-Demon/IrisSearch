@@ -3,34 +3,36 @@ open Ast
 open State
 open Search
 
-let solve ?(until_transformation = false) ?(until_validation = false)
+let solve ?(until_validation = false) ?(until_transformation = false)
     ?(show_transformed_instance = false) ?(show_global_state = false)
     ?(show_initial_state = false) ?(show_path = false) fmt ins =
-  let ins = uncurry_transformation ins in
-  let () =
-    if show_transformed_instance then
-      fprintf fmt "instance after uncurry_transformation@.@.%a@." pp_instance
-        ins
-  in
-  let ins = eliminate_persistent_transformation ins in
-  let () =
-    if show_transformed_instance then
-      fprintf fmt "instance after eliminate_persistent_transformation@.@.%a@."
-        pp_instance ins
-  in
-  if until_transformation then fprintf fmt "@.Transformation succeeds.@.@."
+  let () = Validate.validate symbol_table ins in
+  if until_validation then fprintf fmt "@.Validation succeeds.@.@."
   else
+    let ins = uncurry_transformation ins in
     let () =
-      if show_global_state then
-        fprintf fmt "global state@.@.%a@." pp_state !global_state
+      if show_transformed_instance then
+        fprintf fmt "instance after uncurry_transformation@.@.%a@." pp_instance
+          ins
     in
-    let source = initial ins in
+    let ins = eliminate_persistent_transformation ins in
     let () =
-      if show_initial_state then
-        fprintf fmt "initial state@.@.%a@." pp_state source
+      if show_transformed_instance then
+        fprintf fmt "instance after eliminate_persistent_transformation@.@.%a@."
+          pp_instance ins
     in
-    if until_validation then fprintf fmt "@.Validation succeeds.@.@."
+    if until_transformation then fprintf fmt "@.Transformation succeeds.@.@."
     else
+      let () =
+        if show_global_state then
+          fprintf fmt "global state@.@.%a@." pp_state !global_state
+      in
+      let source = initial ins in
+      let () =
+        if show_initial_state then
+          fprintf fmt "initial state@.@.%a@." pp_state source
+      in
+
       let open Make (struct
         type node = state
 

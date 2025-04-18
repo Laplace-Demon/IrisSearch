@@ -1,4 +1,5 @@
 open Format
+open Ast
 open Internal
 
 (** Definition of symbol table. *)
@@ -21,10 +22,11 @@ let pp_state fmt (pr_set, ipr_mset) =
     (pp_internal_iprop_multiset ~pp_sep:pp_print_cut)
     ipr_mset
 
-let initial ins =
-  let facts, laws, atoms = Validate.validate symbol_table ins in
-  global_state := (prop_list_to_internal facts, iprop_list_to_internal laws);
-  (PropSet.empty, iprop_list_to_internal atoms)
+let initial
+    { decl_types; decl_preds; decl_consts; decl_facts; decl_laws; decl_init } =
+  global_state :=
+    (prop_list_to_internal decl_facts, iprop_list_to_internal decl_laws);
+  (PropSet.empty, iprop_list_to_internal decl_init)
 
 let visited : state -> bool =
   let state_list = ref [] in

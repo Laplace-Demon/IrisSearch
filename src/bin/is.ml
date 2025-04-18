@@ -2,8 +2,8 @@ open Format
 open Is
 
 let until_parsing = ref false
-let until_transformation = ref false
 let until_validation = ref false
+let until_transformation = ref false
 let show_instance = ref false
 let show_transformed_instance = ref false
 let show_global_state = ref false
@@ -20,12 +20,12 @@ let input_filename, in_channel, out_channel =
     [
       ("-o", Arg.String set_output, "\n\tSpecify output file.\n");
       ("--until-parsing", Arg.Set until_parsing, "\n\tStop after parsing.\n");
-      ( "--until-transformation",
-        Arg.Set until_transformation,
-        "\n\ttop after transformation.\n" );
       ( "--until-validation",
         Arg.Set until_validation,
         "\n\tStop after validation.\n" );
+      ( "--until-transformation",
+        Arg.Set until_transformation,
+        "\n\ttop after transformation.\n" );
       ("--show-instance", Arg.Set show_instance, "\n\tPrint problem instance.\n");
       ( "--show-transformed-instance",
         Arg.Set show_transformed_instance,
@@ -85,8 +85,8 @@ let () =
         in
         if !until_parsing then fprintf formatter "@.Parsing succeeds.@.@."
         else
-          Main.solve ~until_transformation:!until_transformation
-            ~until_validation:!until_validation
+          Main.solve ~until_validation:!until_validation
+            ~until_transformation:!until_transformation
             ~show_transformed_instance:!show_transformed_instance
             ~show_global_state:!show_global_state
             ~show_initial_state:!show_initial_state ~show_path:!show_path

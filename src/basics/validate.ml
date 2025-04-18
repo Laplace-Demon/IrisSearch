@@ -144,10 +144,7 @@ let validate symbol_table
           Hashtbl.add symbol_table str ity)
       decl_consts
   in
-  let () =
-    (* Check type. *)
-    List.iter (check_prop symbol_table) decl_facts;
-    List.iter (check_iprop symbol_table) decl_laws;
-    List.iter (check_iprop symbol_table) decl_init
-  in
-  (decl_facts, decl_laws, decl_init)
+  (* Check type. *)
+  List.iter (check_prop symbol_table) decl_facts;
+  List.iter (check_iprop symbol_table) decl_laws;
+  List.iter (check_iprop symbol_table) decl_init
