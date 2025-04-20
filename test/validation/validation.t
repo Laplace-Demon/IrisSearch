@@ -53,3 +53,13 @@
   
   Validation succeeds.
   
+  $ is ./quant1 --until-validation
+  
+  Validation succeeds.
+  
+  $ is ./quant2 --until-transformation --show-transformed-instance
+  validation error: l should have type loc, but has type val
+  [1]
+  $ is ./quant3 --until-validation
+  validation error: missing const declaration of P
+  [1]

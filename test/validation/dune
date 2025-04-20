@@ -18,4 +18,7 @@
   type4
   type5
   type6
-  multiple_const))
+  multiple_const
+  quant1
+  quant2
+  quant3))

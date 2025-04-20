@@ -1,0 +1,6 @@
+(cram
+ (deps
+  %{bin:is}
+  uncurry
+  merge_quant
+  elim_pers))

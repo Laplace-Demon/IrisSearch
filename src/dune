@@ -8,6 +8,7 @@
   internal
   interned_string
   main
+  map
   multiset
   multiplicity
   lexer
@@ -17,6 +18,7 @@
   state
   state_operations
   statistics
+  transform
   validate)
  (libraries baby menhirLib)
  (flags

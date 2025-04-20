@@ -1,0 +1,4 @@
+laws
+    forall P : iProp, P -* P
+
+init

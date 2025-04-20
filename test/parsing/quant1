@@ -1,0 +1,7 @@
+types
+    loc
+
+laws
+    forall (l1 l2 : loc), False
+
+init

@@ -91,3 +91,55 @@
   
   Parsing succeeds.
   
+  $ is ./quant1 --until-parsing --show-instance
+  original instance
+  
+  types
+      loc
+  laws
+      □ forall l1 l2 : loc, ⊥
+  init
+      %empty
+  
+  
+  Parsing succeeds.
+  
+  $ is ./quant2 --until-parsing --show-instance
+  original instance
+  
+  types
+      loc
+      val
+      dfrac
+  preds
+      pointsto : loc * dfrac * val -> iProp
+  consts
+      Discarded : dfrac
+  laws
+      □ forall (l : loc) (dq1 dq2 : dfrac) (v1 v2 : val), (pointsto l dq1 v1 -* (pointsto l dq2 v2 -* ⌜ v1 = v2 ⌝)),
+      □ forall (l : loc) (dq : dfrac) (v : val), (pointsto l dq v -* pointsto l Discarded v)
+  init
+      %empty
+  
+  
+  Parsing succeeds.
+  
+  $ is ./quant3 --until-parsing --show-instance
+  original instance
+  
+  types
+      loc
+      val
+      dfrac
+  preds
+      pointsto : loc * dfrac * val -> iProp
+  consts
+      Discarded : dfrac
+  laws
+      □ forall l : loc, forall dq1 : dfrac, forall dq2 : dfrac, forall v1 : val, forall v2 : val, (pointsto l dq1 v1 -* (pointsto l dq2 v2 -* ⌜ v1 = v2 ⌝))
+  init
+      %empty
+  
+  
+  Parsing succeeds.
+  

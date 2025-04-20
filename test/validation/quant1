@@ -1,0 +1,17 @@
+types
+    loc val dfrac
+
+preds
+    pointsto : loc * dfrac * val -> iProp
+
+consts
+    Discarded : dfrac
+
+laws
+    forall (l : loc) (dq1 dq2 : dfrac) (v1 v2 : val),
+        pointsto l dq1 v1 -* pointsto l dq2 v2 -* ⌜v1 = v2⌝,
+
+    forall (l : loc) (dq : dfrac) (v : val),
+        pointsto l dq v -* pointsto l Discarded v
+
+init

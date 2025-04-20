@@ -16,6 +16,7 @@
 %token <string> IDENT
 
 (** Low precedence *)
+%nonassoc FORALL
 %right WAND
 %left STAR
 %nonassoc BOX
@@ -71,7 +72,7 @@ decl_types:
   { $2 }
 
 decl_type:
-| predefiend_itype
+| predefined_itype
   { raise (Validate.DuplicateTypeDeclarationError (Format.asprintf "%a" pp_itype $1)) }
 | IDENT
   { $1 }
@@ -86,7 +87,7 @@ decl_pred:
 
 decl_consts:
 | DECL_CONSTS list(decl_const)
-  { List.concat_map (fun (id_list, ity) -> List.map (fun id -> (id, ity)) id_list) $2 }
+  { List.concat_map (fun (str_list, ity) -> List.map (fun str -> (str, ity)) str_list) $2 }
 
 decl_const:
 | nonempty_list(IDENT) COLON itype
@@ -115,17 +116,35 @@ decl_init:
 | DECL_INIT separated_list(COMMA, iprop)
   { $2 }
 
-itype:
-| predefiend_itype
-  { $1 }
+term:
 | IDENT
-  { Tcustom $1 }
+  { Var $1 }
 
-predefiend_itype:
-| TYPE_PROP
-  { Tprop }
-| TYPE_IPROP
-  { Tiprop }
+prop:
+| LPAREN prop RPAREN
+  { $2 }
+| PERSISTENT IDENT
+  { let atom = Atom $2 in
+    Persistent atom }
+| NOT prop
+  { Not $2 }
+| prop AND prop
+  { And ($1, $3) }
+| prop OR prop
+  { Or ($1, $3) }
+| prop ARROW prop
+  { Imply ($1, $3) }
+| IDENT nonempty_list(term) 
+  { Pred ($1, $2) }
+| FORALL IDENT COLON itype COMMA prop %prec FORALL
+  { Forall ([$2, $4], $6) }
+| FORALL nonempty_list(binders) COMMA prop %prec FORALL
+  { let typed_str_list = List.concat_map (fun (str_list, ity) -> List.map (fun str -> str, ity) str_list) $2 in
+    Forall (typed_str_list, $4) }
+| term EQ term
+  { Eq ($1, $3) }
+| term NEQ term
+  { Neq ($1, $3) }
 
 iprop:
 | LPAREN iprop RPAREN
@@ -144,28 +163,24 @@ iprop:
   { Pure $2 }
 | IDENT nonempty_list(term) 
   { HPred ($1, $2) }
+| FORALL IDENT COLON itype COMMA iprop %prec FORALL
+  { HForall ([$2, $4], $6) }
+| FORALL nonempty_list(binders) COMMA iprop %prec FORALL
+  { let typed_str_list = List.concat_map (fun (str_list, ity) -> List.map (fun str -> str, ity) str_list) $2 in
+    HForall (typed_str_list, $4) }
 
-prop:
-| LPAREN prop RPAREN
-  { $2 }
-| PERSISTENT IDENT
-  { let atom = Atom $2 in
-    Persistent atom }
-| NOT prop
-  { Not $2 }
-| prop AND prop
-  { And ($1, $3) }
-| prop OR prop
-  { Or ($1, $3) }
-| prop ARROW prop
-  { Imply ($1, $3) }
-| IDENT nonempty_list(term) 
-  { Pred ($1, $2) }
-| term EQ term
-  { Eq ($1, $3) }
-| term NEQ term
-  { Neq ($1, $3) }
+binders:
+| LPAREN nonempty_list(IDENT) COLON itype RPAREN
+  { $2, $4 }
 
-term:
+itype:
+| predefined_itype
+  { $1 }
 | IDENT
-  { Var $1 }
+  { Tcustom $1 }
+
+predefined_itype:
+| TYPE_PROP
+  { Tprop }
+| TYPE_IPROP
+  { Tiprop }

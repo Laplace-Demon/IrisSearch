@@ -1,0 +1,17 @@
+types t
+
+consts
+    a b : t
+    A : iProp
+
+facts
+    a = b -> a = b -> a = b -> a = b,
+    a = b -> a = b -> a = b -> a = b /\ a = b,
+    a = b \/ a = b -> a = b -> a = b
+
+laws
+    A -* A -* A -* A -* A,
+    A -* (A -* A -* A -* A) -* False,
+    A -* ⌜a = b -> a = b -> a = b⌝ -* False
+
+init

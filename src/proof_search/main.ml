@@ -3,6 +3,7 @@ open Ast
 open State
 open State_operations
 open Search
+open Transform
 
 let solve ?(until_validation = false) ?(until_transformation = false)
     ?(show_transformed_instance = false) ?(show_global_state = false)
@@ -15,6 +16,12 @@ let solve ?(until_validation = false) ?(until_transformation = false)
       if show_transformed_instance then
         fprintf fmt "instance after uncurry_transformation@.@.%a@." pp_instance
           ins
+    in
+    let ins = merge_quantifier_transformation ins in
+    let () =
+      if show_transformed_instance then
+        fprintf fmt "instance after merge_quantifier_transformation@.@.%a@."
+          pp_instance ins
     in
     let ins = eliminate_persistent_transformation ins in
     let () =

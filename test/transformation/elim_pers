@@ -1,0 +1,14 @@
+consts
+    A B C : iProp
+
+facts
+    Persistent A,
+    Persistent B,
+    Persistent C
+
+laws
+    A -* B,
+    C -* (A * A -* B * B) -* □ □ □ C,
+    (A -* B) -* (A -* B) -* A -* B
+
+init

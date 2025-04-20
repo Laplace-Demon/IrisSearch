@@ -28,7 +28,41 @@ let rec pp_itype fmt = function
                 pp_itype fmt l)
         ity_list pp_itype ity
 
-let pp_typed_ident fmt (str, ity) = fprintf fmt "%s : %a" str pp_itype ity
+let group_typed_str : (string * itype) list -> (string list * itype) list =
+  let rec group_typed_str_aux acc typed_str_list =
+    match typed_str_list with
+    | [] -> (
+        match acc with
+        | None -> []
+        | Some (acc_list, ity) -> [ (List.rev acc_list, ity) ])
+    | (str, ity') :: typed_str_list' -> (
+        match acc with
+        | None -> group_typed_str_aux (Some ([ str ], ity')) typed_str_list'
+        | Some (acc_list, ity) ->
+            if itype_eqb ity ity' then
+              group_typed_str_aux (Some (str :: acc_list, ity)) typed_str_list'
+            else
+              (List.rev acc_list, ity)
+              :: group_typed_str_aux (Some ([ str ], ity')) typed_str_list')
+  in
+  group_typed_str_aux None
+
+let pp_typed_strs ?(pp_paren = false) fmt (strs_list, ity) =
+  if pp_paren then
+    fprintf fmt "(%a : %a)"
+      (pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt " ") pp_print_string)
+      strs_list pp_itype ity
+  else
+    fprintf fmt "%a : %a"
+      (pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt " ") pp_print_string)
+      strs_list pp_itype ity
+
+let pp_typed_strs_list ?(pp_sep = pp_print_cut) ?(pp_paren = false) () fmt
+    typed_strs_list =
+  let pp_paren = pp_paren && List.length typed_strs_list > 1 in
+  fprintf fmt "%a"
+    (pp_print_list ~pp_sep (pp_typed_strs ~pp_paren))
+    typed_strs_list
 
 type term = Var of string
 
@@ -44,6 +78,7 @@ type prop =
   | Or of prop * prop
   | Imply of prop * prop
   | Pred of string * term list
+  | Forall of (string * itype) list * prop
   | Eq of term * term
   | Neq of term * term
 
@@ -55,6 +90,9 @@ and iprop =
   | Box of iprop
   | Pure of prop
   | HPred of string * term list
+  | HForall of (string * itype) list * iprop
+
+(** These functions do not consider alpha-equivalence. *)
 
 let rec prop_eqb pr1 pr2 =
   match (pr1, pr2) with
@@ -66,6 +104,12 @@ let rec prop_eqb pr1 pr2 =
       prop_eqb pr11 pr21 && prop_eqb pr12 pr22
   | Pred (str1, param_list1), Pred (str2, param_list2) ->
       String.equal str1 str2 && List.equal term_eqb param_list1 param_list2
+  | Forall (typed_str_list1, pr1), Forall (typed_str_list2, pr2) ->
+      List.equal
+        (fun (str1, ity1) (str2, ity2) ->
+          String.equal str1 str2 && itype_eqb ity1 ity2)
+        typed_str_list1 typed_str_list2
+      && prop_eqb pr1 pr2
   | Eq (tm11, tm12), Eq (tm21, tm22) | Neq (tm11, tm12), Neq (tm21, tm22) ->
       term_eqb tm11 tm21 && term_eqb tm12 tm22
   | _, _ -> false
@@ -81,6 +125,12 @@ and iprop_eqb ipr1 ipr2 =
   | Pure pr1, Pure pr2 -> prop_eqb pr1 pr2
   | HPred (str1, param_list1), HPred (str2, param_list2) ->
       String.equal str1 str2 && List.equal term_eqb param_list1 param_list2
+  | HForall (typed_str_list1, ipr1), HForall (typed_str_list2, ipr2) ->
+      List.equal
+        (fun (str1, ity1) (str2, ity2) ->
+          String.equal str1 str2 && itype_eqb ity1 ity2)
+        typed_str_list1 typed_str_list2
+      && iprop_eqb ipr1 ipr2
   | _, _ -> false
 
 let rec pp_prop fmt = function
@@ -93,6 +143,13 @@ let rec pp_prop fmt = function
       fprintf fmt "%s %a" str
         (pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt " ") pp_term)
         param_list
+  | Forall (typed_str_list, pr) ->
+      fprintf fmt "forall %a, %a"
+        (pp_typed_strs_list
+           ~pp_sep:(fun fmt () -> fprintf fmt " ")
+           ~pp_paren:true ())
+        (group_typed_str typed_str_list)
+        pp_prop pr
   | Eq (tm1, tm2) -> fprintf fmt "%a = %a" pp_term tm1 pp_term tm2
   | Neq (tm1, tm2) -> fprintf fmt "%a ≠ %a" pp_term tm1 pp_term tm2
 
@@ -107,93 +164,13 @@ and pp_iprop fmt = function
       fprintf fmt "%s %a" str
         (pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt " ") pp_term)
         param_list
-
-(** Substitution. *)
-
-(* These functions are not general enough, need to be changed in the future. *)
-
-let rec prop_subst_var src dest = function
-  | Persistent ipr -> Persistent (iprop_subst_var src dest ipr)
-  | Not pr -> Not (prop_subst_var src dest pr)
-  | And (pr1, pr2) ->
-      And (prop_subst_var src dest pr1, prop_subst_var src dest pr2)
-  | Or (pr1, pr2) ->
-      Or (prop_subst_var src dest pr1, prop_subst_var src dest pr2)
-  | Imply (pr1, pr2) ->
-      Imply (prop_subst_var src dest pr1, prop_subst_var src dest pr2)
-  | _ as pr -> pr
-
-and iprop_subst_var src dest = function
-  | Atom str -> if String.equal str src then dest else Atom str
-  | Star (ipr1, ipr2) ->
-      Star (iprop_subst_var src dest ipr1, iprop_subst_var src dest ipr2)
-  | Wand (ipr1, ipr2) ->
-      Wand (iprop_subst_var src dest ipr1, iprop_subst_var src dest ipr2)
-  | Box ipr -> Box (iprop_subst_var src dest ipr)
-  | Pure pr -> Pure (prop_subst_var src dest pr)
-  | _ as ipr -> ipr
-
-let rec prop_subst_positive_var src dest = function
-  | Persistent ipr -> Persistent (iprop_subst_positive_var src dest ipr)
-  | Not pr -> Not (prop_subst_positive_var src dest pr)
-  | And (pr1, pr2) ->
-      And
-        ( prop_subst_positive_var src dest pr1,
-          prop_subst_positive_var src dest pr2 )
-  | Or (pr1, pr2) ->
-      Or
-        ( prop_subst_positive_var src dest pr1,
-          prop_subst_positive_var src dest pr2 )
-  | Imply (pr1, pr2) ->
-      Imply
-        ( prop_subst_positive_var src dest pr1,
-          prop_subst_positive_var src dest pr2 )
-  | _ as pr -> pr
-
-and prop_subst_negative_var src dest = function
-  | Persistent ipr -> Persistent (iprop_subst_negative_var src dest ipr)
-  | Not pr -> Not (prop_subst_negative_var src dest pr)
-  | And (pr1, pr2) ->
-      And
-        ( prop_subst_negative_var src dest pr1,
-          prop_subst_negative_var src dest pr2 )
-  | Or (pr1, pr2) ->
-      Or
-        ( prop_subst_negative_var src dest pr1,
-          prop_subst_negative_var src dest pr2 )
-  | Imply (pr1, pr2) ->
-      Imply
-        ( prop_subst_negative_var src dest pr1,
-          prop_subst_negative_var src dest pr2 )
-  | _ as pr -> pr
-
-and iprop_subst_positive_var src dest = function
-  | Atom str -> if String.equal str src then dest else Atom str
-  | Star (ipr1, ipr2) ->
-      Star
-        ( iprop_subst_positive_var src dest ipr1,
-          iprop_subst_positive_var src dest ipr2 )
-  | Wand (ipr1, ipr2) ->
-      Wand
-        ( iprop_subst_negative_var src dest ipr1,
-          iprop_subst_positive_var src dest ipr2 )
-  | Box ipr -> Box (iprop_subst_positive_var src dest ipr)
-  | Pure pr -> Pure (prop_subst_positive_var src dest pr)
-  | _ as ipr -> ipr
-
-and iprop_subst_negative_var src dest = function
-  | Atom str -> Atom str
-  | Star (ipr1, ipr2) ->
-      Star
-        ( iprop_subst_negative_var src dest ipr1,
-          iprop_subst_negative_var src dest ipr2 )
-  | Wand (ipr1, ipr2) ->
-      Wand
-        ( iprop_subst_positive_var src dest ipr1,
-          iprop_subst_negative_var src dest ipr2 )
-  | Box ipr -> Box (iprop_subst_negative_var src dest ipr)
-  | Pure pr -> Pure (prop_subst_negative_var src dest pr)
-  | _ as ipr -> ipr
+  | HForall (typed_str_list, ipr) ->
+      fprintf fmt "forall %a, %a"
+        (pp_typed_strs_list
+           ~pp_sep:(fun fmt () -> fprintf fmt " ")
+           ~pp_paren:true ())
+        (group_typed_str typed_str_list)
+        pp_iprop ipr
 
 (** The problem instance is represented as a record holding:
     - type declarations
@@ -229,9 +206,8 @@ let pp_instance fmt
   in
   let () =
     if not (List.is_empty decl_consts) then
-      fprintf fmt "@[<v 4>consts@,%a@]@."
-        (pp_print_list pp_typed_ident)
-        decl_consts
+      fprintf fmt "@[<v 4>consts@,%a@]@." (pp_typed_strs_list ())
+        (group_typed_str decl_consts)
   in
   let () =
     if not (List.is_empty decl_facts) then
@@ -262,83 +238,3 @@ let pp_instance fmt
            pp_print_cut fmt ())
          pp_iprop)
       decl_init
-
-let instance_subst_var src dest
-    { decl_types; decl_preds; decl_consts; decl_facts; decl_laws; decl_init } =
-  {
-    decl_types;
-    decl_preds;
-    decl_consts;
-    decl_facts = List.map (fun pr -> prop_subst_var src dest pr) decl_facts;
-    decl_laws = List.map (fun ipr -> iprop_subst_var src dest ipr) decl_laws;
-    decl_init = List.map (fun ipr -> iprop_subst_var src dest ipr) decl_init;
-  }
-
-let instance_subst_positive_var src dest
-    { decl_types; decl_preds; decl_consts; decl_facts; decl_laws; decl_init } =
-  {
-    decl_types;
-    decl_preds;
-    decl_consts;
-    decl_facts =
-      List.map (fun pr -> prop_subst_positive_var src dest pr) decl_facts;
-    decl_laws =
-      List.map (fun ipr -> iprop_subst_positive_var src dest ipr) decl_laws;
-    decl_init =
-      List.map (fun ipr -> iprop_subst_positive_var src dest ipr) decl_init;
-  }
-
-let instance_subst_negative_var src dest
-    { decl_types; decl_preds; decl_consts; decl_facts; decl_laws; decl_init } =
-  {
-    decl_types;
-    decl_preds;
-    decl_consts;
-    decl_facts =
-      List.map (fun pr -> prop_subst_negative_var src dest pr) decl_facts;
-    decl_laws =
-      List.map (fun ipr -> iprop_subst_negative_var src dest ipr) decl_laws;
-    decl_init =
-      List.map (fun ipr -> iprop_subst_negative_var src dest ipr) decl_init;
-  }
-
-(** Transformations on ast. *)
-
-let rec uncurry_prop = function
-  | Persistent ipr -> Persistent (uncurry_iprop ipr)
-  | Not pr -> Not (uncurry_prop pr)
-  | And (pr1, pr2) -> And (uncurry_prop pr1, uncurry_prop pr2)
-  | Or (pr1, pr2) -> Or (uncurry_prop pr1, uncurry_prop pr2)
-  | Imply (pr1, Imply (pr21, pr22)) ->
-      uncurry_prop (Imply (And (pr1, pr21), pr22))
-  | Imply (pr1, pr2) -> Imply (uncurry_prop pr1, uncurry_prop pr2)
-  | _ as pr -> pr
-
-and uncurry_iprop = function
-  | Star (ipr1, ipr2) -> Star (uncurry_iprop ipr1, uncurry_iprop ipr2)
-  | Wand (ipr1, Wand (ipr21, ipr22)) ->
-      uncurry_iprop (Wand (Star (ipr1, ipr21), ipr22))
-  | Wand (ipr1, ipr2) -> Wand (uncurry_iprop ipr1, uncurry_iprop ipr2)
-  | Box ipr -> Box (uncurry_iprop ipr)
-  | Pure pr -> Pure (uncurry_prop pr)
-  | _ as ipr -> ipr
-
-let uncurry_transformation
-    ({ decl_types; decl_preds; decl_consts; decl_facts; decl_laws; decl_init }
-     as ins) =
-  let decl_facts = List.map uncurry_prop decl_facts in
-  let decl_laws = List.map uncurry_iprop decl_laws in
-  let decl_init = List.map uncurry_iprop decl_init in
-  { decl_types; decl_preds; decl_consts; decl_facts; decl_laws; decl_init }
-
-let eliminate_persistent_transformation
-    ({ decl_types; decl_preds; decl_consts; decl_facts; decl_laws; decl_init }
-     as ins) =
-  List.fold_right
-    (fun pr ins ->
-      match pr with
-      | Persistent (Atom str) ->
-          instance_subst_positive_var str (Box (Atom str)) ins
-      | _ -> { ins with decl_facts = pr :: ins.decl_facts })
-    decl_facts
-    { ins with decl_facts = [] }
