@@ -1,6 +1,7 @@
 open Format
 open Ast
 open Interned_string
+open Type
 
 (** Definition of string interning modules. Term variables, predicates, heap
     predicates, atoms are distinguished at the type level. *)
@@ -89,9 +90,3 @@ val pp_internal_iprop_multiset :
   formatter ->
   internal_iprop_multiset ->
   unit
-
-val term_to_internal : term -> internal_term
-val prop_to_internal : prop -> internal_prop
-val iprop_to_internal : iprop -> internal_iprop
-val prop_list_to_internal : prop list -> internal_prop_set
-val iprop_list_to_internal : iprop list -> internal_iprop_multiset

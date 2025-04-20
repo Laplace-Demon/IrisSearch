@@ -1,6 +1,7 @@
 open Is
 open Ast
 open Freshname
+open Type
 
 module Negative = struct
   let const_num = ref 20

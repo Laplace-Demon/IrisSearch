@@ -1,5 +1,6 @@
 %{
   open Ast
+  open Type
 %}
 
 %token DECL_TYPES DECL_PREDS DECL_CONSTS DECL_FACTS DECL_LAWS DECL_INIT

@@ -121,7 +121,7 @@ let () =
       exit 1
   | Validate.TypeError (str, ity1, ity2) ->
       eprintf "validation error: %s should have type %a, but has type %a@." str
-        Ast.pp_itype ity1 Ast.pp_itype ity2;
+        Type.pp_itype ity1 Type.pp_itype ity2;
       exit 1
   | e ->
       eprintf "exception: %s\n@." (Printexc.to_string e);

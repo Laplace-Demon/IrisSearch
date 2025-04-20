@@ -6,6 +6,7 @@
   ast
   duplication_checker
   internal
+  internal_operations
   interned_string
   main
   map
@@ -19,6 +20,7 @@
   state_operations
   statistics
   transform
+  type
   validate)
  (libraries baby menhirLib)
  (flags

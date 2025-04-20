@@ -1,5 +1,6 @@
 open Format
 open Internal
+open Type
 
 (** Definition of searching state and symbol table. *)
 
@@ -14,4 +15,4 @@ let pp_state fmt (pr_set, ipr_mset) =
     (pp_internal_iprop_multiset ~pp_sep:pp_print_cut)
     ipr_mset
 
-let symbol_table : (string, Ast.itype) Hashtbl.t = Hashtbl.create 17
+let symbol_table : (string, itype) Hashtbl.t = Hashtbl.create 17

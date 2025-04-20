@@ -1,5 +1,6 @@
 open Format
 open Ast
+open Type
 
 exception IllegalPredicateDeclarationError of string
 exception DuplicateTypeDeclarationError of string

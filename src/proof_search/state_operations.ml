@@ -1,7 +1,9 @@
 open Ast
-open Internal
-open State
 open Duplication_checker
+open Internal
+open Internal_operations
+open State
+open Type
 
 let state_size (pr_set, ipr_mset) =
   (PropSet.cardinal pr_set, IpropMset.cardinal ipr_mset)
