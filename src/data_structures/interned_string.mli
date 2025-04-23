@@ -16,6 +16,7 @@ module type InternedString = sig
   val hash : t -> int
   val import : string -> t
   val export : t -> string
+  val min : t
 end
 
 (** [Make()] creates a new abstract type [t] that is isomorphic to [string]. The

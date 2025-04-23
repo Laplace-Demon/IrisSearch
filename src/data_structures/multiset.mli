@@ -21,8 +21,11 @@ module type Multiset = sig
   val diff : t -> t -> t
   val diff_multiple : Multiplicity.t -> t -> t -> t
   val subset : t -> t -> bool
-  val partition : (elt -> Multiplicity.t -> bool) -> t -> t * t
-  val map : (elt -> Multiplicity.t -> Multiplicity.t) -> t -> t
+  val split : elt -> t -> t * Multiplicity.t option * t
+  val find_first_opt : (elt -> bool) -> t -> (elt * Multiplicity.t) option
+  val find_last_opt : (elt -> bool) -> t -> (elt * Multiplicity.t) option
+  val map : (elt -> elt) -> t -> t
+  val map_multiplicity : (elt -> Multiplicity.t -> Multiplicity.t) -> t -> t
   val fold : (elt -> Multiplicity.t -> 'acc -> 'acc) -> t -> 'acc -> 'acc
   val to_list : t -> (elt * Multiplicity.t) list
   val to_seq : t -> (elt * Multiplicity.t) Seq.t

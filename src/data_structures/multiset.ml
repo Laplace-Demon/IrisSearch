@@ -21,8 +21,11 @@ module type Multiset = sig
   val diff : t -> t -> t
   val diff_multiple : Multiplicity.t -> t -> t -> t
   val subset : t -> t -> bool
-  val partition : (elt -> Multiplicity.t -> bool) -> t -> t * t
-  val map : (elt -> Multiplicity.t -> Multiplicity.t) -> t -> t
+  val split : elt -> t -> t * Multiplicity.t option * t
+  val find_first_opt : (elt -> bool) -> t -> (elt * Multiplicity.t) option
+  val find_last_opt : (elt -> bool) -> t -> (elt * Multiplicity.t) option
+  val map : (elt -> elt) -> t -> t
+  val map_multiplicity : (elt -> Multiplicity.t -> Multiplicity.t) -> t -> t
   val fold : (elt -> Multiplicity.t -> 'acc -> 'acc) -> t -> 'acc -> 'acc
   val to_list : t -> (elt * Multiplicity.t) list
   val to_seq : t -> (elt * Multiplicity.t) Seq.t
@@ -102,9 +105,30 @@ module Make (HashOrd : HashedOrderedType) = struct
     Statistics.record_operation "Multiset.subset";
     BabyMap.sub (fun v1 v2 -> Multiplicity.compare v1 v2 <= 0) s1 s2
 
-  let partition = BabyMap.partition
-  let map = BabyMap.mapi
-  let fold = BabyMap.fold
+  let split e s =
+    Statistics.record_operation "Multiset.split";
+    BabyMap.split e s
+
+  let find_first_opt f s =
+    Statistics.record_operation "Multiset.find_first_opt";
+    BabyMap.find_first_opt f s
+
+  let find_last_opt f s =
+    Statistics.record_operation "Multiset.find_last_opt";
+    BabyMap.find_last_opt f s
+
+  let map f s =
+    Statistics.record_operation "Multiset.map";
+    s |> BabyMap.to_seq |> Seq.map (fun (e, v) -> (f e, v)) |> BabyMap.of_seq
+
+  let map_multiplicity =
+    Statistics.record_operation "Multiset.map_multiplicity";
+    BabyMap.mapi
+
+  let fold f s init =
+    Statistics.record_operation "Multiset.fold";
+    BabyMap.fold f s init
+
   let to_list = BabyMap.to_list
   let to_seq = BabyMap.to_seq
   let of_list = BabyMap.of_list

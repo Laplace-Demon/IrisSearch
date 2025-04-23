@@ -11,17 +11,16 @@ let rec uncurry_prop = function
   | _ as pr -> pr
 
 and uncurry_iprop = function
+  | Pure pr -> Pure (uncurry_prop pr)
   | Star (ipr1, ipr2) -> Star (uncurry_iprop ipr1, uncurry_iprop ipr2)
   | Wand (ipr1, Wand (ipr21, ipr22)) ->
       uncurry_iprop (Wand (Star (ipr1, ipr21), ipr22))
   | Wand (ipr1, ipr2) -> Wand (uncurry_iprop ipr1, uncurry_iprop ipr2)
   | Box ipr -> Box (uncurry_iprop ipr)
-  | Pure pr -> Pure (uncurry_prop pr)
   | _ as ipr -> ipr
 
 let uncurry_transformation
-    ({ decl_types; decl_preds; decl_consts; decl_facts; decl_laws; decl_init }
-     as ins) =
+    { decl_types; decl_preds; decl_consts; decl_facts; decl_laws; decl_init } =
   let decl_facts = List.map uncurry_prop decl_facts in
   let decl_laws = List.map uncurry_iprop decl_laws in
   let decl_init = List.map uncurry_iprop decl_init in
@@ -41,11 +40,11 @@ let rec merge_quantifier_prop = function
   | _ as pr -> pr
 
 and merge_quantifier_iprop = function
+  | Pure pr -> Pure (merge_quantifier_prop pr)
   | Star (ipr1, ipr2) ->
       Star (merge_quantifier_iprop ipr1, merge_quantifier_iprop ipr2)
   | Wand (ipr1, ipr2) -> Wand (merge_quantifier_iprop ipr1, uncurry_iprop ipr2)
   | Box ipr -> Box (merge_quantifier_iprop ipr)
-  | Pure pr -> Pure (merge_quantifier_prop pr)
   | HForall (typed_str_list1, HForall (typed_str_list2, ipr)) ->
       merge_quantifier_iprop (HForall (typed_str_list1 @ typed_str_list2, ipr))
   | HForall (typed_str_list, ipr) ->
@@ -53,17 +52,14 @@ and merge_quantifier_iprop = function
   | _ as ipr -> ipr
 
 let merge_quantifier_transformation
-    ({ decl_types; decl_preds; decl_consts; decl_facts; decl_laws; decl_init }
-     as ins) =
+    { decl_types; decl_preds; decl_consts; decl_facts; decl_laws; decl_init } =
   let decl_facts = List.map merge_quantifier_prop decl_facts in
   let decl_laws = List.map merge_quantifier_iprop decl_laws in
   let decl_init = List.map merge_quantifier_iprop decl_init in
   { decl_types; decl_preds; decl_consts; decl_facts; decl_laws; decl_init }
 
 (* TODO: also substitute quantified Persistent *)
-let eliminate_persistent_transformation
-    ({ decl_types; decl_preds; decl_consts; decl_facts; decl_laws; decl_init }
-     as ins) =
+let eliminate_persistent_transformation ({ decl_facts } as ins) =
   let rec prop_subst_positive_var src dest = function
     | Persistent ipr -> Persistent (iprop_subst_positive_var src dest ipr)
     | Not pr -> Not (prop_subst_positive_var src dest pr)
@@ -102,6 +98,7 @@ let eliminate_persistent_transformation
     | _ as pr -> pr
   and iprop_subst_positive_var src dest = function
     | Atom str -> if String.equal str src then dest else Atom str
+    | Pure pr -> Pure (prop_subst_positive_var src dest pr)
     | Star (ipr1, ipr2) ->
         Star
           ( iprop_subst_positive_var src dest ipr1,
@@ -111,12 +108,12 @@ let eliminate_persistent_transformation
           ( iprop_subst_negative_var src dest ipr1,
             iprop_subst_positive_var src dest ipr2 )
     | Box ipr -> Box (iprop_subst_positive_var src dest ipr)
-    | Pure pr -> Pure (prop_subst_positive_var src dest pr)
     | HForall (typed_str_list, ipr) ->
         HForall (typed_str_list, iprop_subst_positive_var src dest ipr)
     | _ as ipr -> ipr
   and iprop_subst_negative_var src dest = function
     | Atom str -> Atom str
+    | Pure pr -> Pure (prop_subst_negative_var src dest pr)
     | Star (ipr1, ipr2) ->
         Star
           ( iprop_subst_negative_var src dest ipr1,
@@ -126,7 +123,6 @@ let eliminate_persistent_transformation
           ( iprop_subst_positive_var src dest ipr1,
             iprop_subst_negative_var src dest ipr2 )
     | Box ipr -> Box (iprop_subst_negative_var src dest ipr)
-    | Pure pr -> Pure (prop_subst_negative_var src dest pr)
     | HForall (typed_str_list, ipr) ->
         HForall (typed_str_list, iprop_subst_negative_var src dest ipr)
     | _ as ipr -> ipr

@@ -19,7 +19,10 @@ module type Set = sig
   val inter : t -> t -> t
   val diff : t -> t -> t
   val subset : t -> t -> bool
-  val partition : (elt -> bool) -> t -> t * t
+  val split : elt -> t -> t * bool * t
+  val find_first_opt : (elt -> bool) -> t -> elt option
+  val find_last_opt : (elt -> bool) -> t -> elt option
+  val map : (elt -> elt) -> t -> t
   val fold : (elt -> 'acc -> 'acc) -> t -> 'acc -> 'acc
   val to_list : t -> elt list
   val to_seq : t -> elt Seq.t

@@ -10,6 +10,7 @@
   interned_string
   main
   map
+  monads
   multiset
   multiplicity
   lexer
@@ -23,5 +24,12 @@
   type
   validate)
  (libraries baby menhirLib)
+ (flags
+  (:standard -w -a)))
+
+(executable
+ (public_name test)
+ (modules test)
+ (libraries baby is menhirLib)
  (flags
   (:standard -w -a)))

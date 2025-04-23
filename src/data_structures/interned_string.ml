@@ -16,6 +16,7 @@ module type InternedString = sig
   val hash : t -> int
   val import : string -> t
   val export : t -> string
+  val min : t
 end
 
 module Make () : InternedString = struct
@@ -60,4 +61,5 @@ module Make () : InternedString = struct
     (encode, decode, verbose)
 
   let import, export, _verbose = new_encode_decode 2048
+  let min = import "min"
 end

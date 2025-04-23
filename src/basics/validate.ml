@@ -70,6 +70,7 @@ and check_iprop symbol_table env = function
           if not (itype_eqb ity Tiprop) then
             raise (TypeError (atom, Tiprop, ity))
       | None -> raise (MissingConstDeclarationError atom))
+  | Pure pr -> check_prop symbol_table env pr
   | Star (ipr1, ipr2) ->
       check_iprop symbol_table env ipr1;
       check_iprop symbol_table env ipr2
@@ -77,7 +78,6 @@ and check_iprop symbol_table env = function
       check_iprop symbol_table env ipr1;
       check_iprop symbol_table env ipr2
   | Box ipr -> check_iprop symbol_table env ipr
-  | Pure pr -> check_prop symbol_table env pr
   | HPred (hpred, param_list) -> (
       match Hashtbl.find_opt symbol_table hpred with
       | Some ity -> (

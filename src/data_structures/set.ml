@@ -19,7 +19,10 @@ module type Set = sig
   val inter : t -> t -> t
   val diff : t -> t -> t
   val subset : t -> t -> bool
-  val partition : (elt -> bool) -> t -> t * t
+  val split : elt -> t -> t * bool * t
+  val find_first_opt : (elt -> bool) -> t -> elt option
+  val find_last_opt : (elt -> bool) -> t -> elt option
+  val map : (elt -> elt) -> t -> t
   val fold : (elt -> 'acc -> 'acc) -> t -> 'acc -> 'acc
   val to_list : t -> elt list
   val to_seq : t -> elt Seq.t
@@ -51,7 +54,19 @@ module Make (HashOrd : HashedOrderedType) = struct
     Statistics.record_operation "Set.subset";
     BabySet.subset s1 s2
 
-  let partition = BabySet.partition
+  let split e s =
+    Statistics.record_operation "Set.split";
+    BabySet.split e s
+
+  let find_first_opt f t =
+    Statistics.record_operation "Set.find_first_opt";
+    BabySet.find_first_opt f t
+
+  let find_last_opt f t =
+    Statistics.record_operation "Set.find_last_opt";
+    BabySet.find_last_opt f t
+
+  let map = BabySet.map
   let fold = BabySet.fold
   let to_list = BabySet.to_list
   let to_seq = BabySet.to_seq

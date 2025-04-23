@@ -24,10 +24,10 @@ type prop =
 and iprop =
   | False
   | Atom of string
+  | Pure of prop
   | Star of iprop * iprop
   | Wand of iprop * iprop
   | Box of iprop
-  | Pure of prop
   | HPred of string * term list
   | HForall of (string * itype) list * iprop
 
@@ -57,11 +57,11 @@ and iprop_eqb ipr1 ipr2 =
   match (ipr1, ipr2) with
   | False, False -> true
   | Atom str1, Atom str2 -> String.equal str1 str2
+  | Pure pr1, Pure pr2 -> prop_eqb pr1 pr2
   | Star (ipr11, ipr12), Star (ipr21, ipr22)
   | Wand (ipr11, ipr12), Wand (ipr21, ipr22) ->
       iprop_eqb ipr11 ipr21 && iprop_eqb ipr12 ipr22
   | Box ipr1, Box ipr2 -> iprop_eqb ipr1 ipr2
-  | Pure pr1, Pure pr2 -> prop_eqb pr1 pr2
   | HPred (str1, param_list1), HPred (str2, param_list2) ->
       String.equal str1 str2 && List.equal term_eqb param_list1 param_list2
   | HForall (typed_str_list1, ipr1), HForall (typed_str_list2, ipr2) ->
@@ -95,10 +95,10 @@ let rec pp_prop fmt = function
 and pp_iprop fmt = function
   | False -> fprintf fmt "⊥"
   | Atom str -> fprintf fmt "%s" str
+  | Pure pr -> fprintf fmt "⌜ %a ⌝" pp_prop pr
   | Star (ipr1, ipr2) -> fprintf fmt "%a * %a" pp_iprop ipr1 pp_iprop ipr2
   | Wand (ipr1, ipr2) -> fprintf fmt "(%a -* %a)" pp_iprop ipr1 pp_iprop ipr2
   | Box ipr -> fprintf fmt "□ %a" pp_iprop ipr
-  | Pure pr -> fprintf fmt "⌜ %a ⌝" pp_prop pr
   | HPred (str, param_list) ->
       fprintf fmt "%s %a" str
         (pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt " ") pp_term)

@@ -154,14 +154,14 @@ iprop:
   { False }
 | IDENT
   { Atom $1 }
+| TOPLEFTCORNER prop TOPRIGHTCORNER
+  { Pure $2 }
 | iprop STAR iprop
   { Star ($1, $3) }
 | iprop WAND iprop
   { Wand ($1, $3) }
 | BOX iprop
   { Box $2 }
-| TOPLEFTCORNER prop TOPRIGHTCORNER
-  { Pure $2 }
 | IDENT nonempty_list(term) 
   { HPred ($1, $2) }
 | FORALL IDENT COLON itype COMMA iprop %prec FORALL

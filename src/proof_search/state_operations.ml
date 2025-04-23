@@ -22,13 +22,13 @@ let apply ipr (pr_set, ipr_mset) =
         | IStar ipr_set -> ipr_set
         | _ -> IpropMset.singleton ipr1 Multiplicity.one
       in
-      let concls =
-        match ipr2 with
-        | IStar ipr_set -> ipr_set
-        | _ -> IpropMset.singleton ipr2 Multiplicity.one
-      in
       try
         let ipr_mset_prems_elim = IpropMset.diff ipr_mset prems in
+        let concls =
+          match ipr2 with
+          | IStar ipr_set -> ipr_set
+          | _ -> IpropMset.singleton ipr2 Multiplicity.one
+        in
         let new_ipr_mset = IpropMset.union concls ipr_mset_prems_elim in
         let new_st = (pr_set, new_ipr_mset) in
         if is_duplicate new_st then None else Some new_st
@@ -45,23 +45,22 @@ let apply_multiple ipr count (pr_set, ipr_mset) =
         | IStar ipr_set -> ipr_set
         | _ -> IpropMset.singleton ipr1 Multiplicity.one
       in
-      let concls =
-        match ipr2 with
-        | IStar ipr_set -> ipr_set
-        | _ -> IpropMset.singleton ipr2 Multiplicity.one
-      in
       try
         let factor = Multiplicity.min (IpropMset.factor ipr_mset prems) count in
         let ipr_mset_prems_elim =
           IpropMset.diff_multiple factor ipr_mset prems
         in
-        let new_ipr_mset =
-          IpropMset.union
-            (IpropMset.map
-               (fun _ count -> Multiplicity.mul count factor)
-               concls)
-            ipr_mset_prems_elim
+        let concls =
+          match ipr2 with
+          | IStar ipr_set -> ipr_set
+          | _ -> IpropMset.singleton ipr2 Multiplicity.one
         in
+        let dup_concls =
+          IpropMset.map_multiplicity
+            (fun _ count -> Multiplicity.mul count factor)
+            concls
+        in
+        let new_ipr_mset = IpropMset.union dup_concls ipr_mset_prems_elim in
         let new_st = (pr_set, new_ipr_mset) in
         if is_duplicate new_st then None else Some new_st
       with Multiplicity.Underflow -> None)
