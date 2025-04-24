@@ -6,7 +6,7 @@ authors: [
   "Zhicheng Hui <zhicheng.hui@inria.fr>"
 ]
 homepage: "https://github.com/Laplace-Demon/IrisSearch"
-homepage: "https://github.com/Laplace-Demon/IrisSearch/issues"
+bug-reports: "https://github.com/Laplace-Demon/IrisSearch/issues"
 license: "MIT"
 synopsis: "Proof Searching in Iris"
 depends: [
