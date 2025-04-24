@@ -1,0 +1,11 @@
+opam-version: "2.0"
+name: "is"
+version: "1.0"
+description: "Proof Searching in Iris"
+depends: [
+  "baby"
+  "menhirLib"
+]
+build: [
+  ["dune" "build" "-p" name]
+]
