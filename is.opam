@@ -1,11 +1,17 @@
 opam-version: "2.0"
 name: "is"
 version: "1.0"
-description: "Proof Searching in Iris"
+maintainer: ["Zhicheng Hui <zhicheng.hui@inria.fr>"]
+authors: [
+  "Zhicheng Hui <zhicheng.hui@inria.fr>"
+]
+homepage: "https://github.com/Laplace-Demon/IrisSearch"
+license: "MIT"
+synopsis: "Proof Searching in Iris"
 depends: [
   "baby"
-  "menhir"
-  "menhirLib"
+  "menhir" {>= "20240715"}
+  "ocamlformat"
 ]
 build: [
   ["dune" "build" "-p" name]
