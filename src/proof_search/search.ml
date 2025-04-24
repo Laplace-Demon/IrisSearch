@@ -1,12 +1,11 @@
-exception Timeout
-
 module Make (G : sig
   type node
 
   val source : node
   val successors : node -> node list
-  val terminate : node -> bool
   val estimate : node -> int
+
+  exception Termination
 end) =
 struct
   type cost = int
@@ -117,29 +116,24 @@ struct
     in
     P.add inode inode.estimate
 
-  let timeout = ref 2
   let max_depth = ref 20
-  let set_timeout t = timeout := t
   let set_max_depth d = max_depth := d
 
   let search () =
-    let start = Sys.time () in
-    let check_timeout () = if Sys.time () -. start > 2. then raise Timeout in
     let rec aux () =
-      check_timeout ();
       (* Pick the open node that currently has lowest fhat,
          that is, lowest estimated distance to a goal node. *)
       match P.get () with
       | None -> None
-      | Some inode ->
+      | Some inode -> (
           let node = inode.this in
           Statistics.record_visited_state ();
-          if G.terminate node then Some inode.path
-          else (
+          try
+            let successors = G.successors node in
             List.iter
               (fun son ->
                 (* Determine the cost of the best known path from the
-               start node, through this node, to this son. *)
+                 start node, through this node, to this son. *)
                 let new_cost = inode.cost + 1 in
                 assert (0 <= new_cost);
                 if new_cost <= !max_depth then (
@@ -159,8 +153,9 @@ struct
                   (* failure means overflow *)
                   Statistics.record_depth new_cost;
                   P.add ison fhat))
-              (G.successors node);
-            aux ())
+              successors;
+            aux ()
+          with G.Termination -> Some inode.path)
     in
     aux ()
 end

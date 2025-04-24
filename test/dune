@@ -7,10 +7,4 @@
   persistent1
   persistent2
   persistent3
-  type1
-  type2
-  type3
-  type4
-  predicate1
-  predicate2
-  equality1))
+  negative))

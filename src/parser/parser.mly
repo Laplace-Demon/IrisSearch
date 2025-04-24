@@ -11,13 +11,13 @@
 %token TYPE_PROP TYPE_IPROP
 %token FALSE STAR WAND BOX TOPLEFTCORNER TOPRIGHTCORNER
 %token NOT AND OR ARROW
-%token FORALL
+%token FORALL EXISTS
 %token EQ NEQ
 
 %token <string> IDENT
 
 (** Low precedence *)
-%nonassoc FORALL
+%nonassoc FORALL EXISTS
 %right WAND
 %left STAR
 %nonassoc BOX
@@ -108,10 +108,10 @@ decl_laws:
 
 decl_law:
 | iprop
-  { Box $1 }
+  { $1 }
 | EXCLUSIVE IDENT
   { let atom = Atom $2 in
-    Box (Wand (Star (atom, atom), False)) }
+    Wand (Star (atom, atom), False) }
 
 decl_init:
 | DECL_INIT separated_list(COMMA, iprop)
@@ -142,6 +142,11 @@ prop:
 | FORALL nonempty_list(binders) COMMA prop %prec FORALL
   { let typed_str_list = List.concat_map (fun (str_list, ity) -> List.map (fun str -> str, ity) str_list) $2 in
     Forall (typed_str_list, $4) }
+| EXISTS IDENT COLON itype COMMA prop %prec EXISTS
+  { Exists ([$2, $4], $6) }
+| EXISTS nonempty_list(binders) COMMA prop %prec EXISTS
+  { let typed_str_list = List.concat_map (fun (str_list, ity) -> List.map (fun str -> str, ity) str_list) $2 in
+    Exists (typed_str_list, $4) }
 | term EQ term
   { Eq ($1, $3) }
 | term NEQ term
@@ -169,6 +174,11 @@ iprop:
 | FORALL nonempty_list(binders) COMMA iprop %prec FORALL
   { let typed_str_list = List.concat_map (fun (str_list, ity) -> List.map (fun str -> str, ity) str_list) $2 in
     HForall (typed_str_list, $4) }
+| EXISTS IDENT COLON itype COMMA iprop %prec EXISTS
+  { HExists ([$2, $4], $6) }
+| EXISTS nonempty_list(binders) COMMA iprop %prec EXISTS
+  { let typed_str_list = List.concat_map (fun (str_list, ity) -> List.map (fun str -> str, ity) str_list) $2 in
+    HExists (typed_str_list, $4) }
 
 binders:
 | LPAREN nonempty_list(IDENT) COLON itype RPAREN

@@ -1,0 +1,12 @@
+types
+    t
+
+consts
+    A B : iProp
+
+laws
+    A -* A -* A,
+    B -* B -* B,
+    A -* (forall var : t, A)
+
+init

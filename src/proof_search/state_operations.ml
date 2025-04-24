@@ -5,77 +5,49 @@ open Internal_operations
 open State
 open Type
 
-let state_size (pr_set, ipr_mset) =
-  (PropSet.cardinal pr_set, IpropMset.cardinal ipr_mset)
+let state_size (ipr_mset, pr_set) =
+  (SimpleIpropMset.cardinal ipr_mset, PropSet.cardinal pr_set)
 
-let initial
-    { decl_types; decl_preds; decl_consts; decl_facts; decl_laws; decl_init } =
-  global_state :=
-    (prop_list_to_internal decl_facts, iprop_list_to_internal decl_laws);
-  (PropSet.empty, iprop_list_to_internal decl_init)
+let initial { decl_facts; decl_laws; decl_init } =
+  facts := prop_list_to_internal_prop_set decl_facts;
+  laws := iprop_list_to_internal_iprop_set decl_laws;
+  iprop_list_to_simple_internal_iprop_multiset_and_internal_prop_set decl_init
 
-let apply ipr (pr_set, ipr_mset) =
-  match ipr with
-  | IWand (ipr1, ipr2) -> (
-      let prems =
-        match ipr1 with
-        | IStar ipr_set -> ipr_set
-        | _ -> IpropMset.singleton ipr1 Multiplicity.one
-      in
+let apply law (ipr_mset, pr_set) =
+  match law with
+  | IWand (ISimple (ipr_prems, pr_prems), ISimple (ipr_concls, pr_concls)) -> (
       try
-        let ipr_mset_prems_elim = IpropMset.diff ipr_mset prems in
-        let concls =
-          match ipr2 with
-          | IStar ipr_set -> ipr_set
-          | _ -> IpropMset.singleton ipr2 Multiplicity.one
+        let ipr_mset_prems_elim, is_inf =
+          SimpleIpropMset.diff ipr_mset ipr_prems
         in
-        let new_ipr_mset = IpropMset.union concls ipr_mset_prems_elim in
-        let new_st = (pr_set, new_ipr_mset) in
-        if is_duplicate new_st then None else Some new_st
-      with Multiplicity.Underflow -> None)
-  | _ -> None
-
-(** apply_multiple tries to apply the wand as many times as possible. *)
-
-let apply_multiple ipr count (pr_set, ipr_mset) =
-  match ipr with
-  | IWand (ipr1, ipr2) -> (
-      let prems =
-        match ipr1 with
-        | IStar ipr_set -> ipr_set
-        | _ -> IpropMset.singleton ipr1 Multiplicity.one
-      in
-      try
-        let factor = Multiplicity.min (IpropMset.factor ipr_mset prems) count in
-        let ipr_mset_prems_elim =
-          IpropMset.diff_multiple factor ipr_mset prems
+        let pr_set_prems_elim = PropSet.diff pr_set pr_prems in
+        let () =
+          if SimpleIpropMset.mem1 false_id ipr_concls then raise Termination
         in
-        let concls =
-          match ipr2 with
-          | IStar ipr_set -> ipr_set
-          | _ -> IpropMset.singleton ipr2 Multiplicity.one
+        let ipr_concls =
+          if is_inf then
+            SimpleIpropMset.map_multiplicity
+              (fun _ _ -> Multiplicity.inf)
+              ipr_concls
+          else ipr_concls
         in
-        let dup_concls =
-          IpropMset.map_multiplicity
-            (fun _ count -> Multiplicity.mul count factor)
-            concls
+        let new_ipr_mset =
+          SimpleIpropMset.union ipr_concls ipr_mset_prems_elim
         in
-        let new_ipr_mset = IpropMset.union dup_concls ipr_mset_prems_elim in
-        let new_st = (pr_set, new_ipr_mset) in
+        let new_pr_set = PropSet.union pr_concls pr_set_prems_elim in
+        let new_st = (new_ipr_mset, new_pr_set) in
         if is_duplicate new_st then None else Some new_st
       with Multiplicity.Underflow -> None)
   | _ -> None
 
 let successors st =
-  let global_pr_set, global_ipr_mset = !global_state in
-  IpropMset.fold
-    (fun ipr count acc ->
-      match apply_multiple ipr count st with
+  IpropSet.fold
+    (fun law acc ->
+      match apply law st with
       | Some new_st ->
           Statistics.record_generated_state (state_size new_st);
           new_st :: acc
       | None -> acc)
-    global_ipr_mset []
+    !laws []
 
-let terminate (_, ipr_mset) = IpropMset.mem iFalse ipr_mset
 let estimate = fun _ -> 0

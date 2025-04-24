@@ -6,8 +6,7 @@ let until_validation = ref false
 let until_transformation = ref false
 let show_instance = ref false
 let show_transformed_instance = ref false
-let show_global_state = ref false
-let show_initial_state = ref false
+let show_state = ref false
 let show_path = ref false
 let show_statistics = ref false
 
@@ -30,12 +29,9 @@ let input_filename, in_channel, out_channel =
       ( "--show-transformed-instance",
         Arg.Set show_transformed_instance,
         "\n\tPrint transformed problem instance.\n" );
-      ( "--show-global-state",
-        Arg.Set show_global_state,
-        "\n\tPrint the global state.\n" );
-      ( "--show-initial-state",
-        Arg.Set show_initial_state,
-        "\n\tPrint the initial state.\n" );
+      ( "--show-state",
+        Arg.Set show_state,
+        "\n\tPrint the global and initial state.\n" );
       ( "--show-path",
         Arg.Set show_path,
         "\n\tPrint the path when searching succeeds.\n" );
@@ -47,8 +43,7 @@ let input_filename, in_channel, out_channel =
           [
             Arg.Set show_instance;
             Arg.Set show_transformed_instance;
-            Arg.Set show_global_state;
-            Arg.Set show_initial_state;
+            Arg.Set show_state;
             Arg.Set show_path;
             Arg.Set show_statistics;
           ],
@@ -88,9 +83,7 @@ let () =
           Main.solve ~until_validation:!until_validation
             ~until_transformation:!until_transformation
             ~show_transformed_instance:!show_transformed_instance
-            ~show_global_state:!show_global_state
-            ~show_initial_state:!show_initial_state ~show_path:!show_path
-            formatter ins)
+            ~show_state:!show_state ~show_path:!show_path formatter ins)
   with
   | Lexer.Lexing_error s ->
       eprintf "%s: lexing error: %s@." input_filename s;
@@ -100,6 +93,12 @@ let () =
       exit 1
   | Validate.IllegalPredicateDeclarationError str ->
       eprintf "validation error: illegal predicate declaration of %s@." str;
+      exit 1
+  | Validate.IllegalLawDeclarationError str ->
+      eprintf "validation error: illegal law declaration, %s@." str;
+      exit 1
+  | Validate.IllegalInitDeclarationError str ->
+      eprintf "validation error: illegal init declaration, %s@." str;
       exit 1
   | Validate.DuplicateTypeDeclarationError str ->
       eprintf "validation error: duplicate type declaration of %s@." str;

@@ -1,0 +1,22 @@
+types
+    A B C
+
+preds
+    P1 : A * B * C -> iProp
+    P2 : A * B -> iProp
+    P3 : A -> iProp
+
+laws
+    forall (a : A) (b : B),
+        P2 a b -* exists c : C,
+            P1 a b c,
+
+    forall a : A,
+        P3 a -* exists (b : B) (c : C),
+            P1 a b c,
+
+    forall a : A,
+        P3 a -* exists (b : B) (c : C),
+            P2 a b
+
+init

@@ -1,37 +1,27 @@
   $ is ./persistent2 --show-path
   path
   
+  atoms
+      □ B
   pures
       %empty
-  props
-      □ B
   
   ↓
   
-  pures
-      %empty
-  props
+  atoms
       □ A
       □ B
+  pures
+      %empty
   
   ↓
   
-  pures
-      %empty
-  props
+  atoms
       □ A
       □ C
       □ B
-  
-  ↓
-  
   pures
       %empty
-  props
-      □ ⊥
-      □ A
-      □ C
-      □ B
   
   find solution
   

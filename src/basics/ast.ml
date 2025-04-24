@@ -18,6 +18,7 @@ type prop =
   | Imply of prop * prop
   | Pred of string * term list
   | Forall of (string * itype) list * prop
+  | Exists of (string * itype) list * prop
   | Eq of term * term
   | Neq of term * term
 
@@ -30,8 +31,7 @@ and iprop =
   | Box of iprop
   | HPred of string * term list
   | HForall of (string * itype) list * iprop
-
-(** These functions do not consider alpha-equivalence. *)
+  | HExists of (string * itype) list * iprop
 
 let rec prop_eqb pr1 pr2 =
   match (pr1, pr2) with
@@ -41,9 +41,10 @@ let rec prop_eqb pr1 pr2 =
   | Or (pr11, pr12), Or (pr21, pr22)
   | Imply (pr11, pr12), Imply (pr21, pr22) ->
       prop_eqb pr11 pr21 && prop_eqb pr12 pr22
-  | Pred (str1, param_list1), Pred (str2, param_list2) ->
-      String.equal str1 str2 && List.equal term_eqb param_list1 param_list2
-  | Forall (typed_str_list1, pr1), Forall (typed_str_list2, pr2) ->
+  | Pred (str1, tm_list1), Pred (str2, tm_list2) ->
+      String.equal str1 str2 && List.equal term_eqb tm_list1 tm_list2
+  | Forall (typed_str_list1, pr1), Forall (typed_str_list2, pr2)
+  | Exists (typed_str_list1, pr1), Exists (typed_str_list2, pr2) ->
       List.equal
         (fun (str1, ity1) (str2, ity2) ->
           String.equal str1 str2 && itype_eqb ity1 ity2)
@@ -62,9 +63,10 @@ and iprop_eqb ipr1 ipr2 =
   | Wand (ipr11, ipr12), Wand (ipr21, ipr22) ->
       iprop_eqb ipr11 ipr21 && iprop_eqb ipr12 ipr22
   | Box ipr1, Box ipr2 -> iprop_eqb ipr1 ipr2
-  | HPred (str1, param_list1), HPred (str2, param_list2) ->
-      String.equal str1 str2 && List.equal term_eqb param_list1 param_list2
-  | HForall (typed_str_list1, ipr1), HForall (typed_str_list2, ipr2) ->
+  | HPred (str1, tm_list1), HPred (str2, tm_list2) ->
+      String.equal str1 str2 && List.equal term_eqb tm_list1 tm_list2
+  | HForall (typed_str_list1, ipr1), HForall (typed_str_list2, ipr2)
+  | HExists (typed_str_list1, ipr1), HExists (typed_str_list2, ipr2) ->
       List.equal
         (fun (str1, ity1) (str2, ity2) ->
           String.equal str1 str2 && itype_eqb ity1 ity2)
@@ -78,12 +80,19 @@ let rec pp_prop fmt = function
   | And (pr1, pr2) -> fprintf fmt "%a ∧ %a" pp_prop pr1 pp_prop pr2
   | Or (pr1, pr2) -> fprintf fmt "%a ∨ %a" pp_prop pr1 pp_prop pr2
   | Imply (pr1, pr2) -> fprintf fmt "%a → %a" pp_prop pr1 pp_prop pr2
-  | Pred (str, param_list) ->
+  | Pred (str, tm_list) ->
       fprintf fmt "%s %a" str
         (pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt " ") pp_term)
-        param_list
+        tm_list
   | Forall (typed_str_list, pr) ->
       fprintf fmt "forall %a, %a"
+        (pp_typed_strs_list
+           ~pp_sep:(fun fmt () -> fprintf fmt " ")
+           ~pp_paren:true ())
+        (group_typed_str typed_str_list)
+        pp_prop pr
+  | Exists (typed_str_list, pr) ->
+      fprintf fmt "exists %a, %a"
         (pp_typed_strs_list
            ~pp_sep:(fun fmt () -> fprintf fmt " ")
            ~pp_paren:true ())
@@ -99,10 +108,10 @@ and pp_iprop fmt = function
   | Star (ipr1, ipr2) -> fprintf fmt "%a * %a" pp_iprop ipr1 pp_iprop ipr2
   | Wand (ipr1, ipr2) -> fprintf fmt "(%a -* %a)" pp_iprop ipr1 pp_iprop ipr2
   | Box ipr -> fprintf fmt "□ %a" pp_iprop ipr
-  | HPred (str, param_list) ->
+  | HPred (str, tm_list) ->
       fprintf fmt "%s %a" str
         (pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt " ") pp_term)
-        param_list
+        tm_list
   | HForall (typed_str_list, ipr) ->
       fprintf fmt "forall %a, %a"
         (pp_typed_strs_list
@@ -110,6 +119,43 @@ and pp_iprop fmt = function
            ~pp_paren:true ())
         (group_typed_str typed_str_list)
         pp_iprop ipr
+  | HExists (typed_str_list, ipr) ->
+      fprintf fmt "exists %a, %a"
+        (pp_typed_strs_list
+           ~pp_sep:(fun fmt () -> fprintf fmt " ")
+           ~pp_paren:true ())
+        (group_typed_str typed_str_list)
+        pp_iprop ipr
+
+(** Free term variables occurring in iprop, prop and term. *)
+
+let term_free_var = function Var var -> [ var ]
+
+let rec prop_free_var = function
+  | Persistent ipr -> iprop_free_var ipr
+  | Not pr -> prop_free_var pr
+  | And (pr1, pr2) | Or (pr1, pr2) | Imply (pr1, pr2) ->
+      prop_free_var pr1 @ prop_free_var pr2
+  | Pred (_, tm_list) -> List.concat_map term_free_var tm_list
+  | Forall (typed_str_list, pr) | Exists (typed_str_list, pr) ->
+      let binded_var_list = List.map fst typed_str_list in
+      List.filter
+        (fun var -> not (List.mem var binded_var_list))
+        (prop_free_var pr)
+  | Eq (tm1, tm2) | Neq (tm1, tm2) -> term_free_var tm1 @ term_free_var tm2
+
+and iprop_free_var = function
+  | False | Atom _ -> []
+  | Pure pr -> prop_free_var pr
+  | Star (ipr1, ipr2) | Wand (ipr1, ipr2) ->
+      iprop_free_var ipr1 @ iprop_free_var ipr2
+  | Box ipr -> iprop_free_var ipr
+  | HPred (_, tm_list) -> List.concat_map term_free_var tm_list
+  | HForall (typed_str_list, ipr) | HExists (typed_str_list, ipr) ->
+      let binded_var_list = List.map fst typed_str_list in
+      List.filter
+        (fun var -> not (List.mem var binded_var_list))
+        (iprop_free_var ipr)
 
 (** The problem instance is represented as a record holding:
     - type declarations

@@ -49,6 +49,7 @@ rule token = parse
   | "∨" | "\\/"           { OR }
   | "→" | "->"            { ARROW }
   | "∀" | "forall"        { FORALL }
+  | "∃" | "exists"        { EXISTS }
   | '='                   { EQ }
   | "≠" | "!="            { NEQ }
 

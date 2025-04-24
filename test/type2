@@ -1,9 +1,0 @@
-types
-    loc
-
-consts
-    A : loc
-    B : int
-
-init
-    False

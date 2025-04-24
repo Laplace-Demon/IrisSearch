@@ -63,3 +63,21 @@
   $ is ./quant3 --until-validation
   validation error: missing const declaration of P
   [1]
+  $ is ./form1
+  validation error: illegal law declaration, premise "(C -* C)" of law should be simple iprop
+  [1]
+  $ is ./form2
+  validation error: illegal law declaration, conclusion "forall var : t, A" of law should be an existentially quantified simple iprop
+  [1]
+  $ is ./form3
+  validation error: illegal law declaration, law "⊥" should be a universally quantified wand
+  [1]
+  $ is ./form4
+  validation error: illegal law declaration, universally quantified variable "c" should appear in the premise "P2 a b" of law
+  [1]
+  $ is ./form5
+  validation error: illegal law declaration, existentially quantified variable "c" should appear in the conclusion "P2 a b" of law
+  [1]
+  $ is ./form6
+  validation error: illegal init declaration, iprop "(⊥ -* ⊥)" in init declaration should be simple
+  [1]

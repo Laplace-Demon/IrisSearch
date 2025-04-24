@@ -15,8 +15,8 @@
   multiplicity
   lexer
   parser
-  set
   search
+  set
   state
   state_operations
   statistics

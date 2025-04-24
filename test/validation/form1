@@ -1,0 +1,9 @@
+consts
+    A B C : iProp
+
+laws
+    A -* A -* A,
+    B -* B -* B,
+    (C -* C) -* C
+
+init

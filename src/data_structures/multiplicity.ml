@@ -28,19 +28,6 @@ let sub t1 t2 =
       else raise Underflow
   | _, _ -> raise Underflow
 
-let mul t1 t2 =
-  match (t1, t2) with
-  | Infinite, _ | _, Infinite -> Infinite
-  | Finite i1, Finite i2 -> Finite (i1 * i2)
-
-let div t1 t2 =
-  match (t1, t2) with
-  | Infinite, _ -> Infinite
-  | _, Infinite -> raise Underflow
-  | Finite i1, Finite i2 ->
-      let c = Int.div i1 i2 in
-      if c >= 1 then Finite c else raise Underflow
-
 let equal t1 t2 =
   match (t1, t2) with
   | Infinite, Infinite -> true

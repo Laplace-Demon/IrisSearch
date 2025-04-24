@@ -10,8 +10,6 @@ val to_int : t -> int
 val to_string : t -> string
 val add : t -> t -> t
 val sub : t -> t -> t option
-val mul : t -> t -> t
-val div : t -> t -> t
 val equal : t -> t -> bool
 val compare : t -> t -> int
 val min : t -> t -> t

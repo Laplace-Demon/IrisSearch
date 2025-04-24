@@ -2,8 +2,11 @@ open Format
 open Internal
 open Type
 
-type state = internal_prop_set * internal_iprop_multiset
+type state = simple_internal_iprop_multiset * internal_prop_set
 
-val global_state : state ref
+val facts : internal_prop_set ref
+val laws : internal_iprop_set ref
 val pp_state : formatter -> state -> unit
 val symbol_table : (string, itype) Hashtbl.t
+
+exception Termination

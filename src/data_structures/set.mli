@@ -1,9 +1,3 @@
-module type HashedOrderedType = sig
-  include Baby.OrderedType
-
-  val hash : t -> int
-end
-
 module type Set = sig
   type elt
   type t
@@ -19,18 +13,12 @@ module type Set = sig
   val inter : t -> t -> t
   val diff : t -> t -> t
   val subset : t -> t -> bool
-  val split : elt -> t -> t * bool * t
-  val find_first_opt : (elt -> bool) -> t -> elt option
-  val find_last_opt : (elt -> bool) -> t -> elt option
   val map : (elt -> elt) -> t -> t
   val fold : (elt -> 'acc -> 'acc) -> t -> 'acc -> 'acc
   val to_list : t -> elt list
-  val to_seq : t -> elt Seq.t
   val of_list : elt list -> t
-  val of_seq : elt Seq.t -> t
   val equal : t -> t -> bool
   val compare : t -> t -> int
-  val hash : t -> int
 end
 
-module Make (HashOrd : HashedOrderedType) : Set with type elt = HashOrd.t
+module Make (Ord : Baby.OrderedType) : Set with type elt = Ord.t

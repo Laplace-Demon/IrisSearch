@@ -2,118 +2,174 @@ open Ast
 open Internal
 open Format
 
-let term_to_internal, prop_to_internal, iprop_to_internal =
-  let term_to_internal_aux ~env : term -> internal_term = function
+let term_to_internal_term, prop_to_internal_prop, iprop_to_internal_iprop =
+  let term_to_internal_term_aux ~env = function
     | Var var -> (
         match List.find_index (String.equal var) env with
         | Some i -> iBVar i
         | None -> iVar_str var)
   in
-  let rec prop_to_internal_aux ~env : prop -> internal_prop = function
-    | Persistent ipr -> iPersistent (iprop_to_internal_aux ~env ipr)
-    | Not pr -> iNot (prop_to_internal_aux ~env pr)
+  let rec prop_to_internal_prop_aux ~env = function
+    | Persistent ipr -> iPersistent (iprop_to_internal_iprop_aux ~env ipr)
+    | Not pr -> iNot (prop_to_internal_prop_aux ~env pr)
     | And (pr1, pr2) ->
         let pr_set1 =
-          match prop_to_internal_aux ~env pr1 with
+          match prop_to_internal_prop_aux ~env pr1 with
           | IAnd pr_set -> pr_set
           | _ as pr -> PropSet.singleton pr
         in
         let pr_set2 =
-          match prop_to_internal_aux ~env pr2 with
+          match prop_to_internal_prop_aux ~env pr2 with
           | IAnd pr_set -> pr_set
           | _ as pr -> PropSet.singleton pr
         in
         iAnd (PropSet.union pr_set1 pr_set2)
     | Or (pr1, pr2) ->
-        iOr (prop_to_internal_aux ~env pr1, prop_to_internal_aux ~env pr2)
+        iOr
+          ( prop_to_internal_prop_aux ~env pr1,
+            prop_to_internal_prop_aux ~env pr2 )
     | Imply (pr1, pr2) ->
-        iImply (prop_to_internal_aux ~env pr1, prop_to_internal_aux ~env pr2)
-    | Pred (pred, param_list) ->
-        iPred_str (pred, List.map (term_to_internal_aux ~env) param_list)
+        iImply
+          ( prop_to_internal_prop_aux ~env pr1,
+            prop_to_internal_prop_aux ~env pr2 )
+    | Pred (pred, tm_list) ->
+        iPred_str
+          ( pred,
+            Array.of_list (List.map (term_to_internal_term_aux ~env) tm_list) )
     | Forall (typed_str_list, pr) ->
         iForall_raw
           ( typed_str_list,
-            prop_to_internal_aux
+            prop_to_internal_prop_aux
+              ~env:
+                (List.fold_left
+                   (fun acc (str, _) -> str :: acc)
+                   env typed_str_list)
+              pr )
+    | Exists (typed_str_list, pr) ->
+        iExists_raw
+          ( typed_str_list,
+            prop_to_internal_prop_aux
               ~env:
                 (List.fold_left
                    (fun acc (str, _) -> str :: acc)
                    env typed_str_list)
               pr )
     | Eq (tm1, tm2) ->
-        iEq (term_to_internal_aux ~env tm1, term_to_internal_aux ~env tm2)
+        iEq
+          ( term_to_internal_term_aux ~env tm1,
+            term_to_internal_term_aux ~env tm2 )
     | Neq (tm1, tm2) ->
-        iNeq (term_to_internal_aux ~env tm1, term_to_internal_aux ~env tm2)
-  and iprop_to_internal_aux ~env : iprop -> internal_iprop = function
-    | False -> iFalse
-    | Atom atom -> iAtom_str atom
-    | Pure pr -> iPure (prop_to_internal_aux ~env pr)
+        iNeq
+          ( term_to_internal_term_aux ~env tm1,
+            term_to_internal_term_aux ~env tm2 )
+  and iprop_to_internal_iprop_aux ~env : iprop -> internal_iprop = function
+    | False ->
+        iSimple
+          ( SimpleIpropMset.singleton (HPredId.import "⊥", [||]) Multiplicity.one,
+            PropSet.empty )
+    | Atom atom ->
+        iSimple
+          ( SimpleIpropMset.singleton
+              (HPredId.import atom, [||])
+              Multiplicity.one,
+            PropSet.empty )
+    | Pure pr ->
+        iSimple
+          ( SimpleIpropMset.empty,
+            PropSet.singleton (prop_to_internal_prop_aux ~env pr) )
     | Star (ipr1, ipr2) ->
-        let ipr_mset1 =
-          match iprop_to_internal_aux ~env ipr1 with
-          | IStar ipr_mset -> ipr_mset
-          | _ as ipr -> IpropMset.singleton ipr Multiplicity.one
+        let ipr_mset1, pr_set1 =
+          match iprop_to_internal_iprop_aux ~env ipr1 with
+          | ISimple (ipr_mset, pr_set) -> (ipr_mset, pr_set)
+          | _ -> assert false
         in
-        let ipr_mset2 =
-          match iprop_to_internal_aux ~env ipr2 with
-          | IStar ipr_mset -> ipr_mset
-          | _ as ipr -> IpropMset.singleton ipr Multiplicity.one
+        let ipr_mset2, pr_set2 =
+          match iprop_to_internal_iprop_aux ~env ipr2 with
+          | ISimple (ipr_mset, pr_set) -> (ipr_mset, pr_set)
+          | _ -> assert false
         in
-        iStar (IpropMset.union ipr_mset1 ipr_mset2)
+        iSimple
+          ( SimpleIpropMset.union ipr_mset1 ipr_mset2,
+            PropSet.union pr_set1 pr_set2 )
     | Wand (ipr1, ipr2) ->
-        iWand (iprop_to_internal_aux ~env ipr1, iprop_to_internal_aux ~env ipr2)
+        iWand
+          ( iprop_to_internal_iprop_aux ~env ipr1,
+            iprop_to_internal_iprop_aux ~env ipr2 )
     | Box ipr -> (
-        match iprop_to_internal_aux ~env ipr with
-        | IStar ipr_mset ->
-            iStar
-              (IpropMset.map_multiplicity
-                 (fun _ _ -> Multiplicity.inf)
-                 ipr_mset)
-        | _ as ipr -> iStar (IpropMset.singleton ipr Multiplicity.inf))
-    | HPred (hpred, param_list) ->
-        iHPred_str (hpred, List.map (term_to_internal_aux ~env) param_list)
+        match iprop_to_internal_iprop_aux ~env ipr with
+        | ISimple (ipr_mset, pr_set) ->
+            iSimple
+              ( SimpleIpropMset.map_multiplicity
+                  (fun _ _ -> Multiplicity.inf)
+                  ipr_mset,
+                pr_set )
+        | _ -> assert false)
+    | HPred (hpred, tm_list) ->
+        iSimple
+          ( SimpleIpropMset.singleton
+              ( HPredId.import hpred,
+                Array.of_list
+                  (List.map (term_to_internal_term_aux ~env) tm_list) )
+              Multiplicity.one,
+            PropSet.empty )
     | HForall (typed_str_list, ipr) ->
         iHForall_raw
           ( typed_str_list,
-            iprop_to_internal_aux
+            iprop_to_internal_iprop_aux
+              ~env:
+                (List.fold_left
+                   (fun acc (str, _) -> str :: acc)
+                   env typed_str_list)
+              ipr )
+    | HExists (typed_str_list, ipr) ->
+        iHExists_raw
+          ( typed_str_list,
+            iprop_to_internal_iprop_aux
               ~env:
                 (List.fold_left
                    (fun acc (str, _) -> str :: acc)
                    env typed_str_list)
               ipr )
   in
-  ( term_to_internal_aux ~env:[],
-    prop_to_internal_aux ~env:[],
-    iprop_to_internal_aux ~env:[] )
+  ( term_to_internal_term_aux ~env:[],
+    prop_to_internal_prop_aux ~env:[],
+    iprop_to_internal_iprop_aux ~env:[] )
 
-let prop_list_to_internal : prop list -> internal_prop_set =
- fun prl ->
-  prl |> List.map prop_to_internal
-  |> List.fold_left
-       (fun acc pr ->
-         PropSet.union acc
-           (match pr with IAnd pr_set -> pr_set | _ -> PropSet.singleton pr))
-       PropSet.empty
+let prop_list_to_internal_prop_set pr_list =
+  List.fold_left
+    (fun acc pr ->
+      PropSet.union acc
+        (match prop_to_internal_prop pr with
+        | IAnd pr_set -> pr_set
+        | _ as pr -> PropSet.singleton pr))
+    PropSet.empty pr_list
 
-let iprop_list_to_internal : iprop list -> internal_iprop_multiset =
- fun iprl ->
-  iprl |> List.map iprop_to_internal
-  |> List.fold_left
-       (fun acc ipr ->
-         IpropMset.union acc
-           (match ipr with
-           | IStar ipr_mset -> ipr_mset
-           | _ -> IpropMset.singleton ipr Multiplicity.one))
-       IpropMset.empty
+let iprop_list_to_internal_iprop_set iprl =
+  IpropSet.of_list (List.map iprop_to_internal_iprop iprl)
+
+let iprop_list_to_simple_internal_iprop_multiset_and_internal_prop_set iprl =
+  List.fold_left
+    (fun (ipr_mset, pr_set) ipr ->
+      match iprop_to_internal_iprop ipr with
+      | ISimple (ipr_mset', pr_set') ->
+          ( SimpleIpropMset.union ipr_mset ipr_mset',
+            PropSet.union pr_set pr_set' )
+      | _ -> assert false)
+    (SimpleIpropMset.empty, PropSet.empty)
+    iprl
 
 (** Substitution of quantified variable. *)
 
 type subst_task = (int * internal_term) list
 
 let ( subst_internal_term,
+      subst_internal_term_array,
       subst_internal_prop,
+      subst_simple_internal_iprop,
       subst_internal_iprop,
       subst_internal_prop_set,
-      subst_internal_iprop_mset ) =
+      subst_internal_iprop_set,
+      subst_simple_internal_iprop_multiset ) =
   let subst_internal_term_aux shift subst_task tm =
     match tm with
     | IBVar ind -> (
@@ -121,6 +177,9 @@ let ( subst_internal_term,
         | Some subst_tm -> subst_tm
         | None -> tm)
     | _ -> tm
+  in
+  let subst_internal_term_array_aux shift subst_task tm_arr =
+    Array.map (subst_internal_term_aux shift subst_task) tm_arr
   in
   let rec subst_internal_prop_aux shift subst_task = function
     | IPersistent ipr ->
@@ -135,11 +194,14 @@ let ( subst_internal_term,
         iImply
           ( subst_internal_prop_aux shift subst_task pr1,
             subst_internal_prop_aux shift subst_task pr2 )
-    | IPred (pred, param_list) ->
-        iPred
-          (pred, List.map (subst_internal_term_aux shift subst_task) param_list)
+    | IPred (pred, tm_arr) ->
+        iPred (pred, Array.map (subst_internal_term_aux shift subst_task) tm_arr)
     | IForall (binder_info, pr) ->
         iForall
+          ( binder_info,
+            subst_internal_prop_aux (shift + binder_info.shift) subst_task pr )
+    | IExists (binder_info, pr) ->
+        iExists
           ( binder_info,
             subst_internal_prop_aux (shift + binder_info.shift) subst_task pr )
     | IEq (tm1, tm2) ->
@@ -150,17 +212,14 @@ let ( subst_internal_term,
         iNeq
           ( subst_internal_term_aux shift subst_task tm1,
             subst_internal_term_aux shift subst_task tm2 )
+  and subst_simple_internal_iprop_aux shift subst_task (ipr_mset, pr_set) =
+    ( subst_simple_internal_iprop_multiset_aux shift subst_task ipr_mset,
+      subst_internal_prop_set_aux shift subst_task pr_set )
   and subst_internal_iprop_aux shift subst_task = function
-    | IPure pr -> iPure (subst_internal_prop_aux shift subst_task pr)
-    | IStar ipr_mset ->
-        iStar (subst_internal_iprop_mset_aux shift subst_task ipr_mset)
     | IWand (ipr1, ipr2) ->
         iWand
           ( subst_internal_iprop_aux shift subst_task ipr1,
             subst_internal_iprop_aux shift subst_task ipr2 )
-    | IHPred (hpred, param_list) ->
-        iHPred
-          (hpred, List.map (subst_internal_term_aux shift subst_task) param_list)
     | IHForall (binder_info, ipr) ->
         iHForall
           ( binder_info,
@@ -169,18 +228,48 @@ let ( subst_internal_term,
     | _ as ipr -> ipr
   and subst_internal_prop_set_aux shift subst_task pr_set =
     PropSet.map (subst_internal_prop_aux shift subst_task) pr_set
-  and subst_internal_iprop_mset_aux shift subst_task ipr_mset =
-    IpropMset.map (subst_internal_iprop_aux shift subst_task) ipr_mset
+  and subst_internal_iprop_set_aux shift subst_task ipr_set =
+    IpropSet.map (subst_internal_iprop_aux shift subst_task) ipr_set
+  and subst_simple_internal_iprop_multiset_aux shift subst_task ipr_mset =
+    SimpleIpropMset.map
+      (subst_internal_term_array_aux shift subst_task)
+      ipr_mset
   in
   ( subst_internal_term_aux 0,
+    subst_internal_term_array_aux 0,
     subst_internal_prop_aux 0,
+    subst_simple_internal_iprop_aux 0,
     subst_internal_iprop_aux 0,
     subst_internal_prop_set_aux 0,
-    subst_internal_iprop_mset_aux 0 )
+    subst_internal_iprop_set_aux 0,
+    subst_simple_internal_iprop_multiset_aux 0 )
 
-(** Pattern match with quantifiers. *)
+(* * Pattern match with quantifiers.
 
 open Monads.OptionMonad
+
+let rec list_fold_left2_option (f : 'acc -> 'a -> 'b -> 'acc option)
+    (acc : 'acc) (la : 'a list) (lb : 'b list) : 'acc option =
+  match (la, lb) with
+  | [], [] -> return acc
+  | a :: la', b :: lb' ->
+      let* acc' = f acc a b in
+      list_fold_left2_option f acc' la' lb'
+  | _, _ -> None
+
+let rec list_iter_option (f : 'a -> unit option) (l : 'a list) : unit option =
+  match l with
+  | [] -> Some ()
+  | a :: l' ->
+      let* res = f a in
+      list_iter_option f l'
+
+let array_fold_left_i f x a =
+  let open Array in
+  let r = ref x in
+  for i = 0 to length a - 1 do
+    r := f i !r (unsafe_get a i)
+  done;open Monads.OptionMonad
 
 let rec list_fold_left2_option (f : 'acc -> 'a -> 'b -> 'acc option)
     (acc : 'acc) (la : 'a list) (lb : 'b list) : 'acc option =
@@ -320,119 +409,30 @@ let internal_term_match, internal_prop_match, internal_iprop_match =
          [] match_result)
   in
   let internal_iprop_match range pipr ipr =
-    match ipr with
-    | IHForall (_, ipr) | (_ as ipr) ->
-        let* raw_match_result = internal_iprop_match_aux range 0 [] pipr ipr in
-        printf "@.raw match result:@.%a@."
-          (pp_print_list (fun fmt (i, tm) ->
-               fprintf fmt "%i:%a" i pp_internal_term tm))
-          raw_match_result;
+    let* raw_match_result = internal_iprop_match_aux range 0 [] pipr ipr in
+    printf "@.raw match result:@.%a@."
+      (pp_print_list (fun fmt (i, tm) ->
+           fprintf fmt "%i:%a" i pp_internal_term tm))
+      raw_match_result;
 
-        let match_result = Array.init range (fun _ -> None) in
-        let* () =
-          list_iter_option
-            (fun (ind, tm) ->
-              match match_result.(ind) with
-              | None ->
-                  match_result.(ind) <- Some tm;
-                  Some ()
-              | Some tm' -> if internal_term_eqb tm tm' then Some () else None)
-            raw_match_result
-        in
-        return
-          (array_fold_left_i
-             (fun i acc tm_opt ->
-               match tm_opt with None -> acc | Some tm -> (i, tm) :: acc)
-             [] match_result)
+    let match_result = Array.init range (fun _ -> None) in
+    let* () =
+      list_iter_option
+        (fun (ind, tm) ->
+          match match_result.(ind) with
+          | None ->
+              match_result.(ind) <- Some tm;
+              Some ()
+          | Some tm' -> if internal_term_eqb tm tm' then Some () else None)
+        raw_match_result
+    in
+    return
+      (array_fold_left_i
+         (fun i acc tm_opt ->
+           match tm_opt with None -> acc | Some tm -> (i, tm) :: acc)
+         [] match_result)
   in
   (internal_term_match, internal_prop_match, internal_iprop_match)
-
-(** These two functions are extremely fragile in that they exploit the implicit
-    ordering of constructors. *)
-
-let rec internal_prop_shape_lower_bound = function
-  | IPersistent _ -> iPersistent iIPropMin
-  | INot _ -> iNot iPropMin
-  | IAnd _ -> iNot iPropMax
-  | IOr _ -> iOr (iPropMin, iPropMin)
-  | IImply _ -> iImply (iPropMin, iPropMin)
-  | IPred (pred, _) -> iPred (pred, [])
-  | IForall (_, pr) -> internal_prop_shape_lower_bound pr
-  | IEq _ -> iEq (iTermMin, iTermMin)
-  | INeq _ -> iNeq (iTermMin, iTermMin)
-
-let rec internal_prop_shape_upper_bound = function
-  | IPersistent _ -> iPersistent iIPropMax
-  | INot _ -> iNot iPropMax
-  | IAnd _ -> iOr (iPropMin, iPropMin)
-  | IOr _ -> iOr (iPropMax, iPropMax)
-  | IImply _ -> iImply (iPropMax, iPropMax)
-  | IPred (pred, _) -> iPred (pred, [ iTermMax ])
-  | IForall (_, pr) -> internal_prop_shape_upper_bound pr
-  | IEq _ -> iEq (iTermMax, iTermMax)
-  | INeq _ -> iNeq (iTermMax, iTermMax)
-
-let rec internal_iprop_shape_lower_bound = function
-  | IFalse -> iIPropMin
-  | IAtom atom -> iFalse
-  | IPure _ -> iPure iPropMin
-  | IStar _ -> iPure iPropMax
-  | IWand _ -> iWand (iIPropMin, iIPropMin)
-  | IHPred (hpred, _) -> iHPred (hpred, [])
-  | IHForall (_, ipr) -> internal_iprop_shape_lower_bound ipr
-
-let rec internal_iprop_shape_upper_bound = function
-  | IFalse -> iAtom AtomId.min
-  | IAtom atom -> iFalse
-  | IPure _ -> iPure iPropMax
-  | IStar _ -> iWand (iIPropMin, iIPropMin)
-  | IWand _ -> iWand (iIPropMax, iIPropMax)
-  | IHPred (hpred, _) -> iHPred (hpred, [ iTermMax ])
-  | IHForall (_, ipr) -> internal_iprop_shape_upper_bound ipr
-
-let reduce_internal_prop_set pr pr_set =
-  let lower_bound = internal_prop_shape_lower_bound pr in
-  let upper_bound = internal_prop_shape_upper_bound pr in
-
-  printf "@.original set:@.%a@."
-    (pp_internal_prop_set ~pp_sep:pp_print_newline)
-    pr_set;
-
-  let _, _, reduced_pr_set = PropSet.split lower_bound pr_set in
-
-  printf "@.reduced set:@.%a@."
-    (pp_internal_prop_set ~pp_sep:pp_print_newline)
-    reduced_pr_set;
-
-  let reduced_pr_set, _, _ = PropSet.split upper_bound reduced_pr_set in
-
-  printf "@.reduced set:@.%a@."
-    (pp_internal_prop_set ~pp_sep:pp_print_newline)
-    reduced_pr_set;
-
-  return reduced_pr_set
-
-let reduce_internal_iprop_multiset ipr ipr_mset =
-  let lower_bound = internal_iprop_shape_lower_bound ipr in
-  let upper_bound = internal_iprop_shape_upper_bound ipr in
-
-  printf "@.original multiset:@.%a@."
-    (pp_internal_iprop_multiset ~pp_sep:pp_print_newline)
-    ipr_mset;
-
-  let _, _, reduced_ipr_mset = IpropMset.split lower_bound ipr_mset in
-
-  printf "@.reduced multiset:@.%a@."
-    (pp_internal_iprop_multiset ~pp_sep:pp_print_newline)
-    reduced_ipr_mset;
-
-  let reduced_ipr_mset, _, _ = IpropMset.split upper_bound reduced_ipr_mset in
-
-  printf "@.reduced multiset:@.%a@."
-    (pp_internal_iprop_multiset ~pp_sep:pp_print_newline)
-    reduced_ipr_mset;
-
-  return reduced_ipr_mset
 
 let internal_prop_match_multiple range pr pr_set =
   match reduce_internal_prop_set pr pr_set with
@@ -454,4 +454,4 @@ let internal_iprop_match_multiple range ipr ipr_mset =
           match internal_iprop_match range ipr ipr' with
           | Some match_result -> match_result :: acc
           | None -> acc)
-        reduced_ipr_mset []
+        reduced_ipr_mset [] *)

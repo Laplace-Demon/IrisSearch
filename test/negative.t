@@ -1,0 +1,4 @@
+  $ is ./negative
+  
+  no solution
+  

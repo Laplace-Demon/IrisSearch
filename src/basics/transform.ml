@@ -37,6 +37,10 @@ let rec merge_quantifier_prop = function
       merge_quantifier_prop (Forall (typed_str_list1 @ typed_str_list2, pr))
   | Forall (typed_str_list, pr) ->
       Forall (typed_str_list, merge_quantifier_prop pr)
+  | Exists (typed_str_list1, Exists (typed_str_list2, pr)) ->
+      merge_quantifier_prop (Exists (typed_str_list1 @ typed_str_list2, pr))
+  | Exists (typed_str_list, pr) ->
+      Exists (typed_str_list, merge_quantifier_prop pr)
   | _ as pr -> pr
 
 and merge_quantifier_iprop = function
@@ -49,6 +53,10 @@ and merge_quantifier_iprop = function
       merge_quantifier_iprop (HForall (typed_str_list1 @ typed_str_list2, ipr))
   | HForall (typed_str_list, ipr) ->
       HForall (typed_str_list, merge_quantifier_iprop ipr)
+  | HExists (typed_str_list1, HExists (typed_str_list2, ipr)) ->
+      merge_quantifier_iprop (HExists (typed_str_list1 @ typed_str_list2, ipr))
+  | HExists (typed_str_list, ipr) ->
+      HExists (typed_str_list, merge_quantifier_iprop ipr)
   | _ as ipr -> ipr
 
 let merge_quantifier_transformation
@@ -58,7 +66,7 @@ let merge_quantifier_transformation
   let decl_init = List.map merge_quantifier_iprop decl_init in
   { decl_types; decl_preds; decl_consts; decl_facts; decl_laws; decl_init }
 
-(* TODO: also substitute quantified Persistent *)
+(* Only unquantified persistent is substituted. I'm not sure whether to retain it in the future. *)
 let eliminate_persistent_transformation ({ decl_facts } as ins) =
   let rec prop_subst_positive_var src dest = function
     | Persistent ipr -> Persistent (iprop_subst_positive_var src dest ipr)
@@ -77,6 +85,8 @@ let eliminate_persistent_transformation ({ decl_facts } as ins) =
             prop_subst_positive_var src dest pr2 )
     | Forall (typed_str_list, pr) ->
         Forall (typed_str_list, prop_subst_positive_var src dest pr)
+    | Exists (typed_str_list, pr) ->
+        Exists (typed_str_list, prop_subst_positive_var src dest pr)
     | _ as pr -> pr
   and prop_subst_negative_var src dest = function
     | Persistent ipr -> Persistent (iprop_subst_negative_var src dest ipr)
@@ -95,6 +105,8 @@ let eliminate_persistent_transformation ({ decl_facts } as ins) =
             prop_subst_negative_var src dest pr2 )
     | Forall (typed_str_list, pr) ->
         Forall (typed_str_list, prop_subst_negative_var src dest pr)
+    | Exists (typed_str_list, pr) ->
+        Exists (typed_str_list, prop_subst_negative_var src dest pr)
     | _ as pr -> pr
   and iprop_subst_positive_var src dest = function
     | Atom str -> if String.equal str src then dest else Atom str
@@ -110,6 +122,8 @@ let eliminate_persistent_transformation ({ decl_facts } as ins) =
     | Box ipr -> Box (iprop_subst_positive_var src dest ipr)
     | HForall (typed_str_list, ipr) ->
         HForall (typed_str_list, iprop_subst_positive_var src dest ipr)
+    | HExists (typed_str_list, ipr) ->
+        HExists (typed_str_list, iprop_subst_positive_var src dest ipr)
     | _ as ipr -> ipr
   and iprop_subst_negative_var src dest = function
     | Atom str -> Atom str
@@ -125,6 +139,8 @@ let eliminate_persistent_transformation ({ decl_facts } as ins) =
     | Box ipr -> Box (iprop_subst_negative_var src dest ipr)
     | HForall (typed_str_list, ipr) ->
         HForall (typed_str_list, iprop_subst_negative_var src dest ipr)
+    | HExists (typed_str_list, ipr) ->
+        HExists (typed_str_list, iprop_subst_negative_var src dest ipr)
     | _ as ipr -> ipr
   in
   let instance_subst_positive_var src dest

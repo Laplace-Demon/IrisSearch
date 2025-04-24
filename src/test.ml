@@ -8,7 +8,7 @@ open Is.State
 
 let () = Printexc.record_backtrace true
 
-open Monads.ListMonad
+(* open Monads.ListMonad
 
 let apply ipr (pr_set, ipr_mset) =
   match ipr with
@@ -16,14 +16,9 @@ let apply ipr (pr_set, ipr_mset) =
       match ipr1 with
       | IStar ipr_set -> []
       | _ -> (
-          printf "%a@." pp_internal_iprop ipr1;
           let* match_result =
             internal_iprop_match_multiple shift ipr1 ipr_mset
           in
-          printf "@.match result:@.%a@."
-            (pp_print_list (fun fmt (i, tm) ->
-                 fprintf fmt "%i:%a" i pp_internal_term tm))
-            match_result;
           let subst_ipr1 = subst_internal_iprop match_result ipr1 in
           let prems =
             match subst_ipr1 with
@@ -31,57 +26,21 @@ let apply ipr (pr_set, ipr_mset) =
             | _ -> IpropMset.singleton subst_ipr1 Multiplicity.one
           in
           try
-            let ipr_mset_prems_elim = IpropMset.diff ipr_mset prems in
+            let ipr_mset_prems_elim, is_inf = IpropMset.diff ipr_mset prems in
             let subst_ipr2 = subst_internal_iprop match_result ipr2 in
             let concls =
               match subst_ipr2 with
-              | IStar ipr_mset -> ipr_mset
-              | _ -> IpropMset.singleton subst_ipr2 Multiplicity.one
+              | IStar ipr_mset ->
+                  if is_inf then
+                    IpropMset.map_multiplicity
+                      (fun _ _ -> Multiplicity.inf)
+                      ipr_mset
+                  else ipr_mset
+              | _ ->
+                  IpropMset.singleton ipr2
+                    (if is_inf then Multiplicity.inf else Multiplicity.one)
             in
             let new_ipr_mset = IpropMset.union concls ipr_mset_prems_elim in
-            let new_st = (pr_set, new_ipr_mset) in
-            if is_duplicate new_st then [] else return new_st
-          with Multiplicity.Underflow -> assert false))
-  | _ -> []
-
-let apply_multiple ipr count (pr_set, ipr_mset) =
-  match ipr with
-  | IHForall ({ shift }, IWand (ipr1, ipr2)) -> (
-      match ipr1 with
-      | IStar ipr_set -> []
-      | _ -> (
-          let* match_result =
-            internal_iprop_match_multiple shift ipr1 ipr_mset
-          in
-          printf "@.match result:@.%a@."
-            (pp_print_list (fun fmt (i, tm) ->
-                 fprintf fmt "%i:%a" i pp_internal_term tm))
-            match_result;
-          let subst_ipr1 = subst_internal_iprop match_result ipr1 in
-          let prems =
-            match subst_ipr1 with
-            | IStar ipr_mset -> ipr_mset
-            | _ -> IpropMset.singleton subst_ipr1 Multiplicity.one
-          in
-          try
-            let factor =
-              Multiplicity.min (IpropMset.factor ipr_mset prems) count
-            in
-            let ipr_mset_prems_elim =
-              IpropMset.diff_multiple factor ipr_mset prems
-            in
-            let subst_ipr2 = subst_internal_iprop match_result ipr2 in
-            let concls =
-              match subst_ipr2 with
-              | IStar ipr_mset -> ipr_mset
-              | _ -> IpropMset.singleton subst_ipr2 Multiplicity.one
-            in
-            let dup_concls =
-              IpropMset.map_multiplicity
-                (fun _ count -> Multiplicity.mul count factor)
-                concls
-            in
-            let new_ipr_mset = IpropMset.union dup_concls ipr_mset_prems_elim in
             let new_st = (pr_set, new_ipr_mset) in
             if is_duplicate new_st then [] else return new_st
           with Multiplicity.Underflow -> assert false))
@@ -105,6 +64,7 @@ module Example1 = struct
   let ipr_list = [ ipr1; ipr2; ipr3; ipr4; ipr5; ipr6 ]
   let ipr_mset = iprop_list_to_internal ipr_list
   let state = (PropSet.empty, ipr_mset)
+  let () = printf "@.%a@." pp_state state
 
   let show () =
     printf "Example1@.";
@@ -134,7 +94,7 @@ module Example2 = struct
 
   let show () =
     printf "Example2@.";
-    let* apply_result = apply_multiple law Multiplicity.inf state in
+    let* apply_result = apply law state in
     let () = printf "@.%a@.@." pp_state apply_result in
     []
 end
@@ -160,7 +120,7 @@ module Example3 = struct
 
   let show () =
     printf "Example3@.";
-    let* apply_result = apply_multiple law Multiplicity.inf state in
+    let* apply_result = apply law state in
     let () = printf "@.%a@.@." pp_state apply_result in
     []
 end
@@ -261,4 +221,4 @@ module Example5 = struct
     []
 end
 
-let _ = Example5.show ()
+let _ = Example1.show () *)

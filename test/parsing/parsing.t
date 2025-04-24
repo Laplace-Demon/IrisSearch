@@ -61,8 +61,8 @@
   original instance
   
   laws
-      □ (A * B * C * D -* □ ⌜ Persistent E ∧ iris search ⌝),
-      □ (A * B * C * D -* □ ⌜ Persistent E ∧ iris search ⌝)
+      (A * B * C * D -* □ ⌜ Persistent E ∧ iris search ⌝),
+      (A * B * C * D -* □ ⌜ Persistent E ∧ iris search ⌝)
   init
       %empty
   
@@ -73,7 +73,7 @@
   original instance
   
   laws
-      □ A A
+      A A
   init
       %empty
   
@@ -84,7 +84,7 @@
   original instance
   
   laws
-      □ (A -* (A -* (A -* A)))
+      (A -* (A -* (A -* A)))
   init
       %empty
   
@@ -97,7 +97,7 @@
   types
       loc
   laws
-      □ forall l1 l2 : loc, ⊥
+      forall l1 l2 : loc, ⊥
   init
       %empty
   
@@ -116,8 +116,8 @@
   consts
       Discarded : dfrac
   laws
-      □ forall (l : loc) (dq1 dq2 : dfrac) (v1 v2 : val), (pointsto l dq1 v1 -* (pointsto l dq2 v2 -* ⌜ v1 = v2 ⌝)),
-      □ forall (l : loc) (dq : dfrac) (v : val), (pointsto l dq v -* pointsto l Discarded v)
+      forall (l : loc) (dq1 dq2 : dfrac) (v1 v2 : val), (pointsto l dq1 v1 -* (pointsto l dq2 v2 -* ⌜ v1 = v2 ⌝)),
+      forall (l : loc) (dq : dfrac) (v : val), (pointsto l dq v -* pointsto l Discarded v)
   init
       %empty
   
@@ -136,7 +136,7 @@
   consts
       Discarded : dfrac
   laws
-      □ forall l : loc, forall dq1 : dfrac, forall dq2 : dfrac, forall v1 : val, forall v2 : val, (pointsto l dq1 v1 -* (pointsto l dq2 v2 -* ⌜ v1 = v2 ⌝))
+      forall l : loc, forall dq1 : dfrac, forall dq2 : dfrac, forall v1 : val, forall v2 : val, (pointsto l dq1 v1 -* (pointsto l dq2 v2 -* ⌜ v1 = v2 ⌝))
   init
       %empty
   
