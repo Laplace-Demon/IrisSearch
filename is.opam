@@ -4,6 +4,7 @@ version: "1.0"
 description: "Proof Searching in Iris"
 depends: [
   "baby"
+  "menhir"
   "menhirLib"
 ]
 build: [
