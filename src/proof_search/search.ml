@@ -136,7 +136,7 @@ struct
                  start node, through this node, to this son. *)
                 let new_cost = inode.cost + 1 in
                 assert (0 <= new_cost);
-                if new_cost <= !max_depth then (
+                if new_cost < !max_depth then (
                   let rec ison =
                     {
                       this = son;

@@ -8,7 +8,7 @@ open Transform
 
 let solve ?(until_validation = false) ?(until_transformation = false)
     ?(show_transformed_instance = false) ?(show_state = false)
-    ?(show_path = false) fmt ins =
+    ?(show_path = false) ?(max_depth = 20) fmt ins =
   let () = Validate.validate symbol_table ins in
   if until_validation then fprintf fmt "@.Validation succeeds.@.@."
   else
@@ -57,6 +57,7 @@ let solve ?(until_validation = false) ?(until_transformation = false)
 
         exception Termination = Termination
       end) in
+      let () = set_max_depth max_depth in
       match search () with
       | Some path ->
           let () =

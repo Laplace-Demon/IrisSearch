@@ -12,6 +12,7 @@ exception MissingTypeDeclarationError of string
 exception MissingPredicateDeclarationError of string
 exception MissingConstDeclarationError of string
 exception TypeError of string * itype * itype
+exception ArityError of string * int * int
 
 module Env = Map.Make (String)
 
@@ -41,14 +42,19 @@ let rec check_prop symbol_table env = function
       | Some ity -> (
           match ity with
           | Tarrow (param_ity_list, Tprop) ->
-              List.iter2
-                (fun param param_ity ->
-                  let arg_ity = check_term symbol_table env param in
-                  if not (itype_eqb arg_ity param_ity) then
-                    raise
-                      (TypeError
-                         (asprintf "%a" pp_term param, param_ity, arg_ity)))
-                param_list param_ity_list
+              if List.length param_list = List.length param_ity_list then
+                List.iter2
+                  (fun param param_ity ->
+                    let arg_ity = check_term symbol_table env param in
+                    if not (itype_eqb arg_ity param_ity) then
+                      raise
+                        (TypeError
+                           (asprintf "%a" pp_term param, param_ity, arg_ity)))
+                  param_list param_ity_list
+              else
+                raise
+                  (ArityError
+                     (pred, List.length param_ity_list, List.length param_list))
           | _ -> raise (TypeError (pred, Tarrow ([], Tprop), ity)))
       | None -> raise (MissingPredicateDeclarationError pred))
   | Forall (typed_str_list, pr) | Exists (typed_str_list, pr) ->
@@ -85,14 +91,19 @@ and check_iprop symbol_table env = function
       | Some ity -> (
           match ity with
           | Tarrow (param_ity_list, Tiprop) ->
-              List.iter2
-                (fun param param_ity ->
-                  let arg_ity = check_term symbol_table env param in
-                  if not (itype_eqb arg_ity param_ity) then
-                    raise
-                      (TypeError
-                         (asprintf "%a" pp_term param, param_ity, arg_ity)))
-                param_list param_ity_list
+              if List.length param_list = List.length param_ity_list then
+                List.iter2
+                  (fun param param_ity ->
+                    let arg_ity = check_term symbol_table env param in
+                    if not (itype_eqb arg_ity param_ity) then
+                      raise
+                        (TypeError
+                           (asprintf "%a" pp_term param, param_ity, arg_ity)))
+                  param_list param_ity_list
+              else
+                raise
+                  (ArityError
+                     (hpred, List.length param_ity_list, List.length param_list))
           | _ -> raise (TypeError (hpred, Tarrow ([], Tiprop), ity)))
       | None -> raise (MissingPredicateDeclarationError hpred))
   | HForall (typed_str_list, ipr) | HExists (typed_str_list, ipr) ->

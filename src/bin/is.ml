@@ -9,6 +9,7 @@ let show_transformed_instance = ref false
 let show_state = ref false
 let show_path = ref false
 let show_statistics = ref false
+let max_depth = ref 20
 
 let input_filename, in_channel, out_channel =
   let input = ref None in
@@ -48,6 +49,9 @@ let input_filename, in_channel, out_channel =
             Arg.Set show_statistics;
           ],
         "\n\tPrint all the information above.\n" );
+      ( "--max-depth",
+        Arg.Int (fun d -> max_depth := d),
+        "\n\tSet maximum search depth.\n" );
     ]
   in
   let () = Arg.parse speclist set_input "Usage: is input [-o output]" in
@@ -83,7 +87,8 @@ let () =
           Main.solve ~until_validation:!until_validation
             ~until_transformation:!until_transformation
             ~show_transformed_instance:!show_transformed_instance
-            ~show_state:!show_state ~show_path:!show_path formatter ins)
+            ~show_state:!show_state ~show_path:!show_path ~max_depth:!max_depth
+            formatter ins)
   with
   | Lexer.Lexing_error s ->
       eprintf "%s: lexing error: %s@." input_filename s;
@@ -121,6 +126,10 @@ let () =
   | Validate.TypeError (str, ity1, ity2) ->
       eprintf "validation error: %s should have type %a, but has type %a@." str
         Type.pp_itype ity1 Type.pp_itype ity2;
+      exit 1
+  | Validate.ArityError (str, a1, a2) ->
+      eprintf "validation error: %s should have arity %i, but has arity %i@."
+        str a1 a2;
       exit 1
   | e ->
       eprintf "exception: %s\n@." (Printexc.to_string e);

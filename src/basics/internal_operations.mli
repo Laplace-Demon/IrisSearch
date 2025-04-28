@@ -10,7 +10,7 @@ val iprop_list_to_internal_iprop_set : iprop list -> internal_iprop_set
 val iprop_list_to_simple_internal_iprop_multiset_and_internal_prop_set :
   iprop list -> simple_internal_iprop_multiset * internal_prop_set
 
-type subst_task = (int * internal_term) list
+type subst_task = internal_term option array
 
 val subst_internal_term : subst_task -> internal_term -> internal_term
 
@@ -33,19 +33,43 @@ val subst_internal_iprop_set :
 val subst_simple_internal_iprop_multiset :
   subst_task -> simple_internal_iprop_multiset -> simple_internal_iprop_multiset
 
-(* type match_result = (int * internal_term) list
+type match_result = internal_term option array
+
+open Monads.ListMonad
 
 val internal_term_match :
-  int -> internal_term -> internal_term -> match_result option
+  match_result -> internal_term -> internal_term -> match_result t
+
+val internal_term_array_match :
+  match_result -> internal_term array -> internal_term array -> match_result t
 
 val internal_prop_match :
-  int -> internal_prop -> internal_prop -> match_result option
+  match_result -> internal_prop -> internal_prop -> match_result t
 
 val internal_iprop_match :
-  int -> internal_iprop -> internal_iprop -> match_result option
+  match_result -> internal_iprop -> internal_iprop -> match_result t
 
-val internal_prop_match_multiple :
-  int -> internal_prop -> internal_prop_set -> match_result list
+val internal_prop_set_match :
+  match_result ->
+  internal_prop_set ->
+  internal_prop_set ->
+  (match_result * internal_prop_set) t
 
-val internal_iprop_match_multiple :
-  int -> internal_iprop -> internal_iprop_multiset -> match_result list *)
+val simple_internal_iprop_multiset_match :
+  match_result ->
+  simple_internal_iprop_multiset ->
+  simple_internal_iprop_multiset ->
+  (match_result * simple_internal_iprop_multiset * bool) t
+
+val internal_prop_set_substract_match :
+  match_result ->
+  internal_prop ->
+  internal_prop_set ->
+  (match_result * internal_prop_set) t
+
+val simple_internal_iprop_multiset_substract_match :
+  match_result ->
+  SimpleIpropMset.elt ->
+  Multiplicity.t ->
+  simple_internal_iprop_multiset ->
+  (match_result * simple_internal_iprop_multiset * bool) t

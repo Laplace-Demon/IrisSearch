@@ -14,6 +14,7 @@ module type Set = sig
   val diff : t -> t -> t
   val subset : t -> t -> bool
   val map : (elt -> elt) -> t -> t
+  val iter : (elt -> unit) -> t -> unit
   val fold : (elt -> 'acc -> 'acc) -> t -> 'acc -> 'acc
   val to_list : t -> elt list
   val of_list : elt list -> t
@@ -47,6 +48,7 @@ module Make (Ord : Baby.OrderedType) = struct
 
   let map = BabySet.map
   let fold = BabySet.fold
+  let iter = BabySet.iter
   let to_list = BabySet.to_list
   let of_list = BabySet.of_list
   let equal = BabySet.equal

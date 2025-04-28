@@ -18,7 +18,7 @@ let add t1 t2 =
   | Infinite, _ | _, Infinite -> Infinite
   | Finite i1, Finite i2 -> Finite (i1 + i2)
 
-let sub t1 t2 =
+let sub_exn t1 t2 =
   match (t1, t2) with
   | Infinite, _ -> Some Infinite
   | Finite i1, Finite i2 ->
@@ -27,6 +27,14 @@ let sub t1 t2 =
       else if c > 0 then Some (Finite (i1 - i2))
       else raise Underflow
   | _, _ -> raise Underflow
+
+let sub_opt t1 t2 =
+  match (t1, t2) with
+  | Infinite, _ -> Some Infinite
+  | Finite i1, Finite i2 ->
+      let c = Int.compare i1 i2 in
+      if c <= 0 then None else Some (Finite (i1 - i2))
+  | _, _ -> None
 
 let equal t1 t2 =
   match (t1, t2) with

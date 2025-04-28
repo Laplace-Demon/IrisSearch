@@ -14,6 +14,7 @@ module type Set = sig
   val diff : t -> t -> t
   val subset : t -> t -> bool
   val map : (elt -> elt) -> t -> t
+  val iter : (elt -> unit) -> t -> unit
   val fold : (elt -> 'acc -> 'acc) -> t -> 'acc -> 'acc
   val to_list : t -> elt list
   val of_list : elt list -> t

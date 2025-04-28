@@ -26,10 +26,3 @@
  (libraries baby menhirLib)
  (flags
   (:standard -w -a)))
-
-(executable
- (public_name test)
- (modules test)
- (libraries baby is menhirLib)
- (flags
-  (:standard -w -a)))

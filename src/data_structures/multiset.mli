@@ -8,13 +8,14 @@ module type Multiset = sig
   val singleton : elt -> Multiplicity.t -> t
   val mem : elt -> t -> bool
   val add : elt -> Multiplicity.t -> t -> t
-  val remove : elt -> t -> t
+  val remove : elt -> Multiplicity.t -> t -> t
   val union : t -> t -> t
   val inter : t -> t -> t
   val diff : t -> t -> t * bool
   val subset : t -> t -> bool
   val map : (elt -> elt) -> t -> t
   val map_multiplicity : (elt -> Multiplicity.t -> Multiplicity.t) -> t -> t
+  val iter : (elt -> Multiplicity.t -> unit) -> t -> unit
   val fold : (elt -> Multiplicity.t -> 'acc -> 'acc) -> t -> 'acc -> 'acc
   val to_list : t -> (elt * Multiplicity.t) list
   val of_list : (elt * Multiplicity.t) list -> t
@@ -37,13 +38,14 @@ module type Multiset2 = sig
   val mem : elt -> t -> bool
   val mem1 : elt1 -> t -> bool
   val add : elt -> Multiplicity.t -> t -> t
-  val remove : elt -> t -> t
+  val remove : elt -> Multiplicity.t -> t -> t
   val union : t -> t -> t
   val inter : t -> t -> t
   val diff : t -> t -> t * bool
   val subset : t -> t -> bool
   val map : (elt2 -> elt2) -> t -> t
   val map_multiplicity : (elt -> Multiplicity.t -> Multiplicity.t) -> t -> t
+  val iter : (elt -> Multiplicity.t -> unit) -> t -> unit
   val fold : (elt -> Multiplicity.t -> 'acc -> 'acc) -> t -> 'acc -> 'acc
   val to_list : t -> (elt * Multiplicity.t) list
   val equal : t -> t -> bool

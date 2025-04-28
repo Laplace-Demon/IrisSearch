@@ -8,13 +8,14 @@ module type Multiset = sig
   val singleton : elt -> Multiplicity.t -> t
   val mem : elt -> t -> bool
   val add : elt -> Multiplicity.t -> t -> t
-  val remove : elt -> t -> t
+  val remove : elt -> Multiplicity.t -> t -> t
   val union : t -> t -> t
   val inter : t -> t -> t
   val diff : t -> t -> t * bool
   val subset : t -> t -> bool
   val map : (elt -> elt) -> t -> t
   val map_multiplicity : (elt -> Multiplicity.t -> Multiplicity.t) -> t -> t
+  val iter : (elt -> Multiplicity.t -> unit) -> t -> unit
   val fold : (elt -> Multiplicity.t -> 'acc -> 'acc) -> t -> 'acc -> 'acc
   val to_list : t -> (elt * Multiplicity.t) list
   val of_list : (elt * Multiplicity.t) list -> t
@@ -39,7 +40,10 @@ module Make (Ord : Baby.OrderedType) = struct
       | None -> Some v
       | Some v' -> Some (Multiplicity.add v v'))
 
-  let remove = BabyMap.remove
+  let remove e v s =
+    BabyMap.update e
+      (function None -> None | Some v' -> Multiplicity.sub_opt v' v)
+      s
 
   let union s1 s2 =
     Statistics.record_operation "Multiset.union";
@@ -59,7 +63,7 @@ module Make (Ord : Baby.OrderedType) = struct
           | _, None -> o1
           | Some v1, Some v2 ->
               is_inf := !is_inf && Multiplicity.is_infinite v1;
-              Multiplicity.sub v1 v2)
+              Multiplicity.sub_exn v1 v2)
         s1 s2
     in
     (merged_tree, !is_inf)
@@ -75,6 +79,10 @@ module Make (Ord : Baby.OrderedType) = struct
   let map_multiplicity =
     Statistics.record_operation "Multiset.map_multiplicity";
     BabyMap.mapi
+
+  let iter f s =
+    Statistics.record_operation "Multiset.iter";
+    BabyMap.iter f s
 
   let fold f s init =
     Statistics.record_operation "Multiset.fold";
@@ -99,13 +107,14 @@ module type Multiset2 = sig
   val mem : elt -> t -> bool
   val mem1 : elt1 -> t -> bool
   val add : elt -> Multiplicity.t -> t -> t
-  val remove : elt -> t -> t
+  val remove : elt -> Multiplicity.t -> t -> t
   val union : t -> t -> t
   val inter : t -> t -> t
   val diff : t -> t -> t * bool
   val subset : t -> t -> bool
   val map : (elt2 -> elt2) -> t -> t
   val map_multiplicity : (elt -> Multiplicity.t -> Multiplicity.t) -> t -> t
+  val iter : (elt -> Multiplicity.t -> unit) -> t -> unit
   val fold : (elt -> Multiplicity.t -> 'acc -> 'acc) -> t -> 'acc -> 'acc
   val to_list : t -> (elt * Multiplicity.t) list
   val equal : t -> t -> bool
@@ -137,12 +146,12 @@ module Make2 (Ord1 : Baby.OrderedType) (Ord2 : Baby.OrderedType) = struct
         | None -> Some (Mset.singleton e2 v) | Some t -> Some (Mset.add e2 v t))
       s
 
-  let remove (e1, e2) s =
+  let remove (e1, e2) v s =
     BabyMap.update e1
       (function
         | None -> None
         | Some t ->
-            let t' = Mset.remove e2 t in
+            let t' = Mset.remove e2 v t in
             if Mset.is_empty t' then None else Some t')
       s
 
@@ -171,6 +180,9 @@ module Make2 (Ord1 : Baby.OrderedType) (Ord2 : Baby.OrderedType) = struct
 
   let map_multiplicity f s =
     BabyMap.mapi (fun e1 t -> Mset.map_multiplicity (fun e2 -> f (e1, e2)) t) s
+
+  let iter f s =
+    BabyMap.iter (fun e1 t -> Mset.iter (fun e2 v -> f (e1, e2) v) t) s
 
   let fold f s init =
     BabyMap.fold (fun e1 t acc -> Mset.fold (fun e2 -> f (e1, e2)) t acc) s init
