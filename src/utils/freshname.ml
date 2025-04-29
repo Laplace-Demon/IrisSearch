@@ -9,5 +9,3 @@ let generate ?(base = "") () =
   | None ->
       Hashtbl.add name_table base 1;
       String.concat "_" [ base; Int.to_string 0 ]
-
-let rec repeat f n = if n = 0 then [] else f () :: repeat f (n - 1)

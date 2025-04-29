@@ -2,7 +2,7 @@ open Format
 open Internal
 open Type
 
-type state = simple_internal_iprop_multiset * internal_prop_set
+type state = string list * simple_internal_iprop_multiset * internal_prop_set
 
 val facts : internal_prop_set ref
 val laws : internal_iprop_set ref

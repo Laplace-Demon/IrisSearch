@@ -386,6 +386,7 @@ let ( internal_term_match,
   and simple_internal_iprop_multiset_substract_match_aux shift match_result
       (phpred, ptm_arr) pcount ipr_mset :
       (match_result * simple_internal_iprop_multiset * bool) t =
+    (* TODO *)
     SimpleIpropMset.fold
       (fun ((hpred, tm_arr) as ipr) count acc ->
         (if HPredId.equal phpred hpred && Multiplicity.compare pcount count <= 0

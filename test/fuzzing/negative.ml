@@ -3,6 +3,8 @@ open Ast
 open Freshname
 open Type
 
+let rec repeat f n = if n = 0 then [] else f () :: repeat f (n - 1)
+
 module Negative = struct
   let const_num = ref 20
   let law_num = ref 50

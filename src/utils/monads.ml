@@ -1,3 +1,12 @@
+module OptionMonad = struct
+  type 'a t = 'a option
+
+  let return x = Some x
+  let bind = Option.bind
+  let ( let* ) = bind
+  let fail = None
+end
+
 module ListMonad = struct
   type 'a t = 'a list
 

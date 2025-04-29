@@ -3,10 +3,11 @@ open State
 
 let is_duplicate : state -> bool =
   let state_list = ref [] in
-  let is_duplicate_aux ((ipr_mset, pr_set) as st) =
+  let is_duplicate_aux ((local_var_list, ipr_mset, pr_set) as st) =
     if
       List.exists
-        (fun (ipr_mset', pr_set') ->
+        (fun (local_var_list', ipr_mset', pr_set') ->
+          (* TODO *)
           SimpleIpropMset.subset ipr_mset ipr_mset'
           && PropSet.subset pr_set pr_set')
         !state_list

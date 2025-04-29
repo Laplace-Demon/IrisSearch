@@ -5,6 +5,7 @@
  (modules
   ast
   duplication_checker
+  freshname
   internal
   internal_operations
   interned_string

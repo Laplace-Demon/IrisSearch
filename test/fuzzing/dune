@@ -1,7 +1,7 @@
 (executable
  (name fuzzer)
  (public_name fuzzer)
- (modules freshname fuzzer negative)
+ (modules fuzzer negative)
  (libraries is)
  (flags
   (:standard -w -a)))
