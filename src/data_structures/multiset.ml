@@ -103,7 +103,7 @@ module Make (Ord : Baby.OrderedType) = struct
   let equal s1 s2 =
     Statistics.record_operation "Multiset.equal";
     BabyMap.equal Multiplicity.equal s1 s2
-  
+
   let compare s1 s2 =
     Statistics.record_operation "Multiset.commpare";
     BabyMap.compare Multiplicity.compare s1 s2
@@ -130,6 +130,7 @@ module type Multiset2 = sig
   val map : (elt2 -> elt2) -> t -> t
   val map_multiplicity : (elt -> Multiplicity.t -> Multiplicity.t) -> t -> t
   val iter : (elt -> Multiplicity.t -> unit) -> t -> unit
+  val iter1 : (elt1 -> unit) -> t -> unit
   val fold : (elt -> Multiplicity.t -> 'acc -> 'acc) -> t -> 'acc -> 'acc
   val to_list : t -> (elt * Multiplicity.t) list
   val equal : t -> t -> bool
@@ -198,6 +199,8 @@ module Make2 (Ord1 : Baby.OrderedType) (Ord2 : Baby.OrderedType) = struct
 
   let iter f s =
     BabyMap.iter (fun e1 t -> Mset.iter (fun e2 v -> f (e1, e2) v) t) s
+
+  let iter1 f s = BabyMap.iter (fun e1 _ -> f e1) s
 
   let fold f s init =
     BabyMap.fold (fun e1 t acc -> Mset.fold (fun e2 -> f (e1, e2)) t acc) s init

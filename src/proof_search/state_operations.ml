@@ -99,7 +99,7 @@ let apply law (local_var_list, ipr_mset, pr_set) =
         in
         let new_pr_set = PropSet.union pr_concls pr_set_prems_elim in
         let new_st = (new_local_var_list, new_ipr_mset, new_pr_set) in
-        if is_duplicate new_st then fail else return new_st
+        if is_dup new_st then fail else return new_st
       with Multiplicity.Underflow -> fail)
 
 let successors st =

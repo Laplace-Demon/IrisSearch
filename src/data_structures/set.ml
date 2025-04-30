@@ -13,6 +13,7 @@ module type Set = sig
   val inter : t -> t -> t
   val diff : t -> t -> t
   val subset : t -> t -> bool
+  val exists : (elt -> bool) -> t -> bool
   val map : (elt -> elt) -> t -> t
   val iter : (elt -> unit) -> t -> unit
   val fold : (elt -> 'acc -> 'acc) -> t -> 'acc -> 'acc
@@ -32,18 +33,23 @@ module Make (Ord : Baby.OrderedType) = struct
   let is_empty = BabySet.is_empty
   let cardinal = BabySet.cardinal
   let singleton e = BabySet.singleton e
+
   let mem e s =
     Statistics.record_operation "Set.mem";
     BabySet.mem e s
+
   let add e s =
     Statistics.record_operation "Set.add";
     BabySet.add e s
+
   let remove e s =
     Statistics.record_operation "Set.remove";
     BabySet.remove e s
+
   let union s1 s2 =
     Statistics.record_operation "Set.union";
     BabySet.union s1 s2
+
   let inter s1 s2 =
     Statistics.record_operation "Set.inter";
     BabySet.inter s1 s2
@@ -56,6 +62,10 @@ module Make (Ord : Baby.OrderedType) = struct
   let subset s1 s2 =
     Statistics.record_operation "Set.subset";
     BabySet.subset s1 s2
+
+  let exists f s =
+    Statistics.record_operation "Set.exists";
+    BabySet.exists f s
 
   let map f s =
     Statistics.record_operation "Set.map";
@@ -72,6 +82,7 @@ module Make (Ord : Baby.OrderedType) = struct
   let to_list s =
     Statistics.record_operation "Set.to_list";
     BabySet.to_list s
+
   let of_list l =
     Statistics.record_operation "Set.of_list";
     BabySet.of_list l
@@ -79,6 +90,7 @@ module Make (Ord : Baby.OrderedType) = struct
   let equal s1 s2 =
     Statistics.record_operation "Set.equal";
     BabySet.equal s1 s2
+
   let compare s1 s2 =
     Statistics.record_operation "Set.compare";
     BabySet.compare s1 s2

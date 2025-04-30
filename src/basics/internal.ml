@@ -162,12 +162,6 @@ and OrderedTermArray :
   let compare = Internal.compare_internal_term_array
 end
 
-and OrderedHPredId : (Baby.OrderedType with type t = HPredId.t) = struct
-  type t = HPredId.t
-
-  let compare = HPredId.compare
-end
-
 and PropSet : (Set.Set with type elt = Internal.internal_prop) =
   Set.Make (OrderedInternalProp)
 
@@ -176,9 +170,9 @@ and IpropSet : (Set.Set with type elt = Internal.internal_iprop) =
 
 and SimpleIpropMset :
   (Multiset.Multiset2
-    with type elt1 = OrderedHPredId.t
+    with type elt1 = HPredId.t
      and type elt2 = OrderedTermArray.t) =
-  Multiset.Make2 (OrderedHPredId) (OrderedTermArray)
+  Multiset.Make2 (HPredId) (OrderedTermArray)
 
 include Internal
 

@@ -6,6 +6,7 @@ open Type
 
 type state = string list * simple_internal_iprop_multiset * internal_prop_set
 
+let empty_state = ([], SimpleIpropMset.empty, PropSet.empty)
 let facts = ref PropSet.empty
 let laws = ref IpropSet.empty
 

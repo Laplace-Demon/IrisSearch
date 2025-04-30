@@ -46,6 +46,7 @@ module type Multiset2 = sig
   val map : (elt2 -> elt2) -> t -> t
   val map_multiplicity : (elt -> Multiplicity.t -> Multiplicity.t) -> t -> t
   val iter : (elt -> Multiplicity.t -> unit) -> t -> unit
+  val iter1 : (elt1 -> unit) -> t -> unit
   val fold : (elt -> Multiplicity.t -> 'acc -> 'acc) -> t -> 'acc -> 'acc
   val to_list : t -> (elt * Multiplicity.t) list
   val equal : t -> t -> bool
