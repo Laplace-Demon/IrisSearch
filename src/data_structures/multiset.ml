@@ -36,11 +36,13 @@ module Make (Ord : Baby.OrderedType) = struct
   let mem = BabyMap.mem
 
   let add e v =
+    Statistics.record_operation "Multiset.add";
     BabyMap.update e (function
       | None -> Some v
       | Some v' -> Some (Multiplicity.add v v'))
 
   let remove e v s =
+    Statistics.record_operation "Multiset.remove";
     BabyMap.update e
       (function None -> None | Some v' -> Multiplicity.sub_opt v' v)
       s
@@ -49,7 +51,9 @@ module Make (Ord : Baby.OrderedType) = struct
     Statistics.record_operation "Multiset.union";
     BabyMap.union (fun _ v1 v2 -> Some (Multiplicity.add v1 v2)) s1 s2
 
-  let inter = BabyMap.inter (fun _ v1 v2 -> Some (Multiplicity.min v1 v2))
+  let inter s1 s2 =
+    Statistics.record_operation "Multiset.inter";
+    BabyMap.inter (fun _ v1 v2 -> Some (Multiplicity.min v1 v2)) s1 s2
 
   let diff s1 s2 =
     Statistics.record_operation "Multiset.diff";
@@ -88,10 +92,21 @@ module Make (Ord : Baby.OrderedType) = struct
     Statistics.record_operation "Multiset.fold";
     BabyMap.fold f s init
 
-  let to_list = BabyMap.to_list
-  let of_list = BabyMap.of_list
-  let equal = BabyMap.equal Multiplicity.equal
-  let compare = BabyMap.compare Multiplicity.compare
+  let to_list s =
+    Statistics.record_operation "Multiset.to_list";
+    BabyMap.to_list s
+
+  let of_list l =
+    Statistics.record_operation "Multiset.of_list";
+    BabyMap.of_list l
+
+  let equal s1 s2 =
+    Statistics.record_operation "Multiset.equal";
+    BabyMap.equal Multiplicity.equal s1 s2
+  
+  let compare s1 s2 =
+    Statistics.record_operation "Multiset.commpare";
+    BabyMap.compare Multiplicity.compare s1 s2
 end
 
 module type Multiset2 = sig

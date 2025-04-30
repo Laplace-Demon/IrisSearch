@@ -14,6 +14,11 @@ module Make (Ord : Baby.OrderedType) = struct
   type 'a t = 'a BabyMap.map
 
   let empty = BabyMap.empty
-  let add = BabyMap.add
-  let find_opt = BabyMap.find_opt
+  let add k e s =
+    Statistics.record_operation "Map.add";
+    BabyMap.add k e s
+
+  let find_opt k s =
+    Statistics.record_operation "Map.find_opt";
+    BabyMap.find_opt k s
 end

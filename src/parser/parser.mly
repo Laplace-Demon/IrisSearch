@@ -109,9 +109,13 @@ decl_laws:
 decl_law:
 | iprop
   { $1 }
-| EXCLUSIVE IDENT
-  { let atom = Atom $2 in
-    Wand (Star (atom, atom), False) }
+| EXCLUSIVE iprop
+  { Wand (Star ($2, $2), False) }
+| FORALL IDENT COLON itype COMMA EXCLUSIVE iprop
+  { HForall ([$2, $4], Wand (Star ($7, $7), False)) }
+| FORALL nonempty_list(binders) COMMA EXCLUSIVE iprop
+  { let typed_str_list = List.concat_map (fun (str_list, ity) -> List.map (fun str -> str, ity) str_list) $2 in
+    HForall (typed_str_list, Wand (Star ($5, $5), False)) }
 
 decl_init:
 | DECL_INIT separated_list(COMMA, iprop)
@@ -124,9 +128,8 @@ term:
 prop:
 | LPAREN prop RPAREN
   { $2 }
-| PERSISTENT IDENT
-  { let atom = Atom $2 in
-    Persistent atom }
+| PERSISTENT iprop
+  { Persistent $2 }
 | NOT prop
   { Not $2 }
 | prop AND prop
