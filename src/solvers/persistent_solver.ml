@@ -3,7 +3,7 @@ open Internal_operations
 open State
 
 let solve : hpred_id * internal_term array -> state -> bool =
- fun (hpred, tm_arr) (_, _, pr_set) ->
+ fun (hpred, tm_arr) { pr_set } ->
   PropSet.exists
     (function
       | IPersistent (ISimple (ipr_mset, _)) ->

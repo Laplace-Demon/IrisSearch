@@ -6,7 +6,7 @@ open State
 open Type
 open Freshname
 
-let state_size (_, ipr_mset, pr_set) =
+let state_size { ipr_mset; pr_set } =
   (SimpleIpropMset.cardinal ipr_mset, PropSet.cardinal pr_set)
 
 let initial { decl_facts; decl_laws; decl_init } =
@@ -15,7 +15,7 @@ let initial { decl_facts; decl_laws; decl_init } =
   let ipr_mset, pr_set =
     iprop_list_to_simple_internal_iprop_multiset_and_internal_prop_set decl_init
   in
-  ([], ipr_mset, pr_set)
+  { local_var_list = []; ipr_mset; pr_set }
 
 let retrieve_law law =
   let open Monads.OptionMonad in
@@ -41,7 +41,7 @@ let retrieve_law law =
 
 open Monads.ListMonad
 
-let apply law ((local_var_list, ipr_mset, pr_set) as st) =
+let apply law ({ local_var_list; ipr_mset; pr_set } as st) =
   match retrieve_law law with
   | None -> fail
   | Some (shift, ipr_prems, pr_prems, exists_var_list, ipr_concls, pr_concls)
@@ -107,7 +107,13 @@ let apply law ((local_var_list, ipr_mset, pr_set) as st) =
           SimpleIpropMset.union ipr_concls ipr_mset_prems_elim
         in
         let new_pr_set = PropSet.union pr_concls pr_set_prems_elim in
-        let new_st = (new_local_var_list, new_ipr_mset, new_pr_set) in
+        let new_st =
+          {
+            local_var_list = new_local_var_list;
+            ipr_mset = new_ipr_mset;
+            pr_set = new_pr_set;
+          }
+        in
         if is_dup new_st then fail else return new_st
       with Multiplicity.Underflow -> fail)
 

@@ -3,7 +3,7 @@ open State
 open UnionFind
 
 let solve : internal_term -> internal_term -> state -> bool =
- fun tm1 tm2 (_, _, pr_set) ->
+ fun tm1 tm2 { pr_set } ->
   compare_internal_term tm1 tm2 = 0
   ||
   let term_ref_table = Hashtbl.create 17 in
