@@ -186,7 +186,7 @@ module Make2 (Ord1 : Baby.OrderedType) (Ord2 : Baby.OrderedType) = struct
           | Some t1, Some t2 ->
               let t, is_inf' = Mset.diff t1 t2 in
               is_inf := !is_inf && is_inf';
-              Some t)
+              if Mset.is_empty t then None else Some t)
         s1 s2
     in
     (merged_tree, !is_inf)

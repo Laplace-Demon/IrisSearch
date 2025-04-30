@@ -17,8 +17,8 @@ let iprop_state_map : iprop_map ref = ref IpropMap.empty
 
 let register_state ((_, ipr_mset, _) as st) =
   let ind = !state_num in
-  state_num := ind + 1;
-  InfiniteArray.set state_array ind st;
+  state_num := ind - 1;
+  InfiniteArray.set state_array (-ind) st;
   SimpleIpropMset.iter1
     (fun hpred ->
       iprop_state_map :=
@@ -30,7 +30,7 @@ let register_state ((_, ipr_mset, _) as st) =
           !iprop_state_map)
     ipr_mset
 
-let get_state = InfiniteArray.get state_array
+let get_state ind = InfiniteArray.get state_array (-ind)
 
 let dup_candidate ipr_mset =
   let st_set = ref None in
