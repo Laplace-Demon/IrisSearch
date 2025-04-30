@@ -5,6 +5,8 @@
  (modules
   ast
   duplication_checker
+  equality_solver
+  persistent_solver
   freshname
   internal
   internal_operations
@@ -24,6 +26,6 @@
   transform
   type
   validate)
- (libraries baby menhirLib)
+ (libraries baby menhirLib unionFind)
  (flags
   (:standard -w -a)))

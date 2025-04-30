@@ -13,6 +13,7 @@ module type Multiset = sig
   val inter : t -> t -> t
   val diff : t -> t -> t * bool
   val subset : t -> t -> bool
+  val exists : (elt -> Multiplicity.t -> bool) -> t -> bool
   val map : (elt -> elt) -> t -> t
   val map_multiplicity : (elt -> Multiplicity.t -> Multiplicity.t) -> t -> t
   val iter : (elt -> Multiplicity.t -> unit) -> t -> unit
@@ -43,6 +44,7 @@ module type Multiset2 = sig
   val inter : t -> t -> t
   val diff : t -> t -> t * bool
   val subset : t -> t -> bool
+  val exists : (elt -> Multiplicity.t -> bool) -> t -> bool
   val map : (elt2 -> elt2) -> t -> t
   val map_multiplicity : (elt -> Multiplicity.t -> Multiplicity.t) -> t -> t
   val iter : (elt -> Multiplicity.t -> unit) -> t -> unit

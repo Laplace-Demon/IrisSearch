@@ -41,7 +41,7 @@ let retrieve_law law =
 
 open Monads.ListMonad
 
-let apply law (local_var_list, ipr_mset, pr_set) =
+let apply law ((local_var_list, ipr_mset, pr_set) as st) =
   match retrieve_law law with
   | None -> fail
   | Some (shift, ipr_prems, pr_prems, exists_var_list, ipr_concls, pr_concls)
@@ -77,7 +77,16 @@ let apply law (local_var_list, ipr_mset, pr_set) =
             SimpleIpropMset.map_multiplicity
               (fun _ _ -> Multiplicity.inf)
               ipr_concls
-          else ipr_concls
+          else
+            SimpleIpropMset.map_multiplicity
+              (fun ipr count ->
+                (* we can use the new state *)
+                if
+                  Multiplicity.is_infinite count
+                  || Persistent_solver.solve ipr st
+                then Multiplicity.inf
+                else count)
+              ipr_concls
         in
         (* subst quantified variables *)
         let ipr_concls, pr_concls =

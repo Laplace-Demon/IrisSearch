@@ -13,6 +13,7 @@ module type Multiset = sig
   val inter : t -> t -> t
   val diff : t -> t -> t * bool
   val subset : t -> t -> bool
+  val exists : (elt -> Multiplicity.t -> bool) -> t -> bool
   val map : (elt -> elt) -> t -> t
   val map_multiplicity : (elt -> Multiplicity.t -> Multiplicity.t) -> t -> t
   val iter : (elt -> Multiplicity.t -> unit) -> t -> unit
@@ -76,6 +77,10 @@ module Make (Ord : Baby.OrderedType) = struct
     Statistics.record_operation "Multiset.subset";
     BabyMap.sub (fun v1 v2 -> Multiplicity.compare v1 v2 <= 0) s1 s2
 
+  let exists f s =
+    Statistics.record_operation "Multiset.exists";
+    BabyMap.exists f s
+
   let map f s =
     Statistics.record_operation "Multiset.map";
     s |> BabyMap.to_list |> List.map (fun (e, v) -> (f e, v)) |> BabyMap.of_list
@@ -127,6 +132,7 @@ module type Multiset2 = sig
   val inter : t -> t -> t
   val diff : t -> t -> t * bool
   val subset : t -> t -> bool
+  val exists : (elt -> Multiplicity.t -> bool) -> t -> bool
   val map : (elt2 -> elt2) -> t -> t
   val map_multiplicity : (elt -> Multiplicity.t -> Multiplicity.t) -> t -> t
   val iter : (elt -> Multiplicity.t -> unit) -> t -> unit
@@ -192,6 +198,10 @@ module Make2 (Ord1 : Baby.OrderedType) (Ord2 : Baby.OrderedType) = struct
     (merged_tree, !is_inf)
 
   let subset s1 s2 = BabyMap.sub (fun t1 t2 -> Mset.subset t1 t2) s1 s2
+
+  let exists f s =
+    BabyMap.exists (fun e1 t -> Mset.exists (fun e2 v -> f (e1, e2) v) t) s
+
   let map f s = BabyMap.map (fun t -> Mset.map f t) s
 
   let map_multiplicity f s =
