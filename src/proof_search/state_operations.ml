@@ -59,11 +59,11 @@ let apply law ({ local_var_list; ipr_mset; pr_set } as st) =
           | false ->
               let match_init = Array.init shift (fun _ -> None) in
               let* match_result, ipr_mset_prems_elim, is_inf =
-                simple_internal_iprop_multiset_match match_init ipr_prems
+                simple_internal_iprop_multiset_match pr_set match_init ipr_prems
                   ipr_mset
               in
               let+ match_result', pr_set_prems_elim =
-                internal_prop_set_match match_result pr_prems pr_set
+                internal_prop_set_match pr_set match_result pr_prems pr_set
               in
               (ipr_mset_prems_elim, pr_set_prems_elim, is_inf, match_result')
         in
@@ -83,7 +83,7 @@ let apply law ({ local_var_list; ipr_mset; pr_set } as st) =
                 (* we can use the new state *)
                 if
                   Multiplicity.is_infinite count
-                  || Persistent_solver.solve ipr st
+                  || Persistent_solver.solve ipr pr_set
                 then Multiplicity.inf
                 else count)
               ipr_concls

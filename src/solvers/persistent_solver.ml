@@ -2,8 +2,8 @@ open Internal
 open Internal_operations
 open State
 
-let solve : hpred_id * internal_term array -> state -> bool =
- fun (hpred, tm_arr) { pr_set } ->
+let solve : hpred_id * internal_term array -> internal_prop_set -> bool =
+ fun (hpred, tm_arr) pr_set ->
   PropSet.exists
     (function
       | IPersistent (ISimple (ipr_mset, _)) ->
@@ -22,7 +22,7 @@ let solve : hpred_id * internal_term array -> state -> bool =
               in
               not
                 (List.is_empty
-                   (internal_term_array_match match_init tm_arr' tm_arr)))
+                   (internal_term_array_match pr_set match_init tm_arr' tm_arr)))
             ipr_mset
       | _ -> false)
     pr_set
