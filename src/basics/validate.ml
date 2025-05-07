@@ -2,15 +2,14 @@ open Format
 open Ast
 open Type
 
-exception IllegalPredicateDeclarationError of string
+exception IllegalConstrDeclarationError of string
+exception IllegalFuncDeclarationError of string
+exception IllegalPredDeclarationError of string
+exception IllegalConstDeclarationError of string
 exception IllegalLawDeclarationError of string
 exception IllegalInitDeclarationError of string
-exception DuplicateTypeDeclarationError of string
-exception DuplicatePredicateDeclarationError of string
-exception DuplicateConstDeclarationError of string
-exception MissingTypeDeclarationError of string
-exception MissingPredicateDeclarationError of string
-exception MissingConstDeclarationError of string
+exception DuplicateDeclarationError of string * string
+exception MissingDeclarationError of string * string
 exception TypeError of string * itype * itype
 exception ArityError of string * int * int
 
@@ -22,14 +21,68 @@ type env = itype Env.t
     immutable map storing variables binded by quantifiers, env shadows
     symbol_table. *)
 
-let check_term symbol_table env = function
+type symbol_kind = Type | Constr | Func | Pred | Const
+
+let pp_symbol_kind fmt = function
+  | Type -> fprintf fmt "type"
+  | Constr -> fprintf fmt "constructor"
+  | Func -> fprintf fmt "function"
+  | Pred -> fprintf fmt "predicate"
+  | Const -> fprintf fmt "constant"
+
+type symbol_info = { ity : itype; kind : symbol_kind }
+
+let symbol_table : (string, symbol_info) Hashtbl.t = Hashtbl.create 17
+
+let rec check_term symbol_table env = function
   | Var var -> (
       match Env.find_opt var env with
       | Some ity -> ity
       | None -> (
           match Hashtbl.find_opt symbol_table var with
-          | Some ity -> ity
-          | None -> raise (MissingConstDeclarationError var)))
+          | Some { ity; kind = Const } -> ity
+          | Some { ity } ->
+              raise
+                (TypeError
+                   (var, Tcustom (asprintf "%a" pp_symbol_kind Const), ity))
+          | None ->
+              raise
+                (MissingDeclarationError
+                   (asprintf "%a" pp_symbol_kind Const, var))))
+  | App (func, tm_list) -> (
+      match Env.find_opt func env with
+      | Some ity ->
+          raise
+            (TypeError (func, Tcustom (asprintf "%a" pp_symbol_kind Func), ity))
+      | None -> (
+          match Hashtbl.find_opt symbol_table func with
+          | Some
+              { ity = Tarrow (param_ity_list, res_ity); kind = Constr | Func }
+            ->
+              if List.length tm_list = List.length param_ity_list then
+                let () =
+                  List.iter2
+                    (fun param param_ity ->
+                      let arg_ity = check_term symbol_table env param in
+                      if not (itype_eqb arg_ity param_ity) then
+                        raise
+                          (TypeError
+                             (asprintf "%a" pp_term param, param_ity, arg_ity)))
+                    tm_list param_ity_list
+                in
+                res_ity
+              else
+                raise
+                  (ArityError
+                     (func, List.length param_ity_list, List.length tm_list))
+          | Some { ity } ->
+              raise
+                (TypeError
+                   (func, Tcustom (asprintf "%a" pp_symbol_kind Func), ity))
+          | None ->
+              raise
+                (MissingDeclarationError
+                   (asprintf "%a" pp_symbol_kind Func, func))))
 
 let rec check_prop symbol_table env = function
   | Persistent ipr -> check_iprop symbol_table env ipr
@@ -37,12 +90,15 @@ let rec check_prop symbol_table env = function
   | And (pr1, pr2) | Or (pr1, pr2) | Imply (pr1, pr2) ->
       check_prop symbol_table env pr1;
       check_prop symbol_table env pr2
-  | Pred (pred, param_list) -> (
-      match Hashtbl.find_opt symbol_table pred with
-      | Some ity -> (
-          match ity with
-          | Tarrow (param_ity_list, Tprop) ->
-              if List.length param_list = List.length param_ity_list then
+  | Pred (pred, tm_list) -> (
+      match Env.find_opt pred env with
+      | Some ity ->
+          raise
+            (TypeError (pred, Tcustom (asprintf "%a" pp_symbol_kind Pred), ity))
+      | None -> (
+          match Hashtbl.find_opt symbol_table pred with
+          | Some { ity = Tarrow (param_ity_list, Tprop); kind = Pred } ->
+              if List.length tm_list = List.length param_ity_list then
                 List.iter2
                   (fun param param_ity ->
                     let arg_ity = check_term symbol_table env param in
@@ -50,13 +106,19 @@ let rec check_prop symbol_table env = function
                       raise
                         (TypeError
                            (asprintf "%a" pp_term param, param_ity, arg_ity)))
-                  param_list param_ity_list
+                  tm_list param_ity_list
               else
                 raise
                   (ArityError
-                     (pred, List.length param_ity_list, List.length param_list))
-          | _ -> raise (TypeError (pred, Tarrow ([], Tprop), ity)))
-      | None -> raise (MissingPredicateDeclarationError pred))
+                     (pred, List.length param_ity_list, List.length tm_list))
+          | Some { ity } ->
+              raise
+                (TypeError
+                   (pred, Tcustom (asprintf "%a" pp_symbol_kind Pred), ity))
+          | None ->
+              raise
+                (MissingDeclarationError
+                   (asprintf "%a" pp_symbol_kind Pred, pred))))
   | Forall (typed_str_list, pr) | Exists (typed_str_list, pr) ->
       let new_env =
         List.fold_left
@@ -73,11 +135,18 @@ let rec check_prop symbol_table env = function
 and check_iprop symbol_table env = function
   | False -> ()
   | Atom atom -> (
-      match Hashtbl.find_opt symbol_table atom with
+      match Env.find_opt atom env with
       | Some ity ->
-          if not (itype_eqb ity Tiprop) then
-            raise (TypeError (atom, Tiprop, ity))
-      | None -> raise (MissingConstDeclarationError atom))
+          raise
+            (TypeError (atom, Tcustom (asprintf "%a" pp_symbol_kind Const), ity))
+      | None -> (
+          match Hashtbl.find_opt symbol_table atom with
+          | Some { ity = Tiprop; kind = Const } -> ()
+          | Some { ity } -> raise (TypeError (atom, Tiprop, ity))
+          | None ->
+              raise
+                (MissingDeclarationError
+                   (asprintf "%a" pp_symbol_kind Const, atom))))
   | Pure pr -> check_prop symbol_table env pr
   | Star (ipr1, ipr2) ->
       check_iprop symbol_table env ipr1;
@@ -87,10 +156,13 @@ and check_iprop symbol_table env = function
       check_iprop symbol_table env ipr2
   | Box ipr -> check_iprop symbol_table env ipr
   | HPred (hpred, param_list) -> (
-      match Hashtbl.find_opt symbol_table hpred with
-      | Some ity -> (
-          match ity with
-          | Tarrow (param_ity_list, Tiprop) ->
+      match Env.find_opt hpred env with
+      | Some ity ->
+          raise
+            (TypeError (hpred, Tcustom (asprintf "%a" pp_symbol_kind Pred), ity))
+      | None -> (
+          match Hashtbl.find_opt symbol_table hpred with
+          | Some { ity = Tarrow (param_ity_list, Tiprop); kind = Pred } ->
               if List.length param_list = List.length param_ity_list then
                 List.iter2
                   (fun param param_ity ->
@@ -104,8 +176,14 @@ and check_iprop symbol_table env = function
                 raise
                   (ArityError
                      (hpred, List.length param_ity_list, List.length param_list))
-          | _ -> raise (TypeError (hpred, Tarrow ([], Tiprop), ity)))
-      | None -> raise (MissingPredicateDeclarationError hpred))
+          | Some { ity } ->
+              raise
+                (TypeError
+                   (hpred, Tcustom (asprintf "%a" pp_symbol_kind Pred), ity))
+          | None ->
+              raise
+                (MissingDeclarationError
+                   (asprintf "%a" pp_symbol_kind Pred, hpred))))
   | HForall (typed_str_list, ipr) | HExists (typed_str_list, ipr) ->
       let new_env =
         List.fold_left
@@ -193,72 +271,168 @@ let check_init ipr =
             ipr))
 
 let validate symbol_table
-    { decl_types; decl_preds; decl_consts; decl_facts; decl_laws; decl_init } =
+    {
+      decl_types;
+      decl_funcs;
+      decl_preds;
+      decl_consts;
+      decl_facts;
+      decl_laws;
+      decl_init;
+    } =
   let type_table = Hashtbl.create 17 in
   let () =
     (* Check type declarations. *)
     List.iter
-      (fun typ ->
-        match typ with
-        | "Prop" | "iProp" -> raise (DuplicateTypeDeclarationError typ)
-        | _ ->
-            if Hashtbl.mem type_table typ then
-              raise (DuplicateTypeDeclarationError typ)
-            else Hashtbl.add type_table typ ())
+      (fun (typ, constr_list) ->
+        let () =
+          (* Check if the type has been defined. *)
+          match typ with
+          | "Prop" | "iProp" ->
+              raise
+                (DuplicateDeclarationError
+                   (asprintf "%a" pp_symbol_kind Type, typ))
+          | _ ->
+              if Hashtbl.mem type_table typ then
+                raise
+                  (DuplicateDeclarationError
+                     (asprintf "%a" pp_symbol_kind Type, typ))
+              else Hashtbl.add type_table typ ()
+        in
+        List.iter
+          (fun (constr, constr_ity) ->
+            let () =
+              (* Check if the result type of constructors equal to the above type, and the parameter types are declared,
+               first-order, and different from iProp and Prop. *)
+              match constr_ity with
+              | Tarrow (param_ity_list, Tcustom res_typ)
+                when String.equal typ res_typ ->
+                  List.iter
+                    (function
+                      | Tiprop | Tprop | Tarrow _ ->
+                          raise (IllegalConstrDeclarationError constr)
+                      | Tcustom param_typ ->
+                          if not (Hashtbl.mem type_table param_typ) then
+                            raise
+                              (MissingDeclarationError
+                                 (asprintf "%a" pp_symbol_kind Type, param_typ)))
+                    param_ity_list
+              | Tcustom res_typ when String.equal typ res_typ -> ()
+              | _ -> raise (IllegalConstrDeclarationError constr)
+            in
+            (* Check if the constructor is already declared. *)
+            if Hashtbl.mem symbol_table constr then
+              raise
+                (DuplicateDeclarationError
+                   (asprintf "%a" pp_symbol_kind Constr, constr))
+            else
+              (* Build the symbol table. *)
+              Hashtbl.add symbol_table constr
+                { ity = constr_ity; kind = Constr })
+          constr_list)
       decl_types
+  in
+  let () =
+    (* Check function declarations. *)
+    List.iter
+      (fun (func, func_ity) ->
+        let param_ity_list, res_ity =
+          match func_ity with
+          | Tarrow (param_ity_list, res_ity) -> (param_ity_list, res_ity)
+          | _ -> raise (IllegalFuncDeclarationError func)
+        in
+        let () =
+          (* Check if the result type of the function exist and is a term type. *)
+          match res_ity with
+          | Tcustom res_typ ->
+              if not (Hashtbl.mem type_table res_typ) then
+                raise
+                  (MissingDeclarationError
+                     (asprintf "%a" pp_symbol_kind Type, res_typ))
+          | _ -> raise (IllegalFuncDeclarationError func)
+        in
+        let () =
+          (* Check if the parameter types of the function are declared, first-order, and different from iProp and Prop. *)
+          List.iter
+            (function
+              | Tiprop | Tprop | Tarrow _ ->
+                  raise (IllegalFuncDeclarationError func)
+              | Tcustom param_typ ->
+                  if not (Hashtbl.mem type_table param_typ) then
+                    raise
+                      (MissingDeclarationError
+                         (asprintf "%a" pp_symbol_kind Type, param_typ)))
+            param_ity_list
+        in
+        (* Check if the function is already declared. *)
+        if Hashtbl.mem symbol_table func then
+          raise
+            (DuplicateDeclarationError (asprintf "%a" pp_symbol_kind Func, func))
+        else
+          (* Build the symbol table. *)
+          Hashtbl.add symbol_table func { ity = func_ity; kind = Func })
+      decl_funcs
   in
   let () =
     (* Check predicate declarations. *)
     List.iter
-      (fun (pred, ity) ->
+      (fun (pred, pred_ity) ->
         let param_ity_list, res_ity =
-          match ity with
+          match pred_ity with
           | Tarrow (param_ity_list, res_ity) -> (param_ity_list, res_ity)
-          | _ -> assert false
+          | _ -> raise (IllegalPredDeclarationError pred)
         in
         let () =
           (* Check if the result type of the predicate is either iProp or Prop. *)
           match res_ity with
           | Tiprop | Tprop -> ()
-          | _ -> raise (IllegalPredicateDeclarationError pred)
+          | _ -> raise (IllegalPredDeclarationError pred)
         in
         let () =
-          (* Check if the parameter types of the predicate is declared, first-order, and different from iProp and Prop *)
+          (* Check if the parameter types of the predicate are declared, first-order, and different from iProp and Prop. *)
           List.iter
             (function
               | Tiprop | Tprop | Tarrow _ ->
-                  raise (IllegalPredicateDeclarationError pred)
-              | Tcustom typ ->
-                  if not (Hashtbl.mem type_table typ) then
-                    raise (MissingTypeDeclarationError typ))
+                  raise (IllegalPredDeclarationError pred)
+              | Tcustom param_typ ->
+                  if not (Hashtbl.mem type_table param_typ) then
+                    raise
+                      (MissingDeclarationError
+                         (asprintf "%a" pp_symbol_kind Type, param_typ)))
             param_ity_list
         in
         (* Check if the predicate is already declared. *)
         if Hashtbl.mem symbol_table pred then
-          raise (DuplicatePredicateDeclarationError pred)
+          raise
+            (DuplicateDeclarationError (asprintf "%a" pp_symbol_kind Pred, pred))
         else
           (* Build the symbol table. *)
-          Hashtbl.add symbol_table pred ity)
+          Hashtbl.add symbol_table pred { ity = pred_ity; kind = Pred })
       decl_preds
   in
   let () =
     (* Check constant declarations. *)
     List.iter
-      (fun (const, ity) ->
+      (fun (const, const_ity) ->
         let () =
           (* Check if the type of the constant is declared. *)
-          match ity with
+          match const_ity with
           | Tcustom typ ->
               if not (Hashtbl.mem type_table typ) then
-                raise (MissingTypeDeclarationError typ)
+                raise
+                  (MissingDeclarationError
+                     (asprintf "%a" pp_symbol_kind Type, typ))
+          | Tarrow _ -> raise (IllegalConstDeclarationError const)
           | _ -> ()
         in
         (* Check if the constant is already declared. *)
         if Hashtbl.mem symbol_table const then
-          raise (DuplicateConstDeclarationError const)
+          raise
+            (DuplicateDeclarationError
+               (asprintf "%a" pp_symbol_kind Const, const))
         else
           (* Build the symbol table. *)
-          Hashtbl.add symbol_table const ity)
+          Hashtbl.add symbol_table const { ity = const_ity; kind = Const })
       decl_consts
   in
   List.iter (check_prop symbol_table Env.empty) decl_facts;

@@ -24,6 +24,7 @@ module Negative = struct
       Array.init !const_num (fun _ -> generate ~base:"Atom" ())
     in
     let decl_types = [] in
+    let decl_funcs = [] in
     let decl_preds = [] in
     let decl_consts =
       List.map (fun str -> (str, Tiprop)) (Array.to_list consts_array)
@@ -64,5 +65,13 @@ module Negative = struct
     let decl_init =
       repeat (fun () -> Atom consts_array.(Random.int !const_num)) !init_num
     in
-    { decl_types; decl_preds; decl_consts; decl_facts; decl_laws; decl_init }
+    {
+      decl_types;
+      decl_funcs;
+      decl_preds;
+      decl_consts;
+      decl_facts;
+      decl_laws;
+      decl_init;
+    }
 end

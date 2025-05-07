@@ -5,11 +5,15 @@ open Type
 (** Definition of string interning modules. Term variables, predicates, heap
     predicates, atoms are distinguished at the type level. *)
 
+module ConstrId : InternedString
 module VarId : InternedString
+module FuncId : InternedString
 module PredId : InternedString
 module HPredId : InternedString
 
+type constr_id = ConstrId.t
 type var_id = VarId.t
+type func_id = FuncId.t
 type pred_id = PredId.t
 type hpred_id = HPredId.t
 
@@ -21,7 +25,12 @@ type internal_prop_set
 type internal_iprop_set
 type simple_internal_iprop_multiset
 type binder_info = { shift : int; typed_str_list : (string * itype) list }
-type internal_term = IVar of var_id | IBVar of int
+
+type internal_term =
+  | IVar of var_id
+  | IBVar of int
+  | IConstr of constr_id * internal_term array
+  | IFunc of func_id * internal_term array
 
 type internal_prop =
   | IPersistent of internal_iprop
@@ -60,6 +69,10 @@ val compare_internal_iprop : internal_iprop -> internal_iprop -> int
 val iVar : var_id -> internal_term
 val iVar_str : string -> internal_term
 val iBVar : int -> internal_term
+val iConstr : constr_id * internal_term array -> internal_term
+val iConstr_str : string * internal_term array -> internal_term
+val iFunc : func_id * internal_term array -> internal_term
+val iFunc_str : string * internal_term array -> internal_term
 
 (** Smart internal_prop constructors. *)
 

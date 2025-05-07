@@ -5,11 +5,12 @@ open State
 open State_operations
 open Search
 open Transform
+open Validate
 
 let solve ?(until_validation = false) ?(until_transformation = false)
     ?(show_transformed_instance = false) ?(show_state = false)
     ?(show_path = false) ?(max_depth = 20) fmt ins =
-  let () = Validate.validate symbol_table ins in
+  let () = validate symbol_table ins in
   if until_validation then fprintf fmt "@.Validation succeeds.@.@."
   else
     let ins = uncurry_transformation ins in
@@ -24,15 +25,9 @@ let solve ?(until_validation = false) ?(until_transformation = false)
         fprintf fmt "instance after merge_quantifier_transformation@.@.%a@."
           pp_instance ins
     in
-    let ins = eliminate_persistent_transformation ins in
-    let () =
-      if show_transformed_instance then
-        fprintf fmt "instance after eliminate_persistent_transformation@.@.%a@."
-          pp_instance ins
-    in
     if until_transformation then fprintf fmt "@.Transformation succeeds.@.@."
     else
-      let () = Validate.check_form ins in
+      let () = check_form ins in
       let source = initial ins in
       let () =
         if show_state then (

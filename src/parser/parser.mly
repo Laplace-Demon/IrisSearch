@@ -1,10 +1,11 @@
 %{
   open Ast
+  open Format
   open Type
 %}
 
-%token DECL_TYPES DECL_PREDS DECL_CONSTS DECL_FACTS DECL_LAWS DECL_INIT
-%token LPAREN RPAREN COLON COMMA
+%token DECL_TYPES DECL_FUNCS DECL_PREDS DECL_CONSTS DECL_FACTS DECL_LAWS DECL_INIT
+%token LPAREN RPAREN COLON COMMA VERTICAL_BAR
 %token EOF
 
 %token PERSISTENT EXCLUSIVE
@@ -33,39 +34,45 @@
 %%
 
 instance:
-| option(decl_types) option(decl_preds) option(decl_consts) option(decl_facts) option(decl_laws) decl_init EOF
+| option(decl_types) option(decl_funcs) option(decl_preds) option(decl_consts) option(decl_facts) option(decl_laws) decl_init EOF
   {
     let decl_types = 
       match $1 with
       | Some decl_types -> decl_types
       | None -> []
     in
-    let decl_preds =
+    let decl_funcs = 
       match $2 with
+      | Some decl_funcs -> decl_funcs
+      | None -> []
+    in
+    let decl_preds =
+      match $3 with
       | Some decl_preds -> decl_preds
       | None -> []
     in
     let decl_consts =
-      match $3 with
+      match $4 with
       | Some decl_consts -> decl_consts
       | None -> []
     in
     let decl_facts =
-      match $4 with
+      match $5 with
       | Some decl_facts -> decl_facts
       | None -> []
     in
     let decl_laws =
-      match $5 with
+      match $6 with
       | Some decl_laws -> decl_laws
       | None -> []
     in
     { decl_types;
+      decl_funcs;
       decl_preds;
       decl_consts;
       decl_facts;
       decl_laws;
-      decl_init = $6; }
+      decl_init = $7; }
   }
 
 decl_types:
@@ -74,17 +81,32 @@ decl_types:
 
 decl_type:
 | predefined_itype
-  { raise (Validate.DuplicateTypeDeclarationError (Format.asprintf "%a" pp_itype $1)) }
+  { let open Validate in
+    raise (DuplicateDeclarationError (asprintf "%a" pp_symbol_kind Type, asprintf "%a" pp_itype $1)) }
 | IDENT
-  { $1 }
+  { ($1, []) }
+| IDENT EQ nonempty_list(decl_constr)
+  { ($1, $3) }
+
+decl_constr:
+| VERTICAL_BAR IDENT COLON itype
+  { ($2, $4) }
+
+decl_funcs:
+| DECL_FUNCS list(decl_func)
+  { $2 }
+
+decl_func:
+| IDENT COLON itype
+  { ($1, $3) }
 
 decl_preds:
 | DECL_PREDS list(decl_pred)
   { $2 }
 
 decl_pred:
-| IDENT COLON separated_nonempty_list(STAR, itype) ARROW itype
-  { ($1, Tarrow ($3, $5)) }
+| IDENT COLON itype
+  { ($1, $3) }
 
 decl_consts:
 | DECL_CONSTS list(decl_const)
@@ -124,6 +146,8 @@ decl_init:
 term:
 | IDENT
   { Var $1 }
+| IDENT LPAREN separated_nonempty_list(COMMA, term) RPAREN
+  { App ($1, $3) }
 
 prop:
 | LPAREN prop RPAREN
@@ -138,7 +162,7 @@ prop:
   { Or ($1, $3) }
 | prop ARROW prop
   { Imply ($1, $3) }
-| IDENT nonempty_list(term) 
+| IDENT nonempty_list(term)
   { Pred ($1, $2) }
 | FORALL IDENT COLON itype COMMA prop %prec FORALL
   { Forall ([$2, $4], $6) }
@@ -188,6 +212,12 @@ binders:
   { $2, $4 }
 
 itype:
+| simple_itype
+  { $1 }
+| separated_nonempty_list(STAR, simple_itype) ARROW simple_itype
+  { Tarrow ($1, $3) }
+
+simple_itype:
 | predefined_itype
   { $1 }
 | IDENT

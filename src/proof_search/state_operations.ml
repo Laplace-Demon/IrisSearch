@@ -10,10 +10,15 @@ let state_size { ipr_mset; pr_set } =
   (SimpleIpropMset.cardinal ipr_mset, PropSet.cardinal pr_set)
 
 let initial { decl_facts; decl_laws; decl_init } =
-  let () = facts := prop_list_to_internal_prop_set decl_facts in
-  let () = laws := iprop_list_to_internal_iprop_set decl_laws in
+  let () =
+    facts := prop_list_to_internal_prop_set Validate.symbol_table decl_facts
+  in
+  let () =
+    laws := iprop_list_to_internal_iprop_set Validate.symbol_table decl_laws
+  in
   let ipr_mset, pr_set =
-    iprop_list_to_simple_internal_iprop_multiset_and_internal_prop_set decl_init
+    iprop_list_to_simple_internal_iprop_multiset_and_internal_prop_set
+      Validate.symbol_table decl_init
   in
   { local_var_list = []; ipr_mset; pr_set }
 
@@ -57,13 +62,14 @@ let apply law ({ local_var_list; ipr_mset; pr_set } as st) =
               let pr_set_prems_elim = PropSet.diff pr_set pr_prems in
               return (ipr_mset_prems_elim, pr_set_prems_elim, is_inf, [||])
           | false ->
+              let knowledge = PropSet.union pr_set !facts in
               let match_init = Array.init shift (fun _ -> None) in
               let* match_result, ipr_mset_prems_elim, is_inf =
-                simple_internal_iprop_multiset_match pr_set match_init ipr_prems
-                  ipr_mset
+                simple_internal_iprop_multiset_match knowledge match_init
+                  ipr_prems ipr_mset
               in
               let+ match_result', pr_set_prems_elim =
-                internal_prop_set_match pr_set match_result pr_prems pr_set
+                internal_prop_set_match knowledge match_result pr_prems pr_set
               in
               (ipr_mset_prems_elim, pr_set_prems_elim, is_inf, match_result')
         in
@@ -122,7 +128,9 @@ let successors st =
     (fun law acc ->
       let succ = apply law st in
       List.iter
-        (fun new_st -> Statistics.record_generated_state (state_size new_st))
+        (fun new_st ->
+          Format.printf "@.%a@." pp_state new_st;
+          Statistics.record_generated_state (state_size new_st))
         succ;
       choose succ acc)
     !laws fail

@@ -23,9 +23,11 @@ rule token = parse
   | ')'                   { RPAREN }
   | ':'                   { COLON }
   | ','                   { COMMA }
+  | '|'                   { VERTICAL_BAR }
   | eof                   { EOF }
 
   | "types"               { DECL_TYPES }
+  | "funcs"               { DECL_FUNCS }
   | "preds"               { DECL_PREDS }
   | "consts"              { DECL_CONSTS }
   | "facts"               { DECL_FACTS }

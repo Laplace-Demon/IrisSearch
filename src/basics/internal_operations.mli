@@ -1,14 +1,26 @@
 open Ast
 open Internal
+open Validate
 
-val term_to_internal_term : term -> internal_term
-val prop_to_internal_prop : prop -> internal_prop
-val iprop_to_internal_iprop : iprop -> internal_iprop
-val prop_list_to_internal_prop_set : prop list -> internal_prop_set
-val iprop_list_to_internal_iprop_set : iprop list -> internal_iprop_set
+val term_to_internal_term :
+  (string, symbol_info) Hashtbl.t -> term -> internal_term
+
+val prop_to_internal_prop :
+  (string, symbol_info) Hashtbl.t -> prop -> internal_prop
+
+val iprop_to_internal_iprop :
+  (string, symbol_info) Hashtbl.t -> iprop -> internal_iprop
+
+val prop_list_to_internal_prop_set :
+  (string, symbol_info) Hashtbl.t -> prop list -> internal_prop_set
+
+val iprop_list_to_internal_iprop_set :
+  (string, symbol_info) Hashtbl.t -> iprop list -> internal_iprop_set
 
 val iprop_list_to_simple_internal_iprop_multiset_and_internal_prop_set :
-  iprop list -> simple_internal_iprop_multiset * internal_prop_set
+  (string, symbol_info) Hashtbl.t ->
+  iprop list ->
+  simple_internal_iprop_multiset * internal_prop_set
 
 type subst_task = internal_term option array
 

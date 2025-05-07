@@ -4,39 +4,60 @@ open Format
 open State
 
 let term_to_internal_term, prop_to_internal_prop, iprop_to_internal_iprop =
-  let term_to_internal_term_aux ~env = function
+  let rec term_to_internal_term_aux ~env symbol_table = function
     | Var var -> (
         match List.find_index (String.equal var) env with
         | Some i -> iBVar i
         | None -> iVar_str var)
+    | App (func, tm_list) -> (
+        let open Validate in
+        match Hashtbl.find symbol_table func with
+        | { kind = Constr } ->
+            iConstr_str
+              ( func,
+                Array.of_list
+                  (List.map
+                     (term_to_internal_term_aux ~env symbol_table)
+                     tm_list) )
+        | { kind = Func } ->
+            iFunc_str
+              ( func,
+                Array.of_list
+                  (List.map
+                     (term_to_internal_term_aux ~env symbol_table)
+                     tm_list) )
+        | _ -> assert false)
   in
-  let rec prop_to_internal_prop_aux ~env = function
-    | Persistent ipr -> iPersistent (iprop_to_internal_iprop_aux ~env ipr)
-    | Not pr -> iNot (prop_to_internal_prop_aux ~env pr)
+  let rec prop_to_internal_prop_aux ~env symbol_table = function
+    | Persistent ipr ->
+        iPersistent (iprop_to_internal_iprop_aux ~env symbol_table ipr)
+    | Not pr -> iNot (prop_to_internal_prop_aux ~env symbol_table pr)
     | And (pr1, pr2) ->
         let pr_set1 =
-          match prop_to_internal_prop_aux ~env pr1 with
+          match prop_to_internal_prop_aux ~env symbol_table pr1 with
           | IAnd pr_set -> pr_set
           | _ as pr -> PropSet.singleton pr
         in
         let pr_set2 =
-          match prop_to_internal_prop_aux ~env pr2 with
+          match prop_to_internal_prop_aux ~env symbol_table pr2 with
           | IAnd pr_set -> pr_set
           | _ as pr -> PropSet.singleton pr
         in
         iAnd (PropSet.union pr_set1 pr_set2)
     | Or (pr1, pr2) ->
         iOr
-          ( prop_to_internal_prop_aux ~env pr1,
-            prop_to_internal_prop_aux ~env pr2 )
+          ( prop_to_internal_prop_aux ~env symbol_table pr1,
+            prop_to_internal_prop_aux ~env symbol_table pr2 )
     | Imply (pr1, pr2) ->
         iImply
-          ( prop_to_internal_prop_aux ~env pr1,
-            prop_to_internal_prop_aux ~env pr2 )
+          ( prop_to_internal_prop_aux ~env symbol_table pr1,
+            prop_to_internal_prop_aux ~env symbol_table pr2 )
     | Pred (pred, tm_list) ->
         iPred_str
           ( pred,
-            Array.of_list (List.map (term_to_internal_term_aux ~env) tm_list) )
+            Array.of_list
+              (List.map (term_to_internal_term_aux ~env symbol_table) tm_list)
+          )
     | Forall (typed_str_list, pr) ->
         iForall_raw
           ( typed_str_list,
@@ -45,7 +66,7 @@ let term_to_internal_term, prop_to_internal_prop, iprop_to_internal_iprop =
                 (List.fold_left
                    (fun acc (str, _) -> str :: acc)
                    env typed_str_list)
-              pr )
+              symbol_table pr )
     | Exists (typed_str_list, pr) ->
         iExists_raw
           ( typed_str_list,
@@ -54,16 +75,16 @@ let term_to_internal_term, prop_to_internal_prop, iprop_to_internal_iprop =
                 (List.fold_left
                    (fun acc (str, _) -> str :: acc)
                    env typed_str_list)
-              pr )
+              symbol_table pr )
     | Eq (tm1, tm2) ->
         iEq
-          ( term_to_internal_term_aux ~env tm1,
-            term_to_internal_term_aux ~env tm2 )
+          ( term_to_internal_term_aux ~env symbol_table tm1,
+            term_to_internal_term_aux ~env symbol_table tm2 )
     | Neq (tm1, tm2) ->
         iNeq
-          ( term_to_internal_term_aux ~env tm1,
-            term_to_internal_term_aux ~env tm2 )
-  and iprop_to_internal_iprop_aux ~env : iprop -> internal_iprop = function
+          ( term_to_internal_term_aux ~env symbol_table tm1,
+            term_to_internal_term_aux ~env symbol_table tm2 )
+  and iprop_to_internal_iprop_aux ~env symbol_table = function
     | False ->
         iSimple
           ( SimpleIpropMset.singleton (HPredId.import "⊥", [||]) Multiplicity.one,
@@ -77,15 +98,16 @@ let term_to_internal_term, prop_to_internal_prop, iprop_to_internal_iprop =
     | Pure pr ->
         iSimple
           ( SimpleIpropMset.empty,
-            PropSet.singleton (prop_to_internal_prop_aux ~env pr) )
+            PropSet.singleton (prop_to_internal_prop_aux ~env symbol_table pr)
+          )
     | Star (ipr1, ipr2) ->
         let ipr_mset1, pr_set1 =
-          match iprop_to_internal_iprop_aux ~env ipr1 with
+          match iprop_to_internal_iprop_aux ~env symbol_table ipr1 with
           | ISimple (ipr_mset, pr_set) -> (ipr_mset, pr_set)
           | _ -> assert false
         in
         let ipr_mset2, pr_set2 =
-          match iprop_to_internal_iprop_aux ~env ipr2 with
+          match iprop_to_internal_iprop_aux ~env symbol_table ipr2 with
           | ISimple (ipr_mset, pr_set) -> (ipr_mset, pr_set)
           | _ -> assert false
         in
@@ -94,10 +116,10 @@ let term_to_internal_term, prop_to_internal_prop, iprop_to_internal_iprop =
             PropSet.union pr_set1 pr_set2 )
     | Wand (ipr1, ipr2) ->
         iWand
-          ( iprop_to_internal_iprop_aux ~env ipr1,
-            iprop_to_internal_iprop_aux ~env ipr2 )
+          ( iprop_to_internal_iprop_aux ~env symbol_table ipr1,
+            iprop_to_internal_iprop_aux ~env symbol_table ipr2 )
     | Box ipr -> (
-        match iprop_to_internal_iprop_aux ~env ipr with
+        match iprop_to_internal_iprop_aux ~env symbol_table ipr with
         | ISimple (ipr_mset, pr_set) ->
             iSimple
               ( SimpleIpropMset.map_multiplicity
@@ -110,7 +132,9 @@ let term_to_internal_term, prop_to_internal_prop, iprop_to_internal_iprop =
           ( SimpleIpropMset.singleton
               ( HPredId.import hpred,
                 Array.of_list
-                  (List.map (term_to_internal_term_aux ~env) tm_list) )
+                  (List.map
+                     (term_to_internal_term_aux ~env symbol_table)
+                     tm_list) )
               Multiplicity.one,
             PropSet.empty )
     | HForall (typed_str_list, ipr) ->
@@ -121,7 +145,7 @@ let term_to_internal_term, prop_to_internal_prop, iprop_to_internal_iprop =
                 (List.fold_left
                    (fun acc (str, _) -> str :: acc)
                    env typed_str_list)
-              ipr )
+              symbol_table ipr )
     | HExists (typed_str_list, ipr) ->
         iHExists_raw
           ( typed_str_list,
@@ -130,28 +154,29 @@ let term_to_internal_term, prop_to_internal_prop, iprop_to_internal_iprop =
                 (List.fold_left
                    (fun acc (str, _) -> str :: acc)
                    env typed_str_list)
-              ipr )
+              symbol_table ipr )
   in
   ( term_to_internal_term_aux ~env:[],
     prop_to_internal_prop_aux ~env:[],
     iprop_to_internal_iprop_aux ~env:[] )
 
-let prop_list_to_internal_prop_set pr_list =
+let prop_list_to_internal_prop_set symbol_table pr_list =
   List.fold_left
     (fun acc pr ->
       PropSet.union acc
-        (match prop_to_internal_prop pr with
+        (match prop_to_internal_prop symbol_table pr with
         | IAnd pr_set -> pr_set
         | _ as pr -> PropSet.singleton pr))
     PropSet.empty pr_list
 
-let iprop_list_to_internal_iprop_set iprl =
-  IpropSet.of_list (List.map iprop_to_internal_iprop iprl)
+let iprop_list_to_internal_iprop_set symbol_table iprl =
+  IpropSet.of_list (List.map (iprop_to_internal_iprop symbol_table) iprl)
 
-let iprop_list_to_simple_internal_iprop_multiset_and_internal_prop_set iprl =
+let iprop_list_to_simple_internal_iprop_multiset_and_internal_prop_set
+    symbol_table iprl =
   List.fold_left
     (fun (ipr_mset, pr_set) ipr ->
-      match iprop_to_internal_iprop ipr with
+      match iprop_to_internal_iprop symbol_table ipr with
       | ISimple (ipr_mset', pr_set') ->
           ( SimpleIpropMset.union ipr_mset ipr_mset',
             PropSet.union pr_set pr_set' )
@@ -171,15 +196,18 @@ let ( subst_internal_term,
       subst_internal_prop_set,
       subst_internal_iprop_set,
       subst_simple_internal_iprop_multiset ) =
-  let subst_internal_term_aux shift subst_task tm =
+  let rec subst_internal_term_aux shift subst_task tm =
     match tm with
     | IBVar ind -> (
         match subst_task.(ind - shift) with
         | Some subst_tm -> subst_tm
         | None -> tm)
+    | IConstr (constr, tm_arr) ->
+        iConstr (constr, subst_internal_term_array_aux shift subst_task tm_arr)
+    | IFunc (func, tm_arr) ->
+        iFunc (func, subst_internal_term_array_aux shift subst_task tm_arr)
     | _ -> tm
-  in
-  let subst_internal_term_array_aux shift subst_task tm_arr =
+  and subst_internal_term_array_aux shift subst_task tm_arr =
     Array.map (subst_internal_term_aux shift subst_task) tm_arr
   in
   let rec subst_internal_prop_aux shift subst_task = function
@@ -196,7 +224,7 @@ let ( subst_internal_term,
           ( subst_internal_prop_aux shift subst_task pr1,
             subst_internal_prop_aux shift subst_task pr2 )
     | IPred (pred, tm_arr) ->
-        iPred (pred, Array.map (subst_internal_term_aux shift subst_task) tm_arr)
+        iPred (pred, subst_internal_term_array_aux shift subst_task tm_arr)
     | IForall (binder_info, pr) ->
         iForall
           ( binder_info,
@@ -260,7 +288,7 @@ let ( internal_term_match,
       simple_internal_iprop_multiset_match,
       internal_prop_set_substract_match,
       simple_internal_iprop_multiset_substract_match ) =
-  let internal_term_match_aux shift knowledge match_result ptm tm =
+  let rec internal_term_match_aux shift knowledge match_result ptm tm =
     match (ptm, tm) with
     | IVar var1, IVar var2 ->
         if VarId.equal var1 var2 then return match_result else fail
@@ -276,9 +304,18 @@ let ( internal_term_match,
             let match_result' = Array.copy match_result in
             let () = match_result'.(ind - shift) <- Some tm in
             return match_result')
+    | IConstr (constr1, tm_arr1), IConstr (constr2, tm_arr2) ->
+        if ConstrId.equal constr1 constr2 then
+          internal_term_array_match_aux shift knowledge match_result tm_arr1
+            tm_arr2
+        else fail
+    | IFunc (func1, tm_arr1), IFunc (func2, tm_arr2) ->
+        if FuncId.equal func1 func2 then
+          internal_term_array_match_aux shift knowledge match_result tm_arr1
+            tm_arr2
+        else fail
     | _, _ -> fail
-  in
-  let internal_term_array_match_aux shift knowledge match_result ptm_arr tm_arr
+  and internal_term_array_match_aux shift knowledge match_result ptm_arr tm_arr
       =
     let match_result = ref (return match_result) in
     Array.iter2

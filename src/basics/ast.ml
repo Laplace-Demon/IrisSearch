@@ -3,12 +3,24 @@ open Type
 
 (** Definition of abstract syntax tree returned by the parser. *)
 
-type term = Var of string
+type term = Var of string | App of string * term list
 
-let term_eqb tm1 tm2 =
-  match (tm1, tm2) with Var str1, Var str2 -> String.equal str1 str2
+let rec term_eqb tm1 tm2 =
+  match (tm1, tm2) with
+  | Var str1, Var str2 -> String.equal str1 str2
+  | App (str1, tm_list1), App (str2, tm_list2) ->
+      String.equal str1 str2 && List.equal term_eqb tm_list1 tm_list2
+  | _, _ -> false
 
-let pp_term fmt = function Var str -> fprintf fmt "%s" str
+let rec pp_term fmt = function
+  | Var str -> fprintf fmt "%s" str
+  | App (str, tm_list) -> (
+      match tm_list with
+      | [] -> assert false
+      | _ ->
+          fprintf fmt "%s(%a)" str
+            (pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt ", ") pp_term)
+            tm_list)
 
 type prop =
   | Persistent of iprop
@@ -129,7 +141,9 @@ and pp_iprop fmt = function
 
 (** Free term variables occurring in iprop, prop and term. *)
 
-let term_free_var = function Var var -> [ var ]
+let rec term_free_var = function
+  | Var var -> [ var ]
+  | App (str, tm_list) -> str :: List.concat_map term_free_var tm_list
 
 let rec prop_free_var = function
   | Persistent ipr -> iprop_free_var ipr
@@ -166,7 +180,8 @@ and iprop_free_var = function
     - initial atoms *)
 
 type instance = {
-  decl_types : string list;
+  decl_types : (string * (string * itype) list) list;
+  decl_funcs : (string * itype) list;
   decl_preds : (string * itype) list;
   decl_consts : (string * itype) list;
   decl_facts : prop list;
@@ -175,12 +190,34 @@ type instance = {
 }
 
 let pp_instance fmt
-    { decl_types; decl_preds; decl_consts; decl_facts; decl_laws; decl_init } =
+    {
+      decl_types;
+      decl_funcs;
+      decl_preds;
+      decl_consts;
+      decl_facts;
+      decl_laws;
+      decl_init;
+    } =
   let () =
     if not (List.is_empty decl_types) then
       fprintf fmt "@[<v 4>types@,%a@]@."
-        (pp_print_list pp_print_string)
+        (pp_print_list (fun fmt (str, constr_list) ->
+             match constr_list with
+             | [] -> fprintf fmt "%s" str
+             | _ ->
+                 fprintf fmt "@[<v 4>%s =@,%a@]" str
+                   (pp_print_list (fun fmt (constr, ity) ->
+                        fprintf fmt "| %s : %a" constr pp_itype ity))
+                   constr_list))
         decl_types
+  in
+  let () =
+    if not (List.is_empty decl_funcs) then
+      fprintf fmt "@[<v 4>funcs@,%a@]@."
+        (pp_print_list (fun fmt (str, ity) ->
+             fprintf fmt "%s : %a" str pp_itype ity))
+        decl_funcs
   in
   let () =
     if not (List.is_empty decl_preds) then

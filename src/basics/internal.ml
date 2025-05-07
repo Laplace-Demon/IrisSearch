@@ -2,14 +2,19 @@ open Format
 open Ast
 open Type
 
-(** Definition of string interning modules. Term variables, predicates, heap
-    predicates, atoms are distinguished at the type level. *)
+(** Definition of string interning modules. Constructors, term variables,
+    functions, predicates, heap predicates, atoms are distinguished at the type
+    level. *)
 
+module ConstrId = Interned_string.Make ()
 module VarId = Interned_string.Make ()
+module FuncId = Interned_string.Make ()
 module PredId = Interned_string.Make ()
 module HPredId = Interned_string.Make ()
 
+type constr_id = ConstrId.t
 type var_id = VarId.t
+type func_id = FuncId.t
 type pred_id = PredId.t
 type hpred_id = HPredId.t
 
@@ -23,7 +28,12 @@ module rec Internal : sig
       shift = List.length name_list *)
 
   type binder_info = { shift : int; typed_str_list : (string * itype) list }
-  type internal_term = IVar of var_id | IBVar of int
+
+  type internal_term =
+    | IVar of var_id
+    | IBVar of int
+    | IConstr of constr_id * internal_term array
+    | IFunc of func_id * internal_term array
 
   type internal_prop =
     | IPersistent of internal_iprop
@@ -58,7 +68,12 @@ module rec Internal : sig
   val compare_internal_iprop : internal_iprop -> internal_iprop -> int
 end = struct
   type binder_info = { shift : int; typed_str_list : (string * itype) list }
-  type internal_term = IVar of var_id | IBVar of int
+
+  type internal_term =
+    | IVar of var_id
+    | IBVar of int
+    | IConstr of constr_id * internal_term array
+    | IFunc of func_id * internal_term array
 
   type internal_prop =
     | IPersistent of internal_iprop
@@ -80,15 +95,21 @@ end = struct
     | IHForall of binder_info * internal_iprop
     | IHExists of binder_info * internal_iprop
 
-  let compare_internal_term tm1 tm2 =
+  let rec compare_internal_term tm1 tm2 =
     match (tm1, tm2) with
     | IVar var1, IVar var2 -> VarId.compare var1 var2
     | IBVar ind1, IBVar ind2 -> Int.compare ind1 ind2
+    | IConstr (constr1, tm_arr1), IConstr (constr2, tm_arr2) ->
+        let tmp = ConstrId.compare constr1 constr2 in
+        if tmp = 0 then compare_internal_term_array tm_arr1 tm_arr2 else tmp
+    | IFunc (func1, tm_arr1), IFunc (func2, tm_arr2) ->
+        let tmp = FuncId.compare func1 func2 in
+        if tmp = 0 then compare_internal_term_array tm_arr1 tm_arr2 else tmp
     | _, _ -> Stdlib.compare tm1 tm2
 
   (** This function assumes that two arrays are of the same length. *)
 
-  let compare_internal_term_array tm_arr1 tm_arr2 =
+  and compare_internal_term_array tm_arr1 tm_arr2 =
     let len = Array.length tm_arr1 in
     let rec cmp i =
       if i = len then 0
@@ -200,12 +221,27 @@ let ( pp_internal_term,
       if n != 1 then sep ();
       repeat f sep (n - 1))
   in
-  let pp_internal_term_aux env fmt = function
+  let rec pp_internal_term_aux env fmt = function
     | IVar var -> fprintf fmt "%s" (VarId.export var)
     | IBVar ind -> (
         match List.nth_opt env ind with
         | Some var -> fprintf fmt "%s" var
         | None -> fprintf fmt "#%i" ind)
+    | IConstr (constr, tm_arr) ->
+        if Array.length tm_arr = 0 then
+          fprintf fmt "%s" (ConstrId.export constr)
+        else
+          fprintf fmt "%s(%a)" (ConstrId.export constr)
+            (pp_print_array
+               ~pp_sep:(fun fmt () -> fprintf fmt ", ")
+               (pp_internal_term_aux env))
+            tm_arr
+    | IFunc (func, tm_arr) ->
+        fprintf fmt "%s(%a)" (FuncId.export func)
+          (pp_print_array
+             ~pp_sep:(fun fmt () -> fprintf fmt ", ")
+             (pp_internal_term_aux env))
+          tm_arr
   in
   let rec pp_internal_prop_aux env fmt = function
     | IPersistent ipr ->
@@ -375,6 +411,10 @@ let ( pp_internal_term,
 let iVar var = IVar var
 let iVar_str str = IVar (VarId.import str)
 let iBVar ind = IBVar ind
+let iConstr (constr, tm_arr) = IConstr (constr, tm_arr)
+let iConstr_str (str, tm_arr) = IConstr (ConstrId.import str, tm_arr)
+let iFunc (func, tm_arr) = IFunc (func, tm_arr)
+let iFunc_str (str, tm_arr) = IFunc (FuncId.import str, tm_arr)
 
 (** Smart internal_prop constructors. *)
 
