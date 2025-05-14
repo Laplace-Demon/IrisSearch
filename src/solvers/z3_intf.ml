@@ -5,6 +5,14 @@ open Z3
 
 let ctx = mk_context [ ("well_sorted_check", "true"); ("auto_config", "true") ]
 
+(* let init () =
+  (*  *)
+  Hashtbl.iter (fun str {ity; kind} ->
+    match kind with
+    | Func | Const ->
+    | _ -> ()
+    ) symbol_table *)
+
 (* let rec internal_term_to_z3 = function
   | IVar var_id ->
     let var = VarId.export var_id in

@@ -34,6 +34,10 @@ type symbol_info = { ity : itype; kind : symbol_kind }
 
 let symbol_table : (string, symbol_info) Hashtbl.t = Hashtbl.create 17
 
+type constructor = string * itype list
+
+let type_decls : (string, constructor list) Hashtbl.t = Hashtbl.create 17
+
 let rec check_term symbol_table env = function
   | Var var -> (
       match Env.find_opt var env with
@@ -280,7 +284,6 @@ let validate symbol_table
       decl_laws;
       decl_init;
     } =
-  let type_table = Hashtbl.create 17 in
   let () =
     (* Check type declarations. *)
     List.iter
@@ -293,43 +296,50 @@ let validate symbol_table
                 (DuplicateDeclarationError
                    (asprintf "%a" pp_symbol_kind Type, typ))
           | _ ->
-              if Hashtbl.mem type_table typ then
+              if Hashtbl.mem type_decls typ then
                 raise
                   (DuplicateDeclarationError
                      (asprintf "%a" pp_symbol_kind Type, typ))
-              else Hashtbl.add type_table typ ()
+              else Hashtbl.add type_decls typ []
         in
-        List.iter
-          (fun (constr, constr_ity) ->
-            let () =
-              (* Check if the result type of constructors equal to the above type, and the parameter types are declared,
+        let () =
+          List.iter
+            (fun (constr, constr_ity) ->
+              let () =
+                (* Check if the result type of constructors equal to the above type, and the parameter types are declared,
                first-order, and different from iProp and Prop. *)
-              match constr_ity with
-              | Tarrow (param_ity_list, Tcustom res_typ)
-                when String.equal typ res_typ ->
-                  List.iter
-                    (function
-                      | Tiprop | Tprop | Tarrow _ ->
-                          raise (IllegalConstrDeclarationError constr)
-                      | Tcustom param_typ ->
-                          if not (Hashtbl.mem type_table param_typ) then
-                            raise
-                              (MissingDeclarationError
-                                 (asprintf "%a" pp_symbol_kind Type, param_typ)))
-                    param_ity_list
-              | Tcustom res_typ when String.equal typ res_typ -> ()
-              | _ -> raise (IllegalConstrDeclarationError constr)
-            in
-            (* Check if the constructor is already declared. *)
-            if Hashtbl.mem symbol_table constr then
-              raise
-                (DuplicateDeclarationError
-                   (asprintf "%a" pp_symbol_kind Constr, constr))
-            else
-              (* Build the symbol table. *)
-              Hashtbl.add symbol_table constr
-                { ity = constr_ity; kind = Constr })
-          constr_list)
+                match constr_ity with
+                | Tarrow (param_ity_list, Tcustom res_typ)
+                  when String.equal typ res_typ ->
+                    List.iter
+                      (function
+                        | Tiprop | Tprop | Tarrow _ ->
+                            raise (IllegalConstrDeclarationError constr)
+                        | Tcustom param_typ ->
+                            if not (Hashtbl.mem type_decls param_typ) then
+                              raise
+                                (MissingDeclarationError
+                                   (asprintf "%a" pp_symbol_kind Type, param_typ)))
+                      param_ity_list
+                | Tcustom res_typ when String.equal typ res_typ -> ()
+                | _ -> raise (IllegalConstrDeclarationError constr)
+              in
+              (* Check if the constructor is already declared. *)
+              if Hashtbl.mem symbol_table constr then
+                raise
+                  (DuplicateDeclarationError
+                     (asprintf "%a" pp_symbol_kind Constr, constr))
+              else
+                (* Build the symbol table. *)
+                Hashtbl.add symbol_table constr
+                  { ity = constr_ity; kind = Constr })
+            constr_list
+        in
+        Hashtbl.replace type_decls typ
+          (List.map
+             (fun (constr, Tarrow (param_ity_list, _)) ->
+               (constr, param_ity_list))
+             constr_list))
       decl_types
   in
   let () =
@@ -345,7 +355,7 @@ let validate symbol_table
           (* Check if the result type of the function exist and is a term type. *)
           match res_ity with
           | Tcustom res_typ ->
-              if not (Hashtbl.mem type_table res_typ) then
+              if not (Hashtbl.mem type_decls res_typ) then
                 raise
                   (MissingDeclarationError
                      (asprintf "%a" pp_symbol_kind Type, res_typ))
@@ -358,7 +368,7 @@ let validate symbol_table
               | Tiprop | Tprop | Tarrow _ ->
                   raise (IllegalFuncDeclarationError func)
               | Tcustom param_typ ->
-                  if not (Hashtbl.mem type_table param_typ) then
+                  if not (Hashtbl.mem type_decls param_typ) then
                     raise
                       (MissingDeclarationError
                          (asprintf "%a" pp_symbol_kind Type, param_typ)))
@@ -395,7 +405,7 @@ let validate symbol_table
               | Tiprop | Tprop | Tarrow _ ->
                   raise (IllegalPredDeclarationError pred)
               | Tcustom param_typ ->
-                  if not (Hashtbl.mem type_table param_typ) then
+                  if not (Hashtbl.mem type_decls param_typ) then
                     raise
                       (MissingDeclarationError
                          (asprintf "%a" pp_symbol_kind Type, param_typ)))
@@ -418,7 +428,7 @@ let validate symbol_table
           (* Check if the type of the constant is declared. *)
           match const_ity with
           | Tcustom typ ->
-              if not (Hashtbl.mem type_table typ) then
+              if not (Hashtbl.mem type_decls typ) then
                 raise
                   (MissingDeclarationError
                      (asprintf "%a" pp_symbol_kind Type, typ))

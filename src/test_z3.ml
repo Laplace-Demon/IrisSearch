@@ -2,11 +2,8 @@ open Z3
 open Format
 
 let ctx = mk_context []
-
-(* forward ref *)
 let list_ref = Datatype.mk_sort_ref_s ctx "list"
 
-(* constructors: Nil | Cons(head: Int, tail: list) *)
 let c_nil =
   Datatype.mk_constructor_s ctx "Nil" (Symbol.mk_string ctx "isNil") [] [] []
 
@@ -38,9 +35,30 @@ let eq1 = Boolean.mk_eq ctx l1 (Expr.mk_const_s ctx "y" list_sort)
 let eq2 = Boolean.mk_eq ctx l2 (Expr.mk_const_s ctx "x" list_sort)
 
 let () =
+  let f1 =
+    FuncDecl.mk_func_decl_s ctx "f"
+      [ Arithmetic.Integer.mk_sort ctx ]
+      (Arithmetic.Integer.mk_sort ctx)
+  in
+  let f2 =
+    FuncDecl.mk_func_decl_s ctx "f"
+      [ Arithmetic.Integer.mk_sort ctx ]
+      (Arithmetic.Integer.mk_sort ctx)
+  in
+  let eq =
+    Boolean.mk_eq ctx
+      (Expr.mk_app ctx f1
+         [ Expr.mk_const_s ctx "a" (Arithmetic.Integer.mk_sort ctx) ])
+      (Expr.mk_app ctx f2
+         [ Expr.mk_const_s ctx "b" (Arithmetic.Integer.mk_sort ctx) ])
+  in
+  let negeq = Boolean.mk_not ctx eq in
   let solver = Solver.mk_solver ctx None in
-  Solver.add solver [ eq1; eq2 ];
-  match Solver.check solver [] with
-  | Solver.SATISFIABLE -> Printf.printf "SAT\n"
-  | Solver.UNSATISFIABLE -> print_endline "UNSAT\n"
-  | Solver.UNKNOWN -> print_endline "UNKNOWN\n"
+  let () = Solver.add solver [ negeq ] in
+  let () =
+    match Solver.check solver [] with
+    | Solver.SATISFIABLE -> Printf.printf "FALSE\n"
+    | Solver.UNSATISFIABLE -> print_endline "TRUE\n"
+    | Solver.UNKNOWN -> print_endline "UNKNOWN\n"
+  in
+  ()
