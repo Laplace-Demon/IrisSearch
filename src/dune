@@ -1,3 +1,10 @@
+(executable
+ (name test_z3)
+ (modules test_z3)
+ (libraries z3)
+ (flags
+  (:standard -w -a)))
+
 (include_subdirs unqualified)
 
 (library
@@ -23,9 +30,11 @@
   state
   state_operations
   statistics
+  term_equality_solver
   transform
   type
-  validate)
- (libraries baby menhirLib unionFind)
+  validate
+  z3_intf)
+ (libraries baby menhirLib smtml unionFind z3)
  (flags
   (:standard -w -a)))

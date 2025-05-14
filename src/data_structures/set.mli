@@ -13,6 +13,7 @@ module type Set = sig
   val inter : t -> t -> t
   val diff : t -> t -> t
   val subset : t -> t -> bool
+  val forall : (elt -> bool) -> t -> bool
   val exists : (elt -> bool) -> t -> bool
   val map : (elt -> elt) -> t -> t
   val iter : (elt -> unit) -> t -> unit

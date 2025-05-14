@@ -43,25 +43,29 @@ let solve ?(until_validation = false) ?(until_transformation = false)
             !laws;
           fprintf fmt "initial state@.@.%a@." pp_state source)
       in
-      let open Make (struct
-        type node = state
+      (* check if the initial state is consistent *)
+      if not (consistent source) then
+        fprintf fmt "@.initial state inconsistent@.@."
+      else
+        let open Make (struct
+          type node = state
 
-        let source = source
-        let successors = successors
-        let estimate = estimate
+          let source = source
+          let successors = successors
+          let estimate = estimate
 
-        exception Termination = Termination
-      end) in
-      let () = set_max_depth max_depth in
-      match search () with
-      | Some path ->
-          let () =
-            if show_path then
-              fprintf fmt "path@.@.%a"
-                (pp_print_list
-                   ~pp_sep:(fun fmt () -> fprintf fmt "@.↓@.@.")
-                   pp_state)
-                (List.rev path)
-          in
-          fprintf fmt "@.find solution@.@."
-      | None -> fprintf fmt "@.no solution@.@."
+          exception Termination = Termination
+        end) in
+        let () = set_max_depth max_depth in
+        match search () with
+        | Some path ->
+            let () =
+              if show_path then
+                fprintf fmt "path@.@.%a"
+                  (pp_print_list
+                     ~pp_sep:(fun fmt () -> fprintf fmt "@.↓@.@.")
+                     pp_state)
+                  (List.rev path)
+            in
+            fprintf fmt "@.find solution@.@."
+        | None -> fprintf fmt "@.no solution@.@."

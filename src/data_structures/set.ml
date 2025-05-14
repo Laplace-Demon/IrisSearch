@@ -13,6 +13,7 @@ module type Set = sig
   val inter : t -> t -> t
   val diff : t -> t -> t
   val subset : t -> t -> bool
+  val forall : (elt -> bool) -> t -> bool
   val exists : (elt -> bool) -> t -> bool
   val map : (elt -> elt) -> t -> t
   val iter : (elt -> unit) -> t -> unit
@@ -62,6 +63,10 @@ module Make (Ord : Baby.OrderedType) = struct
   let subset s1 s2 =
     Statistics.record_operation "Set.subset";
     BabySet.subset s1 s2
+
+  let forall f s =
+    Statistics.record_operation "Set.forall";
+    BabySet.for_all f s
 
   let exists f s =
     Statistics.record_operation "Set.exists";

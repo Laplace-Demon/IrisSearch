@@ -62,7 +62,7 @@ let apply law ({ local_var_list; ipr_mset; pr_set } as st) =
               let pr_set_prems_elim = PropSet.diff pr_set pr_prems in
               return (ipr_mset_prems_elim, pr_set_prems_elim, is_inf, [||])
           | false ->
-              let knowledge = PropSet.union pr_set !facts in
+              let knowledge = pr_set in
               let match_init = Array.init shift (fun _ -> None) in
               let* match_result, ipr_mset_prems_elim, is_inf =
                 simple_internal_iprop_multiset_match knowledge match_init
@@ -87,9 +87,7 @@ let apply law ({ local_var_list; ipr_mset; pr_set } as st) =
             SimpleIpropMset.map_multiplicity
               (fun ipr count ->
                 (* we can use the new state *)
-                if
-                  Multiplicity.is_infinite count
-                  || Persistent_solver.solve ipr pr_set
+                if Multiplicity.is_infinite count || Persistent_solver.solve ipr
                 then Multiplicity.inf
                 else count)
               ipr_concls
@@ -113,6 +111,10 @@ let apply law ({ local_var_list; ipr_mset; pr_set } as st) =
           SimpleIpropMset.union ipr_concls ipr_mset_prems_elim
         in
         let new_pr_set = PropSet.union pr_concls pr_set_prems_elim in
+        let () =
+          (* check consistency of facts *)
+          if not (Equality_solver.solve new_pr_set) then raise Termination
+        in
         let new_st =
           {
             local_var_list = new_local_var_list;
@@ -136,3 +138,7 @@ let successors st =
     !laws fail
 
 let estimate = fun _ -> 0
+
+let consistent st =
+  Equality_solver.solve (PropSet.union !facts st.pr_set)
+  && SimpleIpropMset.mem1 false_id st.ipr_mset

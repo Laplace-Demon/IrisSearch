@@ -4,6 +4,8 @@ module OptionMonad = struct
   let return x = Some x
   let bind = Option.bind
   let ( let* ) = bind
+  let map o f = Option.map f o
+  let ( let+ ) = map
   let fail = None
 end
 

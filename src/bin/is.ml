@@ -96,8 +96,17 @@ let () =
   | Parser.Error ->
       eprintf "%s%a: parsing error@." input_filename Lexer.print_position lexbuf;
       exit 1
-  | Validate.IllegalPredicateDeclarationError str ->
+  | Validate.IllegalConstrDeclarationError str ->
+      eprintf "validation error: illegal constructor declaration of %s@." str;
+      exit 1
+  | Validate.IllegalFuncDeclarationError str ->
+      eprintf "validation error: illegal function declaration of %s@." str;
+      exit 1
+  | Validate.IllegalPredDeclarationError str ->
       eprintf "validation error: illegal predicate declaration of %s@." str;
+      exit 1
+  | Validate.IllegalConstDeclarationError str ->
+      eprintf "validation error: illegal constant declaration of %s@." str;
       exit 1
   | Validate.IllegalLawDeclarationError str ->
       eprintf "validation error: illegal law declaration, %s@." str;
@@ -105,23 +114,11 @@ let () =
   | Validate.IllegalInitDeclarationError str ->
       eprintf "validation error: illegal init declaration, %s@." str;
       exit 1
-  | Validate.DuplicateTypeDeclarationError str ->
-      eprintf "validation error: duplicate type declaration of %s@." str;
+  | Validate.DuplicateDeclarationError (kind, str) ->
+      eprintf "validation error: duplicate %s declaration of %s@." kind str;
       exit 1
-  | Validate.DuplicatePredicateDeclarationError str ->
-      eprintf "validation error: duplicate predicate declaration of %s@." str;
-      exit 1
-  | Validate.DuplicateConstDeclarationError str ->
-      eprintf "validation error: duplicate const declaration of %s@." str;
-      exit 1
-  | Validate.MissingTypeDeclarationError str ->
-      eprintf "validation error: missing type declaration of %s@." str;
-      exit 1
-  | Validate.MissingPredicateDeclarationError str ->
-      eprintf "validation error: missing predicate declaration of %s@." str;
-      exit 1
-  | Validate.MissingConstDeclarationError str ->
-      eprintf "validation error: missing const declaration of %s@." str;
+  | Validate.MissingDeclarationError (kind, str) ->
+      eprintf "validation error: missing %s declaration of %s@." kind str;
       exit 1
   | Validate.TypeError (str, ity1, ity2) ->
       eprintf "validation error: %s should have type %a, but has type %a@." str
