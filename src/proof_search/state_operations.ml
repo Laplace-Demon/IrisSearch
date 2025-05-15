@@ -133,9 +133,7 @@ let successors st =
     (fun law acc ->
       let succ = apply law st in
       List.iter
-        (fun new_st ->
-          Format.printf "@.%a@." pp_state new_st;
-          Statistics.record_generated_state (state_size new_st))
+        (fun new_st -> Statistics.record_generated_state (state_size new_st))
         succ;
       choose succ acc)
     !laws fail
@@ -144,4 +142,4 @@ let estimate = fun _ -> 0
 
 let consistent st =
   Z3_intf.consistent_solver (PropSet.union !facts st.pr_set)
-  && SimpleIpropMset.mem1 false_id st.ipr_mset
+  && not (SimpleIpropMset.mem1 false_id st.ipr_mset)

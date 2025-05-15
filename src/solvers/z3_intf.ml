@@ -4,7 +4,7 @@ open Validate
 open State
 open Z3
 
-let ctx = mk_context [ ("well_sorted_check", "true"); ("auto_config", "true") ]
+let ctx = mk_context [ ("auto_config", "true") ]
 let sort_table : (itype, Sort.sort) Hashtbl.t = Hashtbl.create 17
 let func_table : (string, FuncDecl.func_decl) Hashtbl.t = Hashtbl.create 17
 

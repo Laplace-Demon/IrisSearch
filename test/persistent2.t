@@ -1,6 +1,8 @@
   $ is ./persistent2 --show-path
   path
   
+  locals
+      %empty
   atoms
       □ B
   pures
@@ -8,6 +10,8 @@
   
   ↓
   
+  locals
+      %empty
   atoms
       □ A
       □ B
@@ -16,10 +20,12 @@
   
   ↓
   
+  locals
+      %empty
   atoms
       □ A
+      □ B
       □ C
-      □ B
   pures
       %empty
   

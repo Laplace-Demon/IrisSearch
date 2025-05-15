@@ -47,6 +47,17 @@ let solve ?(until_validation = false) ?(until_transformation = false)
       if not (consistent source) then
         fprintf fmt "@.initial state inconsistent@.@."
       else
+        let source =
+          {
+            source with
+            ipr_mset =
+              SimpleIpropMset.map_multiplicity
+                (fun ipr count ->
+                  if Persistent_solver.solve ipr then Multiplicity.inf
+                  else count)
+                source.ipr_mset;
+          }
+        in
         let open Make (struct
           type node = state
 

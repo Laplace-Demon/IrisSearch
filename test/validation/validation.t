@@ -5,13 +5,13 @@
   validation error: duplicate predicate declaration of p1
   [1]
   $ is ./dup3 --until-validation
-  validation error: duplicate const declaration of f
+  validation error: duplicate constant declaration of f
   [1]
   $ is ./miss1 --until-validation
-  validation error: missing const declaration of something
+  validation error: missing constant declaration of something
   [1]
   $ is ./miss2 --until-validation
-  validation error: missing const declaration of v
+  validation error: missing constant declaration of v
   [1]
   $ is ./miss3 --until-validation
   validation error: missing predicate declaration of p3
@@ -41,10 +41,10 @@
   validation error: l should have type val, but has type loc
   [1]
   $ is ./type4 --until-validation
-  validation error: pointsto should have type ... -> Prop, but has type loc * val -> iProp
+  validation error: pointsto should have type predicate, but has type loc * val -> iProp
   [1]
   $ is ./type5 --until-validation
-  validation error: add should have type ... -> iProp, but has type val * val * val -> Prop
+  validation error: add should have type predicate, but has type val * val * val -> Prop
   [1]
   $ is ./type6 --until-validation
   validation error: v1 should have type loc, but has type val
@@ -61,7 +61,7 @@
   validation error: l should have type loc, but has type val
   [1]
   $ is ./quant3 --until-validation
-  validation error: missing const declaration of P
+  validation error: P should have type constant, but has type iProp
   [1]
   $ is ./form1
   validation error: illegal law declaration, premise "(C -* C)" of law should be simple iprop
