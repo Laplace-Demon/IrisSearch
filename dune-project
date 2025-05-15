@@ -5,4 +5,5 @@
 (name is)
 
 (package
- (name is))
+ (name is)
+ (depends z3))

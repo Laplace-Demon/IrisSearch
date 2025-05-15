@@ -35,6 +35,6 @@
   type
   validate
   z3_intf)
- (libraries baby menhirLib smtml unionFind z3)
+ (libraries baby menhirLib unionFind z3)
  (flags
   (:standard -w -a)))

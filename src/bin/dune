@@ -4,6 +4,6 @@
  (public_name is)
  (modules is)
  (package is)
- (libraries baby is menhirLib)
+ (libraries is)
  (flags
   (:standard -w -a)))
