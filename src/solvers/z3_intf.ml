@@ -1,6 +1,7 @@
 open Type
 open Internal
 open Validate
+open State
 open Z3
 
 let ctx = mk_context [ ("well_sorted_check", "true"); ("auto_config", "true") ]
@@ -107,25 +108,40 @@ let rec internal_term_to_z3 { desc; ity } =
       let arg_list = Array.to_list (Array.map internal_term_to_z3 tm_arr) in
       FuncDecl.apply (get_func func) arg_list
 
-let rec internal_prop_to_z3 =
-  let open Monads.OptionMonad in
-  function
-  | IPersistent _ -> fail
+let mute = ref 0
+
+let rec internal_prop_to_z3 = function
+  | IPersistent _ ->
+      let ans =
+        Expr.mk_const_s ctx
+          (String.concat "-" [ "Per"; Int.to_string !mute ])
+          (Boolean.mk_sort ctx)
+      in
+      mute := !mute + 1;
+      ans
   | INot pr ->
-      let+ pr = internal_prop_to_z3 pr in
+      let pr = internal_prop_to_z3 pr in
       Boolean.mk_not ctx pr
-  | IAnd _ -> fail
+  | IAnd pr_set -> internal_prop_set_to_z3 pr_set
   | IOr (pr1, pr2) ->
-      let* pr1 = internal_prop_to_z3 pr1 in
-      let+ pr2 = internal_prop_to_z3 pr2 in
+      let pr1 = internal_prop_to_z3 pr1 in
+      let pr2 = internal_prop_to_z3 pr2 in
       Boolean.mk_or ctx [ pr1; pr2 ]
   | IImply (pr1, pr2) ->
-      let* pr1 = internal_prop_to_z3 pr1 in
-      let+ pr2 = internal_prop_to_z3 pr2 in
+      let pr1 = internal_prop_to_z3 pr1 in
+      let pr2 = internal_prop_to_z3 pr2 in
       Boolean.mk_implies ctx pr1 pr2
-  | IPred _ -> fail
+  | IPred (pred_id, _) ->
+      let pred = PredId.export pred_id in
+      let ans =
+        Expr.mk_const_s ctx
+          (String.concat "-" [ pred; Int.to_string !mute ])
+          (Boolean.mk_sort ctx)
+      in
+      mute := !mute + 1;
+      ans
   | IForall ({ shift; typed_str_list }, pr) ->
-      let+ pr = internal_prop_to_z3 pr in
+      let pr = internal_prop_to_z3 pr in
       let sort_list, sym_list =
         List.split
           (List.map
@@ -137,7 +153,7 @@ let rec internal_prop_to_z3 =
       Quantifier.expr_of_quantifier
         (Quantifier.mk_forall ctx [] [] pr None [] [] None None)
   | IExists ({ shift; typed_str_list }, pr) ->
-      let+ pr = internal_prop_to_z3 pr in
+      let pr = internal_prop_to_z3 pr in
       let sort_list, sym_list =
         List.split
           (List.map
@@ -151,8 +167,34 @@ let rec internal_prop_to_z3 =
   | IEq (tm1, tm2) ->
       let tm1 = internal_term_to_z3 tm1 in
       let tm2 = internal_term_to_z3 tm2 in
-      return (Boolean.mk_eq ctx tm1 tm2)
+      Boolean.mk_eq ctx tm1 tm2
   | INeq (tm1, tm2) ->
       let tm1 = internal_term_to_z3 tm1 in
       let tm2 = internal_term_to_z3 tm2 in
-      return (Boolean.mk_distinct ctx [ tm1; tm2 ])
+      Boolean.mk_distinct ctx [ tm1; tm2 ]
+
+and internal_prop_set_to_z3 pr_set =
+  Boolean.mk_and ctx (List.map internal_prop_to_z3 (PropSet.to_list pr_set))
+
+let equality_solver knowledge tm1 tm2 =
+  let knowledge = internal_prop_set_to_z3 (PropSet.union knowledge !facts) in
+  let tm1 = internal_term_to_z3 tm1 in
+  let tm2 = internal_term_to_z3 tm2 in
+  let eq = Boolean.mk_eq ctx tm1 tm2 in
+  let diseq = Boolean.mk_not ctx eq in
+  let solver = Solver.mk_solver ctx None in
+  let () = Solver.add solver [ knowledge ] in
+  let () = Solver.add solver [ diseq ] in
+  match Solver.check solver [] with
+  | Solver.SATISFIABLE -> false
+  | Solver.UNSATISFIABLE -> true
+  | Solver.UNKNOWN -> false
+
+let consistent_solver knowledge =
+  let knowledge = internal_prop_set_to_z3 (PropSet.union knowledge !facts) in
+  let solver = Solver.mk_solver ctx None in
+  let () = Solver.add solver [ knowledge ] in
+  match Solver.check solver [] with
+  | Solver.SATISFIABLE -> true
+  | Solver.UNSATISFIABLE -> false
+  | Solver.UNKNOWN -> false

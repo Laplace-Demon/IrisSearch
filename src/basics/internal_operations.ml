@@ -307,7 +307,7 @@ let ( internal_term_match,
         | Some res ->
             if
               compare_internal_term res tm = 0
-              || Term_equality_solver.solve res tm knowledge
+              || Z3_intf.equality_solver knowledge res tm
             then return match_result
             else fail
         | None ->
@@ -424,26 +424,24 @@ let ( internal_term_match,
           | IEq ({ desc = IBVar ind1 }, { desc = IBVar ind2 }) ->
               if
                 not
-                  (Term_equality_solver.solve
+                  (Z3_intf.equality_solver knowledge
                      (Option.get match_result'.(ind1))
-                     (Option.get match_result'.(ind2))
-                     knowledge)
+                     (Option.get match_result'.(ind2)))
               then match_result_and_pr_set := fail;
               fail
           | IEq ({ desc = IBVar ind1 }, tm2) ->
               if
                 not
-                  (Term_equality_solver.solve
+                  (Z3_intf.equality_solver knowledge
                      (Option.get match_result'.(ind1))
-                     tm2 knowledge)
+                     tm2)
               then match_result_and_pr_set := fail;
               fail
           | IEq (tm1, { desc = IBVar ind2 }) ->
               if
                 not
-                  (Term_equality_solver.solve tm1
-                     (Option.get match_result'.(ind2))
-                     knowledge)
+                  (Z3_intf.equality_solver knowledge tm1
+                     (Option.get match_result'.(ind2)))
               then match_result_and_pr_set := fail;
               fail
           | _ -> fail

@@ -116,7 +116,7 @@ let apply law ({ local_var_list; ipr_mset; pr_set } as st) =
         let new_pr_set = PropSet.union pr_concls pr_set_prems_elim in
         let () =
           (* check consistency of facts *)
-          if not (Equality_solver.solve new_pr_set) then raise Termination
+          if not (Z3_intf.consistent_solver new_pr_set) then raise Termination
         in
         let new_st =
           {
@@ -143,5 +143,5 @@ let successors st =
 let estimate = fun _ -> 0
 
 let consistent st =
-  Equality_solver.solve (PropSet.union !facts st.pr_set)
+  Z3_intf.consistent_solver (PropSet.union !facts st.pr_set)
   && SimpleIpropMset.mem1 false_id st.ipr_mset
