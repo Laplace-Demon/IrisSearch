@@ -13,6 +13,7 @@ depends: [
   "baby"
   "menhir" {>= "20240715"}
   "ocamlformat"
+  "unionFind"
   "z3"
 ]
 build: [
