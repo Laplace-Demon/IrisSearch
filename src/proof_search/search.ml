@@ -5,7 +5,7 @@ module Make (G : sig
   val successors : node -> node list
   val estimate : node -> int
 
-  exception Termination
+  exception Termination of string
 end) =
 struct
   type cost = int
@@ -118,6 +118,8 @@ struct
 
   let max_depth = ref 20
   let set_max_depth d = max_depth := d
+  let end_msg = ref ""
+  let get_end_msg () = !end_msg
 
   let search () =
     let rec aux () =
@@ -155,7 +157,9 @@ struct
                   P.add ison fhat))
               successors;
             aux ()
-          with G.Termination -> Some inode.path)
+          with G.Termination msg ->
+            end_msg := msg;
+            Some inode.path)
     in
     aux ()
 end

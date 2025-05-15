@@ -13,4 +13,4 @@ val facts : internal_prop_set ref
 val laws : internal_iprop_set ref
 val pp_state : formatter -> state -> unit
 
-exception Termination
+exception Termination of string

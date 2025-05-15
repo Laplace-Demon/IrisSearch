@@ -4,7 +4,7 @@ open Validate
 open State
 open Z3
 
-let ctx = mk_context [ ("auto_config", "true") ]
+let ctx = mk_context []
 let sort_table : (itype, Sort.sort) Hashtbl.t = Hashtbl.create 17
 let func_table : (string, FuncDecl.func_decl) Hashtbl.t = Hashtbl.create 17
 
@@ -19,7 +19,11 @@ let get_sort ity =
 let get_func str = Hashtbl.find func_table str
 
 let init () =
-  let type_decls = List.of_seq (Hashtbl.to_seq type_decls) in
+  let type_decls =
+    List.filter
+      (fun (_, constr_list) -> not (List.is_empty constr_list))
+      (List.of_seq (Hashtbl.to_seq type_decls))
+  in
   let sort_name_list = List.map fst type_decls in
   let constr_list_list =
     List.map
@@ -193,8 +197,13 @@ let equality_solver knowledge tm1 tm2 =
 let consistent_solver knowledge =
   let knowledge = internal_prop_set_to_z3 (PropSet.union knowledge !facts) in
   let solver = Solver.mk_solver ctx None in
-  let () = Solver.add solver [ knowledge ] in
-  match Solver.check solver [] with
-  | Solver.SATISFIABLE -> true
-  | Solver.UNSATISFIABLE -> false
-  | Solver.UNKNOWN -> false
+  match Solver.check solver [ knowledge ] with
+  | Solver.SATISFIABLE -> None
+  | Solver.UNSATISFIABLE ->
+      let unsat_core = Solver.get_unsat_core solver in
+      Some
+        Format.(
+          asprintf "@.@[<v 4>Unsat core:@,%a@]@."
+            (pp_print_list pp_print_string)
+            (List.map Expr.to_string unsat_core))
+  | Solver.UNKNOWN -> None

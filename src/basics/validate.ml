@@ -337,8 +337,11 @@ let validate symbol_table
         in
         Hashtbl.replace type_decls typ
           (List.map
-             (fun (constr, Tarrow (param_ity_list, _)) ->
-               (constr, param_ity_list))
+             (fun (constr, ity) ->
+               match ity with
+               | Tarrow (param_ity_list, _) -> (constr, param_ity_list)
+               | Tcustom _ -> (constr, [])
+               | _ -> assert false)
              constr_list))
       decl_types
   in

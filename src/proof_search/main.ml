@@ -7,6 +7,8 @@ open Search
 open Transform
 open Validate
 
+let () = Printexc.record_backtrace true
+
 let solve ?(until_validation = false) ?(until_transformation = false)
     ?(show_transformed_instance = false) ?(show_state = false)
     ?(show_path = false) ?(max_depth = 20) fmt ins =
@@ -43,6 +45,7 @@ let solve ?(until_validation = false) ?(until_transformation = false)
             !laws;
           fprintf fmt "initial state@.@.%a@." pp_state source)
       in
+      let () = Z3_intf.init () in
       (* check if the initial state is consistent *)
       if not (consistent source) then
         fprintf fmt "@.initial state inconsistent@.@."
@@ -78,5 +81,6 @@ let solve ?(until_validation = false) ?(until_transformation = false)
                      pp_state)
                   (List.rev path)
             in
+            let () = fprintf fmt "%s" (get_end_msg ()) in
             fprintf fmt "@.find solution@.@."
         | None -> fprintf fmt "@.no solution@.@."

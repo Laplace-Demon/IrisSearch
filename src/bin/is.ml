@@ -1,6 +1,7 @@
 open Format
 open Is
 
+let () = Printexc.record_backtrace true
 let until_parsing = ref false
 let until_validation = ref false
 let until_transformation = ref false
@@ -129,5 +130,6 @@ let () =
         str a1 a2;
       exit 1
   | e ->
-      eprintf "exception: %s\n@." (Printexc.to_string e);
+      let bt = Printexc.get_backtrace () in
+      eprintf "exception: %s@.backtrace:@.%s@." (Printexc.to_string e) bt;
       exit 1

@@ -37,4 +37,4 @@ let pp_state fmt { local_var_list; ipr_mset; pr_set } =
 
 (** Definition of termination exception. *)
 
-exception Termination
+exception Termination of string

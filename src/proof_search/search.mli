@@ -5,8 +5,9 @@ module Make (G : sig
   val successors : node -> node list
   val estimate : node -> int
 
-  exception Termination
+  exception Termination of string
 end) : sig
   val set_max_depth : int -> unit
   val search : unit -> G.node list option
+  val get_end_msg : unit -> string
 end

@@ -77,7 +77,12 @@ let apply law ({ local_var_list; ipr_mset; pr_set } as st) =
         in
         (* check for termination *)
         let () =
-          if SimpleIpropMset.mem1 false_id ipr_concls then raise Termination
+          if SimpleIpropMset.mem1 false_id ipr_concls then
+            raise
+              (Termination
+                 Format.(
+                   asprintf "@.@[<v 4>Applying law@,%a@.yields False.@]@."
+                     pp_internal_iprop law))
         in
         (* strengthen conclusion *)
         let ipr_concls =
@@ -116,7 +121,9 @@ let apply law ({ local_var_list; ipr_mset; pr_set } as st) =
         let new_pr_set = PropSet.union pr_concls pr_set_prems_elim in
         let () =
           (* check consistency of facts *)
-          if not (Z3_intf.consistent_solver new_pr_set) then raise Termination
+          match Z3_intf.consistent_solver new_pr_set with
+          | Some unsat_core -> raise (Termination unsat_core)
+          | None -> ()
         in
         let new_st =
           {
@@ -141,5 +148,5 @@ let successors st =
 let estimate = fun _ -> 0
 
 let consistent st =
-  Z3_intf.consistent_solver (PropSet.union !facts st.pr_set)
+  Option.is_none (Z3_intf.consistent_solver (PropSet.union !facts st.pr_set))
   && not (SimpleIpropMset.mem1 false_id st.ipr_mset)
