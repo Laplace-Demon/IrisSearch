@@ -119,18 +119,21 @@ let apply law ({ local_var_list; ipr_mset; pr_set } as st) =
           SimpleIpropMset.union ipr_concls ipr_mset_prems_elim
         in
         let new_pr_set = PropSet.union pr_concls pr_set_prems_elim in
-        let () =
-          (* check consistency of facts *)
-          match Z3_intf.consistent_solver new_pr_set with
-          | Some unsat_core -> raise (Termination unsat_core)
-          | None -> ()
-        in
         let new_st =
           {
             local_var_list = new_local_var_list;
             ipr_mset = new_ipr_mset;
             pr_set = new_pr_set;
           }
+        in
+        let () =
+          (* check consistency of facts *)
+          match Z3_intf.consistent_solver new_pr_set with
+          | Some unsat_core ->
+              raise
+                (Termination
+                   Format.(asprintf "@.↓@.@.%a%s" pp_state new_st unsat_core))
+          | None -> ()
         in
         if is_dup new_st then fail else return new_st
       with Multiplicity.Underflow -> fail)

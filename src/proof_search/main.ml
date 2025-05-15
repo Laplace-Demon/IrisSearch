@@ -75,12 +75,11 @@ let solve ?(until_validation = false) ?(until_transformation = false)
         | Some path ->
             let () =
               if show_path then
-                fprintf fmt "path@.@.%a"
+                fprintf fmt "path@.@.%a%s"
                   (pp_print_list
                      ~pp_sep:(fun fmt () -> fprintf fmt "@.↓@.@.")
                      pp_state)
-                  (List.rev path)
+                  (List.rev path) (get_end_msg ())
             in
-            let () = fprintf fmt "%s" (get_end_msg ()) in
             fprintf fmt "@.find solution@.@."
         | None -> fprintf fmt "@.no solution@.@."
