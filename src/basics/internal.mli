@@ -26,7 +26,9 @@ type internal_iprop_set
 type simple_internal_iprop_multiset
 type binder_info = { shift : int; typed_str_list : (string * itype) list }
 
-type internal_term =
+type internal_term = { desc : internal_term_desc; ity : itype }
+
+and internal_term_desc =
   | IVar of var_id
   | IBVar of int
   | IConstr of constr_id * internal_term array
@@ -66,13 +68,13 @@ val compare_internal_iprop : internal_iprop -> internal_iprop -> int
 
 (** Smart internal_term constructors. *)
 
-val iVar : var_id -> internal_term
-val iVar_str : string -> internal_term
-val iBVar : int -> internal_term
-val iConstr : constr_id * internal_term array -> internal_term
-val iConstr_str : string * internal_term array -> internal_term
-val iFunc : func_id * internal_term array -> internal_term
-val iFunc_str : string * internal_term array -> internal_term
+val iVar : var_id * itype -> internal_term
+val iVar_str : string * itype -> internal_term
+val iBVar : int * itype -> internal_term
+val iConstr : constr_id * internal_term array * itype -> internal_term
+val iConstr_str : string * internal_term array * itype -> internal_term
+val iFunc : func_id * internal_term array * itype -> internal_term
+val iFunc_str : string * internal_term array * itype -> internal_term
 
 (** Smart internal_prop constructors. *)
 

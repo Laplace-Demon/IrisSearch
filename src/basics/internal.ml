@@ -29,7 +29,9 @@ module rec Internal : sig
 
   type binder_info = { shift : int; typed_str_list : (string * itype) list }
 
-  type internal_term =
+  type internal_term = { desc : internal_term_desc; ity : itype }
+
+  and internal_term_desc =
     | IVar of var_id
     | IBVar of int
     | IConstr of constr_id * internal_term array
@@ -69,7 +71,9 @@ module rec Internal : sig
 end = struct
   type binder_info = { shift : int; typed_str_list : (string * itype) list }
 
-  type internal_term =
+  type internal_term = { desc : internal_term_desc; ity : itype }
+
+  and internal_term_desc =
     | IVar of var_id
     | IBVar of int
     | IConstr of constr_id * internal_term array
@@ -95,7 +99,7 @@ end = struct
     | IHForall of binder_info * internal_iprop
     | IHExists of binder_info * internal_iprop
 
-  let rec compare_internal_term tm1 tm2 =
+  let rec compare_internal_term { desc = tm1 } { desc = tm2 } =
     match (tm1, tm2) with
     | IVar var1, IVar var2 -> VarId.compare var1 var2
     | IBVar ind1, IBVar ind2 -> Int.compare ind1 ind2
@@ -221,7 +225,8 @@ let ( pp_internal_term,
       if n != 1 then sep ();
       repeat f sep (n - 1))
   in
-  let rec pp_internal_term_aux env fmt = function
+  let rec pp_internal_term_aux env fmt { desc = tm } =
+    match tm with
     | IVar var -> fprintf fmt "%s" (VarId.export var)
     | IBVar ind -> (
         match List.nth_opt env ind with
@@ -408,13 +413,18 @@ let ( pp_internal_term,
 
 (** Smart internal_term constructors. *)
 
-let iVar var = IVar var
-let iVar_str str = IVar (VarId.import str)
-let iBVar ind = IBVar ind
-let iConstr (constr, tm_arr) = IConstr (constr, tm_arr)
-let iConstr_str (str, tm_arr) = IConstr (ConstrId.import str, tm_arr)
-let iFunc (func, tm_arr) = IFunc (func, tm_arr)
-let iFunc_str (str, tm_arr) = IFunc (FuncId.import str, tm_arr)
+let iVar (var, ity) = { desc = IVar var; ity }
+let iVar_str (str, ity) = { desc = IVar (VarId.import str); ity }
+let iBVar (ind, ity) = { desc = IBVar ind; ity }
+let iConstr (constr, tm_arr, ity) = { desc = IConstr (constr, tm_arr); ity }
+
+let iConstr_str (str, tm_arr, ity) =
+  { desc = IConstr (ConstrId.import str, tm_arr); ity }
+
+let iFunc (func, tm_arr, ity) = { desc = IFunc (func, tm_arr); ity }
+
+let iFunc_str (str, tm_arr, ity) =
+  { desc = IFunc (FuncId.import str, tm_arr); ity }
 
 (** Smart internal_prop constructors. *)
 

@@ -2,30 +2,38 @@ open Ast
 open Internal
 open Format
 open State
+open Type
+open Validate
 
 let term_to_internal_term, prop_to_internal_prop, iprop_to_internal_iprop =
   let rec term_to_internal_term_aux ~env symbol_table = function
     | Var var -> (
-        match List.find_index (String.equal var) env with
-        | Some i -> iBVar i
-        | None -> iVar_str var)
+        match
+          List.find_mapi
+            (fun ind (str, ity) ->
+              if String.equal var str then Some (ind, ity) else None)
+            env
+        with
+        | Some (ind, ity) -> iBVar (ind, ity)
+        | None -> iVar_str (var, (Hashtbl.find symbol_table var).ity))
     | App (func, tm_list) -> (
-        let open Validate in
         match Hashtbl.find symbol_table func with
-        | { kind = Constr } ->
+        | { ity = Tarrow (_, ity); kind = Constr } ->
             iConstr_str
               ( func,
                 Array.of_list
                   (List.map
                      (term_to_internal_term_aux ~env symbol_table)
-                     tm_list) )
-        | { kind = Func } ->
+                     tm_list),
+                ity )
+        | { ity = Tarrow (_, ity); kind = Func } ->
             iFunc_str
               ( func,
                 Array.of_list
                   (List.map
                      (term_to_internal_term_aux ~env symbol_table)
-                     tm_list) )
+                     tm_list),
+                ity )
         | _ -> assert false)
   in
   let rec prop_to_internal_prop_aux ~env symbol_table = function
@@ -64,7 +72,7 @@ let term_to_internal_term, prop_to_internal_prop, iprop_to_internal_iprop =
             prop_to_internal_prop_aux
               ~env:
                 (List.fold_left
-                   (fun acc (str, _) -> str :: acc)
+                   (fun acc typed_str -> typed_str :: acc)
                    env typed_str_list)
               symbol_table pr )
     | Exists (typed_str_list, pr) ->
@@ -73,7 +81,7 @@ let term_to_internal_term, prop_to_internal_prop, iprop_to_internal_iprop =
             prop_to_internal_prop_aux
               ~env:
                 (List.fold_left
-                   (fun acc (str, _) -> str :: acc)
+                   (fun acc typed_str -> typed_str :: acc)
                    env typed_str_list)
               symbol_table pr )
     | Eq (tm1, tm2) ->
@@ -143,7 +151,7 @@ let term_to_internal_term, prop_to_internal_prop, iprop_to_internal_iprop =
             iprop_to_internal_iprop_aux
               ~env:
                 (List.fold_left
-                   (fun acc (str, _) -> str :: acc)
+                   (fun acc typed_str -> typed_str :: acc)
                    env typed_str_list)
               symbol_table ipr )
     | HExists (typed_str_list, ipr) ->
@@ -152,7 +160,7 @@ let term_to_internal_term, prop_to_internal_prop, iprop_to_internal_iprop =
             iprop_to_internal_iprop_aux
               ~env:
                 (List.fold_left
-                   (fun acc (str, _) -> str :: acc)
+                   (fun acc typed_str -> typed_str :: acc)
                    env typed_str_list)
               symbol_table ipr )
   in
@@ -196,16 +204,17 @@ let ( subst_internal_term,
       subst_internal_prop_set,
       subst_internal_iprop_set,
       subst_simple_internal_iprop_multiset ) =
-  let rec subst_internal_term_aux shift subst_task tm =
-    match tm with
+  let rec subst_internal_term_aux shift subst_task ({ desc; ity } as tm) =
+    match desc with
     | IBVar ind -> (
         match subst_task.(ind - shift) with
         | Some subst_tm -> subst_tm
         | None -> tm)
     | IConstr (constr, tm_arr) ->
-        iConstr (constr, subst_internal_term_array_aux shift subst_task tm_arr)
+        iConstr
+          (constr, subst_internal_term_array_aux shift subst_task tm_arr, ity)
     | IFunc (func, tm_arr) ->
-        iFunc (func, subst_internal_term_array_aux shift subst_task tm_arr)
+        iFunc (func, subst_internal_term_array_aux shift subst_task tm_arr, ity)
     | _ -> tm
   and subst_internal_term_array_aux shift subst_task tm_arr =
     Array.map (subst_internal_term_aux shift subst_task) tm_arr
@@ -288,8 +297,9 @@ let ( internal_term_match,
       simple_internal_iprop_multiset_match,
       internal_prop_set_substract_match,
       simple_internal_iprop_multiset_substract_match ) =
-  let rec internal_term_match_aux shift knowledge match_result ptm tm =
-    match (ptm, tm) with
+  let rec internal_term_match_aux shift knowledge match_result
+      ({ desc = pdesc } as ptm) ({ desc } as tm) =
+    match (pdesc, desc) with
     | IVar var1, IVar var2 ->
         if VarId.equal var1 var2 then return match_result else fail
     | IBVar ind, _ -> (
@@ -399,7 +409,7 @@ let ( internal_term_match,
     PropSet.iter
       (fun ppr ->
         match ppr with
-        | IEq (IBVar _, _) | IEq (_, IBVar _) -> ()
+        | IEq ({ desc = IBVar _ }, _) | IEq (_, { desc = IBVar _ }) -> ()
         | _ ->
             match_result_and_pr_set :=
               let* match_result', pr_set' = !match_result_and_pr_set in
@@ -411,7 +421,7 @@ let ( internal_term_match,
         let _ =
           let* match_result', _ = !match_result_and_pr_set in
           match ppr with
-          | IEq (IBVar ind1, IBVar ind2) ->
+          | IEq ({ desc = IBVar ind1 }, { desc = IBVar ind2 }) ->
               if
                 not
                   (Term_equality_solver.solve
@@ -420,7 +430,7 @@ let ( internal_term_match,
                      knowledge)
               then match_result_and_pr_set := fail;
               fail
-          | IEq (IBVar ind1, tm2) ->
+          | IEq ({ desc = IBVar ind1 }, tm2) ->
               if
                 not
                   (Term_equality_solver.solve
@@ -428,7 +438,7 @@ let ( internal_term_match,
                      tm2 knowledge)
               then match_result_and_pr_set := fail;
               fail
-          | IEq (tm1, IBVar ind2) ->
+          | IEq (tm1, { desc = IBVar ind2 }) ->
               if
                 not
                   (Term_equality_solver.solve tm1

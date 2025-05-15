@@ -2,7 +2,6 @@ open Z3
 open Format
 
 let ctx = mk_context []
-let list_ref = Datatype.mk_sort_ref_s ctx "list"
 
 let c_nil =
   Datatype.mk_constructor_s ctx "Nil" (Symbol.mk_string ctx "isNil") [] [] []
@@ -55,10 +54,29 @@ let () =
   let negeq = Boolean.mk_not ctx eq in
   let solver = Solver.mk_solver ctx None in
   let () = Solver.add solver [ negeq ] in
-  let () =
-    match Solver.check solver [] with
-    | Solver.SATISFIABLE -> Printf.printf "FALSE\n"
-    | Solver.UNSATISFIABLE -> print_endline "TRUE\n"
-    | Solver.UNKNOWN -> print_endline "UNKNOWN\n"
-  in
   ()
+
+let () =
+  let s = Arithmetic.Integer.mk_sort ctx in
+  let v0 = Quantifier.mk_bound ctx 0 s in
+  let v1 = Quantifier.mk_bound ctx 1 s in
+  let eq_x_y = Boolean.mk_eq ctx v1 v0 in
+  let eq_x_x =
+    Boolean.mk_eq ctx
+      (Quantifier.mk_bound ctx 0 s)
+      (Quantifier.mk_bound ctx 0 s)
+  in
+  let inner =
+    Quantifier.expr_of_quantifier
+      (Quantifier.mk_forall ctx [ s ]
+         [ Symbol.mk_string ctx "y" ]
+         eq_x_y None [] [] None None)
+  in
+  let inner2 = Boolean.mk_and ctx [ eq_x_x; inner ] in
+  let outer =
+    Quantifier.expr_of_quantifier
+      (Quantifier.mk_forall ctx [ s ]
+         [ Symbol.mk_string ctx "x" ]
+         inner2 None [] [] None None)
+  in
+  printf "%s" (Expr.to_string outer)

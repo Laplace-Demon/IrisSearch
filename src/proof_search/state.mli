@@ -3,7 +3,7 @@ open Internal
 open Type
 
 type state = {
-  local_var_list : string list;
+  local_var_list : (string * itype) list;
   ipr_mset : simple_internal_iprop_multiset;
   pr_set : internal_prop_set;
 }

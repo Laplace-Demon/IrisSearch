@@ -36,7 +36,9 @@ let retrieve_law law =
     match concls with
     | IHExists ({ typed_str_list }, ISimple (ipr_concls, pr_concls)) ->
         return
-          ( List.map (fun (str, _) -> generate ~base:str ()) typed_str_list,
+          ( List.map
+              (fun (str, ity) -> (generate ~base:str (), ity))
+              typed_str_list,
             ipr_concls,
             pr_concls )
     | ISimple (ipr_concls, pr_concls) -> return ([], ipr_concls, pr_concls)
@@ -96,8 +98,9 @@ let apply law ({ local_var_list; ipr_mset; pr_set } as st) =
         let ipr_concls, pr_concls =
           let local_var_num = List.length local_var_list in
           let exists_subst_task =
-            Array.init (List.length exists_var_list) (fun i ->
-                Some (iBVar (i + local_var_num)))
+            Array.mapi
+              (fun i (_, ity) -> Some (iBVar (i + local_var_num, ity)))
+              (Array.of_list exists_var_list)
           in
           let subst_task = Array.append exists_subst_task subst_task in
           match Array.length subst_task = 0 with
