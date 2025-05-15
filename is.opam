@@ -13,6 +13,7 @@ depends: [
   "baby"
   "menhir" {>= "20240715"}
   "ocamlformat"
+  "z3"
 ]
 build: [
   ["dune" "build" "-p" name]
