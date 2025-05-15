@@ -14,7 +14,7 @@ exception Lexing_error of string
 
 let digit = [ '0' - '9' ]
 let letter = [ 'a' - 'z' 'A' - 'Z' '_' ]
-let ident = letter (letter | digit)*
+let ident = letter (letter | digit | '\'')*
 
 rule token = parse
   | [' ' '\t']            { token lexbuf }
