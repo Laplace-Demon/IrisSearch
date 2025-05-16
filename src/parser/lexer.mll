@@ -12,8 +12,18 @@ let print_position outx lexbuf =
 exception Lexing_error of string
 }
 
+let greek_lower =
+  "α" | "β" | "γ" | "δ" | "ε" | "ζ" | "η" | "θ"
+| "ι" | "κ" | "λ" | "μ" | "ν" | "ξ" | "ο" | "π"
+| "ρ" | "σ" | "τ" | "υ" | "φ" | "χ" | "ψ" | "ω"
+
+let greek_upper =
+  "Α" | "Β" | "Γ" | "Δ" | "Ε" | "Ζ" | "Η" | "Θ"
+| "Ι" | "Κ" | "Λ" | "Μ" | "Ν" | "Ξ" | "Ο" | "Π"
+| "Ρ" | "Σ" | "Τ" | "Υ" | "Φ" | "Χ" | "Ψ" | "Ω"
+
 let digit = [ '0' - '9' ]
-let letter = [ 'a' - 'z' 'A' - 'Z' '_' ]
+let letter = [ 'a' - 'z' 'A' - 'Z' '_' ] | greek_lower | greek_upper
 let ident = letter (letter | digit | '\'')*
 
 rule token = parse
