@@ -46,6 +46,9 @@ val subst_simple_internal_iprop_multiset :
   subst_task -> simple_internal_iprop_multiset -> simple_internal_iprop_multiset
 
 type match_result = internal_term option array
+
+val match_result_complete : match_result -> bool
+
 type knowledge = internal_prop_set
 
 open Monads.ListMonad

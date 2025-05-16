@@ -15,7 +15,10 @@ let term_to_internal_term, prop_to_internal_prop, iprop_to_internal_iprop =
             env
         with
         | Some (ind, ity) -> iBVar (ind, ity)
-        | None -> iVar_str (var, (Hashtbl.find symbol_table var).ity))
+        | None -> (
+            match Hashtbl.find symbol_table var with
+            | { ity; kind = Constr } -> iConstr_str (var, [||], ity)
+            | _ -> iVar_str (var, (Hashtbl.find symbol_table var).ity)))
     | App (func, tm_list) -> (
         match Hashtbl.find symbol_table func with
         | { ity = Tarrow (_, ity); kind = Constr } ->
@@ -285,6 +288,9 @@ let ( subst_internal_term,
 (** Pattern match with quantifiers. *)
 
 type match_result = internal_term option array
+
+let match_result_complete = Array.for_all Option.is_some
+
 type knowledge = internal_prop_set
 
 open Monads.ListMonad

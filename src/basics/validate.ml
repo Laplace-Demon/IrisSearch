@@ -45,6 +45,7 @@ let rec check_term symbol_table env = function
       | None -> (
           match Hashtbl.find_opt symbol_table var with
           | Some { ity; kind = Const } -> ity
+          | Some { ity = Tcustom _ as ity; kind = Constr } -> ity
           | Some { ity } ->
               raise
                 (TypeError
