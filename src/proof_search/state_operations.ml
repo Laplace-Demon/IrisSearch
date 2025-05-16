@@ -55,25 +55,26 @@ let apply law ({ local_var_list; ipr_mset; pr_set } as st) =
     -> (
       try
         (* instantiate quantified variables *)
-        let* ipr_mset_prems_elim, pr_set_prems_elim, is_inf, subst_task =
+        let* ipr_mset_prems_elim, is_inf, subst_task =
           match shift = 0 with
           | true ->
-              let ipr_mset_prems_elim, is_inf =
-                SimpleIpropMset.diff ipr_mset ipr_prems
-              in
-              let pr_set_prems_elim = PropSet.diff pr_set pr_prems in
-              return (ipr_mset_prems_elim, pr_set_prems_elim, is_inf, [||])
+              if not (Z3_intf.implication_solver (Some st) pr_prems) then fail
+              else
+                let ipr_mset_prems_elim, is_inf =
+                  SimpleIpropMset.diff ipr_mset ipr_prems
+                in
+                return (ipr_mset_prems_elim, is_inf, [||])
           | false ->
-              let knowledge = pr_set in
               let match_init = Array.init shift (fun _ -> None) in
               let* match_result, ipr_mset_prems_elim, is_inf =
-                simple_internal_iprop_multiset_match knowledge match_init
+                simple_internal_iprop_multiset_match (Some st) match_init
                   ipr_prems ipr_mset
               in
-              let+ match_result', pr_set_prems_elim =
-                internal_prop_set_match knowledge match_result pr_prems pr_set
-              in
-              (ipr_mset_prems_elim, pr_set_prems_elim, is_inf, match_result')
+              if match_result_complete match_result then
+                let pr_prems = subst_internal_prop_set match_result pr_prems in
+                if not (Z3_intf.implication_solver (Some st) pr_prems) then fail
+                else return (ipr_mset_prems_elim, is_inf, match_result)
+              else fail
         in
         (* check for termination *)
         let () =
@@ -118,7 +119,7 @@ let apply law ({ local_var_list; ipr_mset; pr_set } as st) =
         let new_ipr_mset =
           SimpleIpropMset.union ipr_concls ipr_mset_prems_elim
         in
-        let new_pr_set = PropSet.union pr_concls pr_set_prems_elim in
+        let new_pr_set = PropSet.union pr_concls pr_set in
         let new_st =
           {
             local_var_list = new_local_var_list;
@@ -128,7 +129,7 @@ let apply law ({ local_var_list; ipr_mset; pr_set } as st) =
         in
         let () =
           (* check consistency of facts *)
-          match Z3_intf.consistent_solver new_pr_set with
+          match Z3_intf.consistent_solver (Some st) with
           | Some unsat_core ->
               raise
                 (Termination
@@ -151,5 +152,5 @@ let successors st =
 let estimate = fun _ -> 0
 
 let consistent st =
-  Option.is_none (Z3_intf.consistent_solver (PropSet.union !facts st.pr_set))
+  Option.is_none (Z3_intf.consistent_solver (Some st))
   && not (SimpleIpropMset.mem1 false_id st.ipr_mset)

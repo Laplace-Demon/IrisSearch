@@ -2,8 +2,8 @@ open Internal
 open State
 open UnionFind
 
-let solve : internal_term -> internal_term -> internal_prop_set -> bool =
- fun tm1 tm2 pr_set ->
+let solve : state -> internal_term -> internal_term -> bool =
+ fun { pr_set } tm1 tm2 ->
   let knowledge = PropSet.union !facts pr_set in
   compare_internal_term tm1 tm2 = 0
   ||

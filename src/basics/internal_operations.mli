@@ -1,6 +1,7 @@
 open Ast
 open Internal
 open Validate
+open State
 
 val term_to_internal_term :
   (string, symbol_info) Hashtbl.t -> term -> internal_term
@@ -49,53 +50,59 @@ type match_result = internal_term option array
 
 val match_result_complete : match_result -> bool
 
-type knowledge = internal_prop_set
-
 open Monads.ListMonad
 
 val internal_term_match :
-  knowledge -> match_result -> internal_term -> internal_term -> match_result t
+  state option ->
+  match_result ->
+  internal_term ->
+  internal_term ->
+  match_result t
 
 val internal_term_array_match :
-  knowledge ->
+  state option ->
   match_result ->
   internal_term array ->
   internal_term array ->
   match_result t
 
 val internal_prop_match :
-  knowledge -> match_result -> internal_prop -> internal_prop -> match_result t
+  state option ->
+  match_result ->
+  internal_prop ->
+  internal_prop ->
+  match_result t
 
 val internal_iprop_match :
-  knowledge ->
+  state option ->
   match_result ->
   internal_iprop ->
   internal_iprop ->
   match_result t
 
 val internal_prop_set_match :
-  knowledge ->
+  state option ->
   match_result ->
   internal_prop_set ->
   internal_prop_set ->
   (match_result * internal_prop_set) t
 
 val simple_internal_iprop_multiset_match :
-  knowledge ->
+  state option ->
   match_result ->
   simple_internal_iprop_multiset ->
   simple_internal_iprop_multiset ->
   (match_result * simple_internal_iprop_multiset * bool) t
 
 val internal_prop_set_substract_match :
-  knowledge ->
+  state option ->
   match_result ->
   internal_prop ->
   internal_prop_set ->
   (match_result * internal_prop_set) t
 
 val simple_internal_iprop_multiset_substract_match :
-  knowledge ->
+  state option ->
   match_result ->
   SimpleIpropMset.elt ->
   Multiplicity.t ->

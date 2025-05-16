@@ -7,4 +7,10 @@
   persistent1
   persistent2
   persistent3
-  negative))
+  negative
+  locals
+  trans
+  diseq1
+  diseq2
+  gen_heap1
+  gen_heap2))

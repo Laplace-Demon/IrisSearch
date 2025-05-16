@@ -1,0 +1,18 @@
+types
+    A
+
+preds
+    P : A * A -> iProp
+
+consts
+    a1 a2 : A
+
+facts
+    forall (a b : A), Persistent (P a b),
+    a1 ≠ a2
+
+laws
+    forall (x y : A), P x y -* ⌜x = y⌝
+
+init
+    P a1 a2

@@ -23,8 +23,7 @@ let solve : hpred_id * internal_term array -> bool =
               in
               not
                 (List.is_empty
-                   (internal_term_array_match knowledge match_init tm_arr'
-                      tm_arr)))
+                   (internal_term_array_match None match_init tm_arr' tm_arr)))
             ipr_mset
       | _ -> false)
     knowledge

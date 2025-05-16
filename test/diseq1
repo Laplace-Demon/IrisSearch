@@ -1,0 +1,20 @@
+types
+    T
+
+preds
+    P : T → iProp
+
+consts
+    a b c : T
+
+facts
+    a != c
+
+laws
+    forall (x y : T),
+        ⌜ x != y ⌝ -* P x -* P y -* False
+
+init
+    P a,
+    P b,
+    ⌜ c = b ⌝

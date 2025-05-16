@@ -1,0 +1,14 @@
+types
+    loc
+
+consts
+    l1 l2 l3 : loc
+
+facts
+    l1 = l2,
+    l2 = l3
+
+laws
+    ⌜ l1 = l3 ⌝ -* False
+
+init

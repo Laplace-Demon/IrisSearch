@@ -1,0 +1,30 @@
+types
+    A B
+
+preds
+    P1 : A * B -> iProp
+    P2 : A * B -> iProp
+    P3 : A * B -> iProp
+    P4 : A * B -> iProp
+    P5 : A * B -> iProp
+
+consts
+    a : A
+    b : B
+
+facts
+    forall (a : A) (b : B), Persistent (P1 a b),
+    forall (a : A) (b : B), Persistent (P2 a b),
+    forall (a : A) (b : B), Persistent (P3 a b),
+    forall (a : A) (b : B), Persistent (P4 a b),
+    forall (a : A) (b : B), Persistent (P5 a b)
+
+laws
+    forall (a : A) (b : B), P1 a b -* exists (aa : A) (bb : B), P2 aa bb,
+    forall (a : A) (b : B), P2 a b -* exists (aa : A) (bb : B), P3 aa bb,
+    forall (a : A) (b : B), P3 a b -* exists (aa : A) (bb : B), P4 aa bb,
+    forall (a : A) (b : B), P4 a b -* exists (aa : A) (bb : B), P5 aa bb,
+    forall (a : A) (b : B), P5 a b -* False
+
+init
+    P1 a b

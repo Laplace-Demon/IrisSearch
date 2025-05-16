@@ -438,12 +438,16 @@ let iPred_str (str, tm_arr) = IPred (PredId.import str, tm_arr)
 let iForall (binder_info, pr) = IForall (binder_info, pr)
 
 let iForall_raw (typed_str_list, pr) =
-  IForall ({ shift = List.length typed_str_list; typed_str_list }, pr)
+  match typed_str_list with
+  | [] -> pr
+  | _ -> IForall ({ shift = List.length typed_str_list; typed_str_list }, pr)
 
 let iExists (binder_info, pr) = IExists (binder_info, pr)
 
 let iExists_raw (typed_str_list, pr) =
-  IExists ({ shift = List.length typed_str_list; typed_str_list }, pr)
+  match typed_str_list with
+  | [] -> pr
+  | _ -> IExists ({ shift = List.length typed_str_list; typed_str_list }, pr)
 
 let iEq (tm1, tm2) = IEq (tm1, tm2)
 let iNeq (tm1, tm2) = INeq (tm1, tm2)

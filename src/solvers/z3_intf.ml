@@ -114,7 +114,31 @@ let rec internal_term_to_z3 { desc; ity } =
 
 let mute = ref 0
 
-let rec internal_prop_to_z3 = function
+let rec get_forall typed_str_list pr =
+  let sort_list, sym_list =
+    List.split
+      (List.map
+         (fun (str, ity) ->
+           let sort = get_sort ity in
+           (sort, Symbol.mk_string ctx str))
+         typed_str_list)
+  in
+  Quantifier.expr_of_quantifier
+    (Quantifier.mk_forall ctx sort_list sym_list pr None [] [] None None)
+
+and get_exists typed_str_list pr =
+  let sort_list, sym_list =
+    List.split
+      (List.map
+         (fun (str, ity) ->
+           let sort = get_sort ity in
+           (sort, Symbol.mk_string ctx str))
+         typed_str_list)
+  in
+  Quantifier.expr_of_quantifier
+    (Quantifier.mk_exists ctx sort_list sym_list pr None [] [] None None)
+
+and internal_prop_to_z3 = function
   | IPersistent _ ->
       let ans =
         Expr.mk_const_s ctx
@@ -144,30 +168,12 @@ let rec internal_prop_to_z3 = function
       in
       mute := !mute + 1;
       ans
-  | IForall ({ shift; typed_str_list }, pr) ->
+  | IForall ({ typed_str_list }, pr) ->
       let pr = internal_prop_to_z3 pr in
-      let sort_list, sym_list =
-        List.split
-          (List.map
-             (fun (str, ity) ->
-               let sort = get_sort ity in
-               (sort, Expr.mk_const_s ctx str sort))
-             typed_str_list)
-      in
-      Quantifier.expr_of_quantifier
-        (Quantifier.mk_forall ctx [] [] pr None [] [] None None)
-  | IExists ({ shift; typed_str_list }, pr) ->
+      get_forall typed_str_list pr
+  | IExists ({ typed_str_list }, pr) ->
       let pr = internal_prop_to_z3 pr in
-      let sort_list, sym_list =
-        List.split
-          (List.map
-             (fun (str, ity) ->
-               let sort = get_sort ity in
-               (sort, Expr.mk_const_s ctx str sort))
-             typed_str_list)
-      in
-      Quantifier.expr_of_quantifier
-        (Quantifier.mk_exists ctx [] [] pr None [] [] None None)
+      get_exists typed_str_list pr
   | IEq (tm1, tm2) ->
       let tm1 = internal_term_to_z3 tm1 in
       let tm2 = internal_term_to_z3 tm2 in
@@ -180,24 +186,40 @@ let rec internal_prop_to_z3 = function
 and internal_prop_set_to_z3 pr_set =
   Boolean.mk_and ctx (List.map internal_prop_to_z3 (PropSet.to_list pr_set))
 
-let equality_solver knowledge tm1 tm2 =
-  let knowledge = internal_prop_set_to_z3 (PropSet.union knowledge !facts) in
+let equality_solver st_opt tm1 tm2 =
   let tm1 = internal_term_to_z3 tm1 in
   let tm2 = internal_term_to_z3 tm2 in
   let eq = Boolean.mk_eq ctx tm1 tm2 in
-  let diseq = Boolean.mk_not ctx eq in
   let solver = Solver.mk_solver ctx None in
-  let () = Solver.add solver [ knowledge ] in
-  let () = Solver.add solver [ diseq ] in
-  match Solver.check solver [] with
+  let assums =
+    match st_opt with
+    | None -> [ internal_prop_set_to_z3 !facts; Boolean.mk_not ctx eq ]
+    | Some { local_var_list; pr_set } ->
+        (* pay attention to the semantics difference between this solver and the others, tm1 and tm2 are supposed to be in the state *)
+        [
+          internal_prop_set_to_z3 !facts;
+          get_exists local_var_list
+            (Boolean.mk_and ctx
+               [ internal_prop_set_to_z3 pr_set; Boolean.mk_not ctx eq ]);
+        ]
+  in
+  match Solver.check solver assums with
   | Solver.SATISFIABLE -> false
   | Solver.UNSATISFIABLE -> true
   | Solver.UNKNOWN -> false
 
-let consistent_solver knowledge =
-  let knowledge = internal_prop_set_to_z3 (PropSet.union knowledge !facts) in
+let consistent_solver st_opt =
+  let assums =
+    match st_opt with
+    | None -> [ internal_prop_set_to_z3 !facts ]
+    | Some { local_var_list; pr_set } ->
+        [
+          internal_prop_set_to_z3 !facts;
+          internal_prop_to_z3 (iExists_raw (local_var_list, iAnd pr_set));
+        ]
+  in
   let solver = Solver.mk_solver ctx None in
-  match Solver.check solver [ knowledge ] with
+  match Solver.check solver assums with
   | Solver.SATISFIABLE -> None
   | Solver.UNSATISFIABLE ->
       let unsat_core = Solver.get_unsat_core solver in
@@ -207,3 +229,21 @@ let consistent_solver knowledge =
             (pp_print_list pp_print_string)
             (List.map Expr.to_string unsat_core))
   | Solver.UNKNOWN -> None
+
+let implication_solver st_opt goal =
+  let goal = internal_prop_set_to_z3 goal in
+  let assums =
+    match st_opt with
+    | None -> [ internal_prop_set_to_z3 !facts; Boolean.mk_not ctx goal ]
+    | Some { local_var_list; pr_set } ->
+        [
+          internal_prop_set_to_z3 !facts;
+          internal_prop_to_z3 (iExists_raw (local_var_list, iAnd pr_set));
+          Boolean.mk_not ctx goal;
+        ]
+  in
+  let solver = Solver.mk_solver ctx None in
+  match Solver.check solver assums with
+  | Solver.SATISFIABLE -> false
+  | Solver.UNSATISFIABLE -> true
+  | Solver.UNKNOWN -> false
