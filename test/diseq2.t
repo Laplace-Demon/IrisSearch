@@ -17,18 +17,9 @@
   pures
       a1 = a2
   
-  ↓
-  
-  locals
-      %empty
-  atoms
-      □ (P a1 a2)
-  pures
-      a1 = a2
-  
   Unsat core:
+      (and (forall ((a A) (b A)) Per-2) (distinct a1 a2))
       (and (= a1 a2))
-      (and (forall ((a A) (b A)) Per-4) (distinct a1 a2))
   
   find solution
   
