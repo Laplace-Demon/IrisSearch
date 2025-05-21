@@ -129,7 +129,7 @@ let apply law ({ local_var_list; ipr_mset; pr_set } as st) =
         in
         let () =
           (* check consistency of facts *)
-          match Z3_intf.consistent_solver (Some st) with
+          match Z3_intf.consistent_solver (Some new_st) with
           | Some unsat_core ->
               raise
                 (Termination
