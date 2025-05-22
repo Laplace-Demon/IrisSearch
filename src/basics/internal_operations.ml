@@ -180,9 +180,6 @@ let prop_list_to_internal_prop_set symbol_table pr_list =
         | _ as pr -> PropSet.singleton pr))
     PropSet.empty pr_list
 
-let iprop_list_to_internal_iprop_set symbol_table iprl =
-  IpropSet.of_list (List.map (iprop_to_internal_iprop symbol_table) iprl)
-
 let iprop_list_to_simple_internal_iprop_multiset_and_internal_prop_set
     symbol_table iprl =
   List.fold_left
@@ -195,9 +192,65 @@ let iprop_list_to_simple_internal_iprop_multiset_and_internal_prop_set
     (SimpleIpropMset.empty, PropSet.empty)
     iprl
 
-(** Substitution of quantified variable. *)
+(** Free variables. *)
 
-type subst_task = internal_term option array
+let ( free_vars_internal_term,
+      free_vars_internal_term_array,
+      free_vars_internal_prop,
+      free_vars_simple_internal_iprop,
+      free_vars_internal_iprop,
+      free_vars_internal_prop_set,
+      free_vars_simple_internal_iprop_multiset ) =
+  let rec free_vars_internal_term_aux acc ({ desc; ity } as tm) =
+    match desc with
+    | IVar var -> (var, ity) :: acc
+    | IBVar _ -> acc
+    | IConstr (_, tm_arr) | IFunc (_, tm_arr) ->
+        free_vars_internal_term_array_aux acc tm_arr
+  and free_vars_internal_term_array_aux acc =
+    Array.fold_left free_vars_internal_term_aux acc
+  in
+  let rec free_vars_internal_prop_aux acc = function
+    | IPersistent ipr -> free_vars_internal_iprop_aux acc ipr
+    | INot pr -> free_vars_internal_prop_aux acc pr
+    | IAnd pr_set -> free_vars_internal_prop_set_aux acc pr_set
+    | IOr (pr1, pr2) | IImply (pr1, pr2) ->
+        let acc' = free_vars_internal_prop_aux acc pr1 in
+        free_vars_internal_prop_aux acc' pr2
+    | IPred (_, tm_arr) -> free_vars_internal_term_array_aux acc tm_arr
+    | IForall (_, pr) | IExists (_, pr) -> free_vars_internal_prop_aux acc pr
+    | IEq (tm1, tm2) | INeq (tm1, tm2) ->
+        let acc' = free_vars_internal_term_aux acc tm1 in
+        free_vars_internal_term_aux acc' tm2
+  and free_vars_simple_internal_iprop_aux acc (ipr_mset, pr_set) =
+    let acc' = free_vars_simple_internal_iprop_multiset_aux acc ipr_mset in
+    free_vars_internal_prop_set_aux acc' pr_set
+  and free_vars_internal_iprop_aux acc = function
+    | ISimple ipr -> free_vars_simple_internal_iprop_aux acc ipr
+    | IWand (ipr1, ipr2) ->
+        let acc' = free_vars_internal_iprop_aux acc ipr1 in
+        free_vars_internal_iprop_aux acc' ipr2
+    | IHForall (_, ipr) | IHExists (_, ipr) ->
+        free_vars_internal_iprop_aux acc ipr
+  and free_vars_internal_prop_set_aux acc pr_set =
+    PropSet.fold (fun pr acc -> free_vars_internal_prop_aux acc pr) pr_set acc
+  and free_vars_simple_internal_iprop_multiset_aux acc ipr_mset =
+    SimpleIpropMset.fold
+      (fun (_, tm_arr) _ acc -> free_vars_internal_term_array_aux acc tm_arr)
+      ipr_mset acc
+  in
+
+  ( free_vars_internal_term_aux [],
+    free_vars_internal_term_array_aux [],
+    free_vars_internal_prop_aux [],
+    free_vars_simple_internal_iprop_aux [],
+    free_vars_internal_iprop_aux [],
+    free_vars_internal_prop_set_aux [],
+    free_vars_simple_internal_iprop_multiset_aux [] )
+
+(** Substitution. *)
+
+type subst_task = internal_term_desc -> internal_term option
 
 let ( subst_internal_term,
       subst_internal_term_array,
@@ -205,20 +258,21 @@ let ( subst_internal_term,
       subst_simple_internal_iprop,
       subst_internal_iprop,
       subst_internal_prop_set,
-      subst_internal_iprop_set,
       subst_simple_internal_iprop_multiset ) =
   let rec subst_internal_term_aux shift subst_task ({ desc; ity } as tm) =
-    match desc with
-    | IBVar ind -> (
-        match subst_task.(ind - shift) with
-        | Some subst_tm -> subst_tm
-        | None -> tm)
-    | IConstr (constr, tm_arr) ->
-        iConstr
-          (constr, subst_internal_term_array_aux shift subst_task tm_arr, ity)
-    | IFunc (func, tm_arr) ->
-        iFunc (func, subst_internal_term_array_aux shift subst_task tm_arr, ity)
-    | _ -> tm
+    match subst_task desc with
+    | Some subst_tm -> subst_tm
+    | None -> (
+        match desc with
+        | IConstr (constr, tm_arr) ->
+            iConstr
+              ( constr,
+                subst_internal_term_array_aux shift subst_task tm_arr,
+                ity )
+        | IFunc (func, tm_arr) ->
+            iFunc
+              (func, subst_internal_term_array_aux shift subst_task tm_arr, ity)
+        | _ -> tm)
   and subst_internal_term_array_aux shift subst_task tm_arr =
     Array.map (subst_internal_term_aux shift subst_task) tm_arr
   in
@@ -269,8 +323,6 @@ let ( subst_internal_term,
     | _ as ipr -> ipr
   and subst_internal_prop_set_aux shift subst_task pr_set =
     PropSet.map (subst_internal_prop_aux shift subst_task) pr_set
-  and subst_internal_iprop_set_aux shift subst_task ipr_set =
-    IpropSet.map (subst_internal_iprop_aux shift subst_task) ipr_set
   and subst_simple_internal_iprop_multiset_aux shift subst_task ipr_mset =
     SimpleIpropMset.map
       (subst_internal_term_array_aux shift subst_task)
@@ -282,7 +334,6 @@ let ( subst_internal_term,
     subst_simple_internal_iprop_aux 0,
     subst_internal_iprop_aux 0,
     subst_internal_prop_set_aux 0,
-    subst_internal_iprop_set_aux 0,
     subst_simple_internal_iprop_multiset_aux 0 )
 
 (** Pattern match with quantifiers. *)

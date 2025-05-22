@@ -13,4 +13,6 @@
   diseq1
   diseq2
   gen_heap1
-  gen_heap2))
+  gen_heap2
+  law_trans1
+  law_trans2))

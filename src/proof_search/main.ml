@@ -39,9 +39,11 @@ let solve ?(until_validation = false) ?(until_transformation = false)
                  pp_print_cut fmt ()))
             !facts;
           fprintf fmt "@[<v 4>global laws@,%a@]@.@."
-            (pp_internal_iprop_set ~pp_sep:(fun fmt () ->
+            (pp_print_list
+               ~pp_sep:(fun fmt () ->
                  pp_print_char fmt ',';
-                 pp_print_cut fmt ()))
+                 pp_print_cut fmt ())
+               pp_law)
             !laws;
           fprintf fmt "initial state@.@.%a@." pp_state source)
       in

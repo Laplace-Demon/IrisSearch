@@ -17,8 +17,13 @@ let empty_state =
     pr_set = PropSet.empty;
   }
 
-let facts = ref PropSet.empty
-let laws = ref IpropSet.empty
+let facts : internal_prop_set ref = ref PropSet.empty
+
+type law = { intern : internal_iprop; extern : internal_iprop }
+
+let pp_law_internal fmt { intern } = pp_internal_iprop fmt intern
+let pp_law fmt { extern } = pp_internal_iprop fmt extern
+let laws : law list ref = ref []
 
 let pp_loval_var_list fmt = function
   | [] -> fprintf fmt "%%empty"

@@ -190,9 +190,6 @@ end
 and PropSet : (Set.Set with type elt = Internal.internal_prop) =
   Set.Make (OrderedInternalProp)
 
-and IpropSet : (Set.Set with type elt = Internal.internal_iprop) =
-  Set.Make (OrderedInternalIprop)
-
 and SimpleIpropMset :
   (Multiset.Multiset2
     with type elt1 = HPredId.t
@@ -202,7 +199,6 @@ and SimpleIpropMset :
 include Internal
 
 type internal_prop_set = PropSet.t
-type internal_iprop_set = IpropSet.t
 type simple_internal_iprop_multiset = SimpleIpropMset.t
 
 let ( pp_internal_term,
@@ -215,8 +211,6 @@ let ( pp_internal_term,
       pp_internal_iprop_env,
       pp_internal_prop_set,
       pp_internal_prop_set_env,
-      pp_internal_iprop_set,
-      pp_internal_iprop_set_env,
       pp_simple_internal_iprop_multiset,
       pp_simple_internal_iprop_multiset_env ) =
   let rec repeat f sep n =
@@ -358,12 +352,6 @@ let ( pp_internal_term,
            fprintf fmt "⌜ %a ⌝" (pp_internal_prop_aux env) pr
          else pp_internal_prop_aux env)
         fmt (PropSet.to_list pr_set)
-  and pp_internal_iprop_set_aux env ?(pp_sep = pp_print_cut) fmt ipr_set =
-    if IpropSet.is_empty ipr_set then pp_print_string fmt "%empty"
-    else
-      pp_print_list ~pp_sep
-        (pp_internal_iprop_aux env)
-        fmt (IpropSet.to_list ipr_set)
   and pp_simple_internal_iprop_multiset_aux env ?(pp_sep = pp_print_cut) fmt
       ipr_mset =
     if SimpleIpropMset.is_empty ipr_mset then pp_print_string fmt "%empty"
@@ -406,8 +394,6 @@ let ( pp_internal_term,
     pp_internal_iprop_aux,
     pp_internal_prop_set_aux false [],
     pp_internal_prop_set_aux false,
-    pp_internal_iprop_set_aux [],
-    pp_internal_iprop_set_aux,
     pp_simple_internal_iprop_multiset_aux [],
     pp_simple_internal_iprop_multiset_aux )
 

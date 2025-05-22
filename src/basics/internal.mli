@@ -22,7 +22,6 @@ val false_id : HPredId.t
 (** Definition of internal representations and data structures storing them. *)
 
 type internal_prop_set
-type internal_iprop_set
 type simple_internal_iprop_multiset
 type binder_info = { shift : int; typed_str_list : (string * itype) list }
 
@@ -106,9 +105,6 @@ val iHExists_raw : (string * itype) list * internal_iprop -> internal_iprop
 module PropSet :
   Set.Set with type elt = internal_prop and type t = internal_prop_set
 
-module IpropSet :
-  Set.Set with type elt = internal_iprop and type t = internal_iprop_set
-
 module SimpleIpropMset :
   Multiset.Multiset2
     with type elt1 = hpred_id
@@ -135,16 +131,6 @@ val pp_internal_prop_set_env :
   ?pp_sep:(formatter -> unit -> unit) ->
   formatter ->
   internal_prop_set ->
-  unit
-
-val pp_internal_iprop_set :
-  ?pp_sep:(formatter -> unit -> unit) -> formatter -> internal_iprop_set -> unit
-
-val pp_internal_iprop_set_env :
-  string list ->
-  ?pp_sep:(formatter -> unit -> unit) ->
-  formatter ->
-  internal_iprop_set ->
   unit
 
 val pp_simple_internal_iprop_multiset :

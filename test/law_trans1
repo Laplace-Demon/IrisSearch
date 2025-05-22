@@ -1,0 +1,21 @@
+types T
+
+preds
+    P : T * T -> iProp
+    Dup : T -> iProp
+
+consts
+    a b c d : T
+
+facts
+    forall (t1 t2 : T), Persistent (P t1 t2),
+    a = b,
+    b = c,
+    c = d
+
+laws
+    forall t : T, P t t -* Dup t,
+    Dup a -* False
+
+init
+    P b d

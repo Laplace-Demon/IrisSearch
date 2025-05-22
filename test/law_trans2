@@ -1,0 +1,36 @@
+types
+    loc
+
+    val =
+        | Loc : loc -> val
+
+    list =
+        | Nil  : list
+        | Cons : val * list -> list
+
+preds
+    pointsto : loc * val  -> iProp
+    mlist    : loc * list -> iProp
+
+consts
+    null l0 l1 l2 l3 : loc
+
+laws
+    forall (l : loc),
+        mlist l Nil -* ⌜ l = null ⌝,
+
+    forall (l : loc) (v : val) (vs : list),
+        mlist l Cons(v, vs) -*
+          (∃ (m : loc),
+             ⌜ v = Loc(m) ⌝
+             * pointsto l Loc(m)
+             * mlist m vs),
+
+    forall (v : val) (vs : list),
+        mlist null Cons(v, vs) -* False
+
+init
+    mlist l0 Cons(Loc(l1), Cons(Loc(l2), Nil)),
+    pointsto l1 Loc(l2),
+    pointsto l2 Loc(l3),
+    ⌜ null = l0 ⌝
