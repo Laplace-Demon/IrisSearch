@@ -16,6 +16,7 @@ module type Set = sig
   val forall : (elt -> bool) -> t -> bool
   val exists : (elt -> bool) -> t -> bool
   val map : (elt -> elt) -> t -> t
+  val partition : (elt -> bool) -> t -> t * t
   val iter : (elt -> unit) -> t -> unit
   val fold : (elt -> 'acc -> 'acc) -> t -> 'acc -> 'acc
   val to_list : t -> elt list
@@ -75,6 +76,10 @@ module Make (Ord : Baby.OrderedType) = struct
   let map f s =
     Statistics.record_operation "Set.map";
     BabySet.map f s
+
+  let partition f s =
+    Statistics.record_operation "Set.partition";
+    BabySet.partition f s
 
   let fold f s init =
     Statistics.record_operation "Set.fold";

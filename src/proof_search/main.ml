@@ -33,18 +33,7 @@ let solve ?(until_validation = false) ?(until_transformation = false)
       let source = initial ins in
       let () =
         if show_state then (
-          fprintf fmt "@[<v 4>global facts@,%a@]@.@."
-            (pp_internal_prop_set ~pp_sep:(fun fmt () ->
-                 pp_print_char fmt ',';
-                 pp_print_cut fmt ()))
-            !facts;
-          fprintf fmt "@[<v 4>global laws@,%a@]@.@."
-            (pp_print_list
-               ~pp_sep:(fun fmt () ->
-                 pp_print_char fmt ',';
-                 pp_print_cut fmt ())
-               pp_law)
-            !laws;
+          fprintf fmt "global state@.@.%a@." pp_global_state ();
           fprintf fmt "initial state@.@.%a@." pp_state source)
       in
       let () = Z3_intf.init () in

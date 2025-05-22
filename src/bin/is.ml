@@ -72,7 +72,8 @@ let () =
   let lexbuf = Lexing.from_channel in_channel in
   let formatter = formatter_of_out_channel out_channel in
   let finally () =
-    if !show_statistics then Statistics.pp_stat formatter;
+    if !show_statistics then
+      fprintf formatter "%a" (Statistics.pp_stat ~avg:1) ();
     close_in in_channel;
     close_out out_channel
   in

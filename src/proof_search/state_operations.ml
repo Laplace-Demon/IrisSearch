@@ -99,11 +99,23 @@ let transform_law = function
       | _ -> assert false)
 
 let initial { decl_facts; decl_laws; decl_init } =
+  (* Build facts and extract persistent specifications. *)
   let () =
-    facts := prop_list_to_internal_prop_set Validate.symbol_table decl_facts
+    let all_facts =
+      prop_list_to_internal_prop_set Validate.symbol_table decl_facts
+    in
+    let facts, persistent =
+      PropSet.partition
+        (function
+          | IPersistent _ | IForall (_, IPersistent _) -> false | _ -> true)
+        all_facts
+    in
+    global_state.facts <- facts;
+    global_state.persistent <- persistent
   in
+  (* Build laws. *)
   let () =
-    laws :=
+    global_state.laws <-
       List.map
         (fun ipr ->
           let ipr = iprop_to_internal_iprop Validate.symbol_table ipr in
@@ -242,7 +254,7 @@ let successors st =
         (fun new_st -> Statistics.record_generated_state (state_size new_st))
         succ;
       choose succ acc)
-    fail !laws
+    fail global_state.laws
 
 let estimate = fun _ -> 0
 

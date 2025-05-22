@@ -5,6 +5,7 @@ open State
 open Z3
 
 let ctx = mk_context []
+let facts = ref (Boolean.mk_true ctx)
 let sort_table : (itype, Sort.sort) Hashtbl.t = Hashtbl.create 17
 let func_table : (string, FuncDecl.func_decl) Hashtbl.t = Hashtbl.create 17
 
@@ -17,85 +18,6 @@ let get_sort ity =
       | _ -> assert false)
 
 let get_func str = Hashtbl.find func_table str
-
-let init () =
-  let type_decls =
-    List.filter
-      (fun (_, constr_list) -> not (List.is_empty constr_list))
-      (List.of_seq (Hashtbl.to_seq type_decls))
-  in
-  let sort_name_list = List.map fst type_decls in
-  let constr_list_list =
-    List.map
-      (fun (_, constr_list) ->
-        List.map
-          (fun (constr, param_ity_list) ->
-            let open Either in
-            let constr_sym = Symbol.mk_string ctx constr in
-            let test_sym =
-              Symbol.mk_string ctx (String.concat "-" [ "is"; constr ])
-            in
-            let destr_syms =
-              List.mapi
-                (fun i _ ->
-                  Symbol.mk_string ctx
-                    (String.concat "-" [ constr; Int.to_string i ]))
-                param_ity_list
-            in
-            let param_sorts_indices =
-              List.map
-                (fun ity ->
-                  match ity with
-                  | Tcustom typ -> (
-                      match
-                        List.find_index (String.equal typ) sort_name_list
-                      with
-                      | Some i -> Right i
-                      | None -> Left (Sort.mk_uninterpreted_s ctx typ))
-                  | _ -> assert false)
-                param_ity_list
-            in
-            let param_sorts =
-              List.map
-                (function Left sort -> Some sort | Right _ -> None)
-                param_sorts_indices
-            in
-            let param_indices =
-              List.map
-                (function Right i -> i | Left _ -> 0)
-                param_sorts_indices
-            in
-            Datatype.mk_constructor ctx constr_sym test_sym destr_syms
-              param_sorts param_indices)
-          constr_list)
-      type_decls
-  in
-  let sort_list = Datatype.mk_sorts_s ctx sort_name_list constr_list_list in
-  let () =
-    List.iter2
-      (fun str sort -> Hashtbl.add sort_table (Tcustom str) sort)
-      sort_name_list sort_list
-  in
-  let () =
-    List.iter2
-      (fun (_, constr_list) z3_constr_list ->
-        List.iter2
-          (fun (str, _) constr ->
-            Hashtbl.add func_table str
-              (Datatype.Constructor.get_constructor_decl constr))
-          constr_list z3_constr_list)
-      type_decls constr_list_list
-  in
-  Hashtbl.iter
-    (fun str sym_info ->
-      match sym_info with
-      | { ity = Tarrow (param_ity_list, res_ity); kind = Func } ->
-          Hashtbl.add func_table str
-            (FuncDecl.mk_func_decl_s ctx str
-               (List.map get_sort param_ity_list)
-               (get_sort res_ity))
-      | _ -> ())
-    symbol_table
 
 let rec internal_term_to_z3 { desc; ity } =
   match desc with
@@ -186,6 +108,91 @@ and internal_prop_to_z3 = function
 and internal_prop_set_to_z3 pr_set =
   Boolean.mk_and ctx (List.map internal_prop_to_z3 (PropSet.to_list pr_set))
 
+let build_datatype () =
+  let type_decls =
+    List.filter
+      (fun (_, constr_list) -> not (List.is_empty constr_list))
+      (List.of_seq (Hashtbl.to_seq type_decls))
+  in
+  let sort_name_list = List.map fst type_decls in
+  let constr_list_list =
+    List.map
+      (fun (_, constr_list) ->
+        List.map
+          (fun (constr, param_ity_list) ->
+            let open Either in
+            let constr_sym = Symbol.mk_string ctx constr in
+            let test_sym =
+              Symbol.mk_string ctx (String.concat "-" [ "is"; constr ])
+            in
+            let destr_syms =
+              List.mapi
+                (fun i _ ->
+                  Symbol.mk_string ctx
+                    (String.concat "-" [ constr; Int.to_string i ]))
+                param_ity_list
+            in
+            let param_sorts_indices =
+              List.map
+                (fun ity ->
+                  match ity with
+                  | Tcustom typ -> (
+                      match
+                        List.find_index (String.equal typ) sort_name_list
+                      with
+                      | Some i -> Right i
+                      | None -> Left (Sort.mk_uninterpreted_s ctx typ))
+                  | _ -> assert false)
+                param_ity_list
+            in
+            let param_sorts =
+              List.map
+                (function Left sort -> Some sort | Right _ -> None)
+                param_sorts_indices
+            in
+            let param_indices =
+              List.map
+                (function Right i -> i | Left _ -> 0)
+                param_sorts_indices
+            in
+            Datatype.mk_constructor ctx constr_sym test_sym destr_syms
+              param_sorts param_indices)
+          constr_list)
+      type_decls
+  in
+  let sort_list = Datatype.mk_sorts_s ctx sort_name_list constr_list_list in
+  let () =
+    List.iter2
+      (fun str sort -> Hashtbl.add sort_table (Tcustom str) sort)
+      sort_name_list sort_list
+  in
+  let () =
+    List.iter2
+      (fun (_, constr_list) z3_constr_list ->
+        List.iter2
+          (fun (str, _) constr ->
+            Hashtbl.add func_table str
+              (Datatype.Constructor.get_constructor_decl constr))
+          constr_list z3_constr_list)
+      type_decls constr_list_list
+  in
+  Hashtbl.iter
+    (fun str sym_info ->
+      match sym_info with
+      | { ity = Tarrow (param_ity_list, res_ity); kind = Func } ->
+          Hashtbl.add func_table str
+            (FuncDecl.mk_func_decl_s ctx str
+               (List.map get_sort param_ity_list)
+               (get_sort res_ity))
+      | _ -> ())
+    symbol_table
+
+let build_facts () = facts := internal_prop_set_to_z3 global_state.facts
+
+let init () =
+  build_datatype ();
+  build_facts ()
+
 let equality_solver st_opt tm1 tm2 =
   let tm1 = internal_term_to_z3 tm1 in
   let tm2 = internal_term_to_z3 tm2 in
@@ -193,11 +200,11 @@ let equality_solver st_opt tm1 tm2 =
   let solver = Solver.mk_solver ctx None in
   let assums =
     match st_opt with
-    | None -> [ internal_prop_set_to_z3 !facts; Boolean.mk_not ctx eq ]
+    | None -> [ !facts; Boolean.mk_not ctx eq ]
     | Some { local_var_list; pr_set } ->
         (* pay attention to the semantics difference between this solver and the others, tm1 and tm2 are supposed to be in the state *)
         [
-          internal_prop_set_to_z3 !facts;
+          !facts;
           get_exists local_var_list
             (Boolean.mk_and ctx
                [ internal_prop_set_to_z3 pr_set; Boolean.mk_not ctx eq ]);
@@ -211,10 +218,10 @@ let equality_solver st_opt tm1 tm2 =
 let consistent_solver st_opt =
   let assums =
     match st_opt with
-    | None -> [ internal_prop_set_to_z3 !facts ]
+    | None -> [ !facts ]
     | Some { local_var_list; pr_set } ->
         [
-          internal_prop_set_to_z3 !facts;
+          !facts;
           internal_prop_to_z3 (iExists_raw (local_var_list, iAnd pr_set));
         ]
   in
@@ -236,10 +243,10 @@ let implication_solver st_opt goal =
     let goal = internal_prop_set_to_z3 goal in
     let assums =
       match st_opt with
-      | None -> [ internal_prop_set_to_z3 !facts; Boolean.mk_not ctx goal ]
+      | None -> [ !facts; Boolean.mk_not ctx goal ]
       | Some { local_var_list; pr_set } ->
           [
-            internal_prop_set_to_z3 !facts;
+            !facts;
             internal_prop_to_z3 (iExists_raw (local_var_list, iAnd pr_set));
             Boolean.mk_not ctx goal;
           ]

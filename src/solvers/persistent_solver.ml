@@ -4,7 +4,7 @@ open State
 
 let solve : hpred_id * internal_term array -> bool =
  fun (hpred, tm_arr) ->
-  let knowledge = !facts in
+  let knowledge = global_state.persistent in
   PropSet.exists
     (function
       | IPersistent (ISimple (ipr_mset, _)) ->

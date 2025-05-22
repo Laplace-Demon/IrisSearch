@@ -97,7 +97,7 @@ let fuzzer_multiple () =
                   Main.solve formatter ins
                 done;
                 fprintf formatter "law_num:%i@.law_size:%i@.@." law_num law_size;
-                Statistics.pp_stat ~avg:10 formatter)
+                fprintf formatter "%a" (Statistics.pp_stat ~avg:10) ())
               law_size_list)
           law_num_list)
   with e ->

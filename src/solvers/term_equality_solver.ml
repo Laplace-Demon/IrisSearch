@@ -4,7 +4,7 @@ open UnionFind
 
 let solve : state -> internal_term -> internal_term -> bool =
  fun { pr_set } tm1 tm2 ->
-  let knowledge = PropSet.union !facts pr_set in
+  let knowledge = PropSet.union global_state.facts pr_set in
   compare_internal_term tm1 tm2 = 0
   ||
   let term_ref_table = Hashtbl.create 17 in

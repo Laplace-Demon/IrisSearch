@@ -60,7 +60,7 @@ let record_operation oper =
       Hashtbl.replace stat_recorder.operation_distribution oper (count + 1)
   | None -> Hashtbl.add stat_recorder.operation_distribution oper 1
 
-let pp_stat ?(avg = 1) fmt =
+let pp_stat ?(avg = 1) fmt () =
   let {
     generated_state_count;
     generated_state_size_distribution;

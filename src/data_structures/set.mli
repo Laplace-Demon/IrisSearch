@@ -16,6 +16,7 @@ module type Set = sig
   val forall : (elt -> bool) -> t -> bool
   val exists : (elt -> bool) -> t -> bool
   val map : (elt -> elt) -> t -> t
+  val partition : (elt -> bool) -> t -> t * t
   val iter : (elt -> unit) -> t -> unit
   val fold : (elt -> 'acc -> 'acc) -> t -> 'acc -> 'acc
   val to_list : t -> elt list

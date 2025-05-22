@@ -18,8 +18,8 @@
       a1 = a2
   
   Unsat core:
+      (and (distinct a1 a2))
       (and (= a1 a2))
-      (and (forall ((a A) (b A)) Per-1) (distinct a1 a2))
   
   find solution
   
