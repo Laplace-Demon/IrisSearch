@@ -115,6 +115,6 @@ val simple_internal_iprop_multiset_substract_match :
   state option ->
   match_result ->
   SimpleIpropMset.elt ->
-  Multiplicity.t ->
+  bool ->
   simple_internal_iprop_multiset ->
   (match_result * simple_internal_iprop_multiset * bool) t

@@ -7,6 +7,8 @@
   persistent1
   persistent2
   persistent3
+  exclusive1
+  exclusive2
   negative
   locals
   trans

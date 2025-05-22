@@ -11,6 +11,7 @@ let to_int = function
   | Finite i -> i
   | Infinite -> raise (Invalid_argument "Multiplicity.to_int")
 
+let to_int_default default = function Finite i -> i | Infinite -> default
 let to_string = function Finite i -> Int.to_string i | Infinite -> "inf"
 
 let add t1 t2 =

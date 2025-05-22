@@ -231,19 +231,21 @@ let consistent_solver st_opt =
   | Solver.UNKNOWN -> None
 
 let implication_solver st_opt goal =
-  let goal = internal_prop_set_to_z3 goal in
-  let assums =
-    match st_opt with
-    | None -> [ internal_prop_set_to_z3 !facts; Boolean.mk_not ctx goal ]
-    | Some { local_var_list; pr_set } ->
-        [
-          internal_prop_set_to_z3 !facts;
-          internal_prop_to_z3 (iExists_raw (local_var_list, iAnd pr_set));
-          Boolean.mk_not ctx goal;
-        ]
-  in
-  let solver = Solver.mk_solver ctx None in
-  match Solver.check solver assums with
-  | Solver.SATISFIABLE -> false
-  | Solver.UNSATISFIABLE -> true
-  | Solver.UNKNOWN -> false
+  if PropSet.is_empty goal then true
+  else
+    let goal = internal_prop_set_to_z3 goal in
+    let assums =
+      match st_opt with
+      | None -> [ internal_prop_set_to_z3 !facts; Boolean.mk_not ctx goal ]
+      | Some { local_var_list; pr_set } ->
+          [
+            internal_prop_set_to_z3 !facts;
+            internal_prop_to_z3 (iExists_raw (local_var_list, iAnd pr_set));
+            Boolean.mk_not ctx goal;
+          ]
+    in
+    let solver = Solver.mk_solver ctx None in
+    match Solver.check solver assums with
+    | Solver.SATISFIABLE -> false
+    | Solver.UNSATISFIABLE -> true
+    | Solver.UNKNOWN -> false

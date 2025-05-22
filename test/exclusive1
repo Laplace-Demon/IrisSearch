@@ -1,0 +1,11 @@
+consts
+    P : iProp
+
+facts
+    Persistent P
+
+laws
+    Exclusive P
+
+init
+    P

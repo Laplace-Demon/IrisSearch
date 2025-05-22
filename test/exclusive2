@@ -1,0 +1,18 @@
+types
+    gname
+
+preds
+    token : gname -> iProp
+
+consts
+    γ1 γ2 : gname
+
+facts
+    γ1 = γ2
+
+laws
+    forall γ : gname, Exclusive (token γ)
+
+init
+    token γ1,
+    token γ2

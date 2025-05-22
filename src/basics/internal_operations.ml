@@ -510,15 +510,18 @@ let ( internal_term_match,
     in
     SimpleIpropMset.iter
       (fun pipr count ->
-        match_result_and_ipr_mset_and_is_inf :=
-          let* match_result', ipr_mset', is_inf =
-            !match_result_and_ipr_mset_and_is_inf
-          in
-          let+ match_result'', ipr_mset'', is_inf' =
-            simple_internal_iprop_multiset_substract_match_aux st_opt shift
-              match_result' pipr count ipr_mset'
-          in
-          (match_result'', ipr_mset'', is_inf && is_inf'))
+        let count_is_inf = Multiplicity.is_infinite count in
+        for _ = 1 to Multiplicity.to_int_default 1 count do
+          match_result_and_ipr_mset_and_is_inf :=
+            let* match_result', ipr_mset', is_inf =
+              !match_result_and_ipr_mset_and_is_inf
+            in
+            let+ match_result'', ipr_mset'', is_inf' =
+              simple_internal_iprop_multiset_substract_match_aux st_opt shift
+                match_result' pipr count_is_inf ipr_mset'
+            in
+            (match_result'', ipr_mset'', is_inf && is_inf')
+        done)
       pipr_mset;
     !match_result_and_ipr_mset_and_is_inf
   and internal_prop_set_substract_match_aux st_opt shift match_result ppr pr_set
@@ -532,8 +535,9 @@ let ( internal_term_match,
         |> choose acc)
       pr_set fail
   and simple_internal_iprop_multiset_substract_match_aux st_opt shift
-      match_result (phpred, ptm_arr) pcount ipr_mset :
+      match_result (phpred, ptm_arr) is_inf ipr_mset :
       (match_result * simple_internal_iprop_multiset * bool) t =
+    let pcount = if is_inf then Multiplicity.inf else Multiplicity.one in
     SimpleIpropMset.fold
       (fun ((hpred, tm_arr) as ipr) count acc ->
         (if HPredId.equal phpred hpred && Multiplicity.compare pcount count <= 0
