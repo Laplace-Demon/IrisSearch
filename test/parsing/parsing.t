@@ -143,3 +143,16 @@
   
   Parsing succeeds.
   
+  $ is ./disj --until-parsing --show-instance
+  original instance
+  
+  consts
+      A B C D : iProp
+  laws
+      (A * B ∨ A * B ∨ B * C ∨ C * D * C ∨ C * A * B ∨ B * C ∨ C * D -* A ∨ A ∨ B * B ∨ C * B ∨ A * B ∨ B * C ∨ C * D * C * C ∨ D)
+  init
+      %empty
+  
+  
+  Parsing succeeds.
+  
