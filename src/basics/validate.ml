@@ -153,10 +153,7 @@ and check_iprop symbol_table env = function
                 (MissingDeclarationError
                    (asprintf "%a" pp_symbol_kind Const, atom))))
   | Pure pr -> check_prop symbol_table env pr
-  | Star (ipr1, ipr2) ->
-      check_iprop symbol_table env ipr1;
-      check_iprop symbol_table env ipr2
-  | Wand (ipr1, ipr2) ->
+  | Star (ipr1, ipr2) | HOr (ipr1, ipr2) | Wand (ipr1, ipr2) ->
       check_iprop symbol_table env ipr1;
       check_iprop symbol_table env ipr2
   | Box ipr -> check_iprop symbol_table env ipr
@@ -200,7 +197,8 @@ and check_iprop symbol_table env = function
 let rec is_iprop_simple = function
   | False | Atom _ | Pure _ | HPred _ -> true
   | Wand _ | HForall _ | HExists _ -> false
-  | Star (ipr1, ipr2) -> is_iprop_simple ipr1 && is_iprop_simple ipr2
+  | Star (ipr1, ipr2) | HOr (ipr1, ipr2) ->
+      is_iprop_simple ipr1 && is_iprop_simple ipr2
   | Box ipr -> is_iprop_simple ipr
 
 let check_law_left ipr =

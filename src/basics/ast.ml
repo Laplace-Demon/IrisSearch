@@ -39,6 +39,7 @@ and iprop =
   | Atom of string
   | Pure of prop
   | Star of iprop * iprop
+  | HOr of iprop * iprop
   | Wand of iprop * iprop
   | Box of iprop
   | HPred of string * term list
@@ -72,6 +73,7 @@ and iprop_eqb ipr1 ipr2 =
   | Atom str1, Atom str2 -> String.equal str1 str2
   | Pure pr1, Pure pr2 -> prop_eqb pr1 pr2
   | Star (ipr11, ipr12), Star (ipr21, ipr22)
+  | HOr (ipr11, ipr12), HOr (ipr21, ipr22)
   | Wand (ipr11, ipr12), Wand (ipr21, ipr22) ->
       iprop_eqb ipr11 ipr21 && iprop_eqb ipr12 ipr22
   | Box ipr1, Box ipr2 -> iprop_eqb ipr1 ipr2
@@ -118,6 +120,7 @@ and pp_iprop fmt = function
   | Atom str -> fprintf fmt "%s" str
   | Pure pr -> fprintf fmt "⌜ %a ⌝" pp_prop pr
   | Star (ipr1, ipr2) -> fprintf fmt "%a * %a" pp_iprop ipr1 pp_iprop ipr2
+  | HOr (ipr1, ipr2) -> fprintf fmt "%a ∨ %a" pp_iprop ipr1 pp_iprop ipr2
   | Wand (ipr1, ipr2) -> fprintf fmt "(%a -* %a)" pp_iprop ipr1 pp_iprop ipr2
   | Box ipr -> fprintf fmt "□ %a" pp_iprop ipr
   | HPred (str, tm_list) ->
@@ -161,7 +164,7 @@ let rec prop_free_var = function
 and iprop_free_var = function
   | False | Atom _ -> []
   | Pure pr -> prop_free_var pr
-  | Star (ipr1, ipr2) | Wand (ipr1, ipr2) ->
+  | Star (ipr1, ipr2) | HOr (ipr1, ipr2) | Wand (ipr1, ipr2) ->
       iprop_free_var ipr1 @ iprop_free_var ipr2
   | Box ipr -> iprop_free_var ipr
   | HPred (_, tm_list) -> List.concat_map term_free_var tm_list

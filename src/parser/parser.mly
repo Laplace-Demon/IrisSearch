@@ -26,7 +26,7 @@
 %right ARROW
 %left OR
 %left AND
-%nonassoc NOT
+%nonassoc NOT PERSISTENT EXCLUSIVE
 (** High precedence *)
 
 %start <instance> instance
@@ -145,7 +145,7 @@ term:
 prop:
 | LPAREN prop RPAREN
   { $2 }
-| PERSISTENT iprop
+| PERSISTENT iprop %prec PERSISTENT
   { Persistent $2 }
 | NOT prop
   { Not $2 }
@@ -183,9 +183,11 @@ iprop:
   { Pure $2 }
 | iprop STAR iprop
   { Star ($1, $3) }
+| iprop OR iprop
+  { HOr ($1, $3) }
 | iprop WAND iprop
   { Wand ($1, $3) }
-| EXCLUSIVE iprop
+| EXCLUSIVE iprop %prec EXCLUSIVE
   { Wand (Star ($2, $2), False) }
 | BOX iprop
   { Box $2 }
