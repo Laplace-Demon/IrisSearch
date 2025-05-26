@@ -47,6 +47,7 @@ type state = {
   local_var_list : (string * itype) list;
   ipr_mset : simple_internal_iprop_multiset;
   pr_set : internal_prop_set;
+  log : string;
 }
 
 let empty_state =
@@ -54,6 +55,7 @@ let empty_state =
     local_var_list = [];
     ipr_mset = SimpleIpropMset.empty;
     pr_set = PropSet.empty;
+    log = "empty";
   }
 
 let pp_local_var_list fmt = function
@@ -73,4 +75,4 @@ let pp_state fmt { local_var_list; ipr_mset; pr_set } =
 
 (** Definition of inconsistent exception. *)
 
-exception Inconsistent
+exception Inconsistent of string

@@ -11,7 +11,7 @@
   pures
       %empty
   
-  ↓
+    ↓ applying law forall (l : loc) (dq1 dq2 : dfrac) (v1 v2 : val), (pointsto l dq2 v2 * pointsto l dq1 v1 -* ⌜ v1 = v2 ⌝)
   
   locals
       %empty

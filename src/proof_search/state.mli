@@ -6,6 +6,7 @@ type state = {
   local_var_list : (string * itype) list;
   ipr_mset : simple_internal_iprop_multiset;
   pr_set : internal_prop_set;
+  log : string;
 }
 
 val pp_state : formatter -> state -> unit
@@ -29,4 +30,4 @@ type global_state = {
 val global_state : global_state
 val pp_global_state : formatter -> unit -> unit
 
-exception Inconsistent
+exception Inconsistent of string

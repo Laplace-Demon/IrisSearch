@@ -1,5 +1,6 @@
 open Ast
 open Duplication_checker
+open Format
 open Internal
 open Internal_operations
 open State
@@ -126,7 +127,7 @@ let initial { decl_facts; decl_laws; decl_init } =
     iprop_list_to_simple_internal_iprop_multiset_and_internal_prop_set
       Validate.symbol_table decl_init
   in
-  { local_var_list = []; ipr_mset; pr_set }
+  { local_var_list = []; ipr_mset; pr_set; log = "initial" }
 
 let retrieve_law law =
   let shift, ipr_prems, pr_prems, concls =
@@ -186,7 +187,10 @@ let apply law ({ local_var_list; ipr_mset; pr_set } as st) =
     in
     (* check for termination *)
     let () =
-      if SimpleIpropMset.mem1 false_id ipr_concls then raise Inconsistent
+      if SimpleIpropMset.mem1 false_id ipr_concls then
+        raise
+          (Inconsistent
+             (asprintf "@.@[<v 4>Applying law@,%a@.yields False.@]@." pp_law law))
     in
     (* strengthen conclusion *)
     let ipr_concls =
@@ -227,12 +231,15 @@ let apply law ({ local_var_list; ipr_mset; pr_set } as st) =
         local_var_list = new_local_var_list;
         ipr_mset = new_ipr_mset;
         pr_set = new_pr_set;
+        log = asprintf "applying law %a" pp_law law;
       }
     in
     let () =
       (* check consistency of facts *)
       match Z3_intf.consistent_solver (Some new_st) with
-      | Some unsat_core -> raise Inconsistent
+      | Some unsat_core ->
+          raise
+            (Inconsistent (asprintf "@.↓@.@.%a%s" pp_state new_st unsat_core))
       | None -> ()
     in
     if is_dup new_st then fail else return new_st

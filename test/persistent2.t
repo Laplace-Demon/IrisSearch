@@ -8,7 +8,7 @@
   pures
       %empty
   
-  ↓
+    ↓ applying law (B -* A)
   
   locals
       %empty
@@ -18,7 +18,7 @@
   pures
       %empty
   
-  ↓
+    ↓ applying law (A -* C)
   
   locals
       %empty

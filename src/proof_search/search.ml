@@ -11,10 +11,10 @@ module Branch (State : Type) = struct
     mutable solved : bool;
     pred : t option;
     mutable succ : t list;
-    mutable path : state list;
+    mutable path : state list * string;
   }
 
-  let create () = { solved = false; pred = None; succ = []; path = [] }
+  let create () = { solved = false; pred = None; succ = []; path = ([], "") }
 
   let add br cnt =
     let succ = List.init cnt (fun _ -> { (create ()) with pred = Some br }) in
@@ -34,11 +34,14 @@ module Branch (State : Type) = struct
       fwd_propagate br;
       match br.pred with None -> () | Some pred -> bwd_propagate pred)
 
-  let mark br =
+  let mark br path msg =
+    br.path <- (List.rev path, msg);
     fwd_propagate br;
     match br.pred with None -> () | Some pred -> bwd_propagate pred
 
-  let rec get_path br = Path (br.path, List.map get_path br.succ)
+  let rec get_path br =
+    let path, msg = br.path in
+    Path (path, msg, List.map get_path br.succ)
 end
 
 module Make (State : sig
@@ -47,7 +50,7 @@ module Make (State : sig
   val source : state
   val successors : state -> state list * bool
 
-  exception Inconsistent
+  exception Inconsistent of string
 end) =
 struct
   let max_depth = ref 20
@@ -103,7 +106,7 @@ struct
               List.iter2 (fun node br -> node.branch <- br) succ_nodes br_list
           | false ->
               List.iter
-                (fun node -> node.path <- node.this :: node.path)
+                (fun succ_node -> succ_node.path <- node.this :: node.path)
                 succ_nodes
         in
         succ_nodes
@@ -118,6 +121,7 @@ struct
             if not (Branch.is_marked node.branch) then (
               Statistics.record_visited_state ();
               try List.iter (fun succ -> P.add succ succ.depth) (get_succ node)
-              with Inconsistent -> Branch.mark node.branch);
+              with Inconsistent msg ->
+                Branch.mark node.branch (node.this :: node.path) msg);
             search ())
 end

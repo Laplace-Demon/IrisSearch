@@ -8,7 +8,7 @@
   pures
       %empty
   
-  ↓
+    ↓ applying law forall t : T, (P t t -* Dup t)
   
   locals
       %empty

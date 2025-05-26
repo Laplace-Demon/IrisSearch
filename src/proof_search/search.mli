@@ -6,7 +6,7 @@ module Make (State : sig
   val source : state
   val successors : state -> state list * bool
 
-  exception Inconsistent
+  exception Inconsistent of string
 end) : sig
   open State
 
