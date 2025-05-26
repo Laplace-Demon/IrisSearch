@@ -1,7 +1,5 @@
 open Ast
 open Internal
-open Format
-open State
 open Type
 open Validate
 
@@ -201,7 +199,7 @@ let ( free_vars_internal_term,
       free_vars_internal_iprop,
       free_vars_internal_prop_set,
       free_vars_simple_internal_iprop_multiset ) =
-  let rec free_vars_internal_term_aux acc ({ desc; ity } as tm) =
+  let rec free_vars_internal_term_aux acc { desc; ity } =
     match desc with
     | IVar var -> (var, ity) :: acc
     | IBVar _ -> acc
@@ -352,8 +350,8 @@ let ( internal_term_match,
       simple_internal_iprop_multiset_match,
       internal_prop_set_substract_match,
       simple_internal_iprop_multiset_substract_match ) =
-  let rec internal_term_match_aux st_opt shift match_result
-      ({ desc = pdesc } as ptm) ({ desc } as tm) =
+  let rec internal_term_match_aux st_opt shift match_result { desc = pdesc; _ }
+      ({ desc; _ } as tm) =
     match (pdesc, desc) with
     | IVar var1, IVar var2 ->
         if VarId.equal var1 var2 then return match_result else fail
@@ -415,8 +413,9 @@ let ( internal_term_match,
           internal_term_array_match_aux st_opt shift match_result tm_arr1
             tm_arr2
         else fail
-    | IForall ({ shift = shift1 }, pr1), IForall ({ shift = shift2 }, pr2)
-    | IExists ({ shift = shift1 }, pr1), IExists ({ shift = shift2 }, pr2) ->
+    | IForall ({ shift = shift1; _ }, pr1), IForall ({ shift = shift2; _ }, pr2)
+    | IExists ({ shift = shift1; _ }, pr1), IExists ({ shift = shift2; _ }, pr2)
+      ->
         if shift1 = shift2 then
           internal_prop_match_aux st_opt (shift + shift1) match_result pr1 pr2
         else fail
@@ -450,19 +449,21 @@ let ( internal_term_match,
           internal_iprop_match_aux st_opt shift match_result ipr11 ipr21
         in
         internal_iprop_match_aux st_opt shift match_result' ipr12 ipr22
-    | IHForall ({ shift = shift1 }, ipr1), IHForall ({ shift = shift2 }, ipr2)
-    | IHExists ({ shift = shift1 }, ipr1), IHExists ({ shift = shift2 }, ipr2)
-      ->
+    | ( IHForall ({ shift = shift1; _ }, ipr1),
+        IHForall ({ shift = shift2; _ }, ipr2) )
+    | ( IHExists ({ shift = shift1; _ }, ipr1),
+        IHExists ({ shift = shift2; _ }, ipr2) ) ->
         if shift1 = shift2 then
           internal_iprop_match_aux st_opt (shift + shift1) match_result ipr1
             ipr2
         else fail
+    | _, _ -> fail
   and internal_prop_set_match_aux st_opt shift match_result ppr_set pr_set =
     let match_result_and_pr_set = ref (return (match_result, pr_set)) in
     PropSet.iter
       (fun ppr ->
         match ppr with
-        | IEq ({ desc = IBVar _ }, _) | IEq (_, { desc = IBVar _ }) -> ()
+        | IEq ({ desc = IBVar _; _ }, _) | IEq (_, { desc = IBVar _; _ }) -> ()
         | _ ->
             match_result_and_pr_set :=
               let* match_result', pr_set' = !match_result_and_pr_set in
@@ -474,7 +475,7 @@ let ( internal_term_match,
         let _ =
           let* match_result', _ = !match_result_and_pr_set in
           match ppr with
-          | IEq ({ desc = IBVar ind1 }, { desc = IBVar ind2 }) ->
+          | IEq ({ desc = IBVar ind1; _ }, { desc = IBVar ind2; _ }) ->
               if
                 not
                   (Z3_intf.equality_solver st_opt
@@ -482,7 +483,7 @@ let ( internal_term_match,
                      (Option.get match_result'.(ind2)))
               then match_result_and_pr_set := fail;
               fail
-          | IEq ({ desc = IBVar ind1 }, tm2) ->
+          | IEq ({ desc = IBVar ind1; _ }, tm2) ->
               if
                 not
                   (Z3_intf.equality_solver st_opt
@@ -490,7 +491,7 @@ let ( internal_term_match,
                      tm2)
               then match_result_and_pr_set := fail;
               fail
-          | IEq (tm1, { desc = IBVar ind2 }) ->
+          | IEq (tm1, { desc = IBVar ind2; _ }) ->
               if
                 not
                   (Z3_intf.equality_solver st_opt tm1

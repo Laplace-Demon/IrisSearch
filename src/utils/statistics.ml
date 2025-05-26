@@ -63,12 +63,11 @@ let record_operation oper =
 let pp_stat ?(avg = 1) fmt () =
   let {
     generated_state_count;
-    generated_state_size_distribution;
     visited_state_count;
     maximum_search_depth;
-    search_depth_distribution;
     duplication_count;
     operation_distribution;
+    _;
   } =
     stat_recorder
   in

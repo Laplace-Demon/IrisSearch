@@ -13,14 +13,12 @@ let solve : hpred_id * internal_term array -> bool =
               HPredId.equal hpred hpred'
               && compare_internal_term_array tm_arr tm_arr' = 0)
             ipr_mset
-      | IForall ({ shift }, IPersistent (ISimple (ipr_mset, _))) ->
+      | IForall ({ shift; _ }, IPersistent (ISimple (ipr_mset, _))) ->
           SimpleIpropMset.exists
             (fun (hpred', tm_arr') _ ->
               HPredId.equal hpred hpred'
               &&
-              let match_init =
-                Array.init (Array.length tm_arr) (fun _ -> None)
-              in
+              let match_init = Array.init shift (fun _ -> None) in
               not
                 (List.is_empty
                    (internal_term_array_match None match_init tm_arr' tm_arr)))

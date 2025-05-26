@@ -18,3 +18,4 @@ let rec pp_state_path fmt (path : state path) =
         (pp_print_list (fun fmt path ->
              fprintf fmt "@[<v 2>- %a@]" pp_state_path path))
         pt_list
+  | _ -> assert false

@@ -3,7 +3,7 @@ open State
 open UnionFind
 
 let solve : state -> internal_term -> internal_term -> bool =
- fun { pr_set } tm1 tm2 ->
+ fun { pr_set; _ } tm1 tm2 ->
   let knowledge = PropSet.union global_state.facts pr_set in
   compare_internal_term tm1 tm2 = 0
   ||

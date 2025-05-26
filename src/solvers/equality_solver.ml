@@ -3,7 +3,7 @@ open State
 open UnionFind
 
 let solve : state -> bool =
- fun { pr_set } ->
+ fun { pr_set; _ } ->
   let knowledge = PropSet.union global_state.facts pr_set in
   let term_ref_table = Hashtbl.create 17 in
   let get_ref tm =

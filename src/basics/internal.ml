@@ -1,5 +1,4 @@
 open Format
-open Ast
 open Type
 
 (** Definition of string interning modules. Constructors, term variables,
@@ -99,7 +98,7 @@ end = struct
     | IHForall of binder_info * internal_iprop
     | IHExists of binder_info * internal_iprop
 
-  let rec compare_internal_term { desc = tm1 } { desc = tm2 } =
+  let rec compare_internal_term { desc = tm1; _ } { desc = tm2; _ } =
     match (tm1, tm2) with
     | IVar var1, IVar var2 -> VarId.compare var1 var2
     | IBVar ind1, IBVar ind2 -> Int.compare ind1 ind2
@@ -135,8 +134,9 @@ end = struct
     | IPred (pred1, tm_arr1), IPred (pred2, tm_arr2) ->
         let tmp = PredId.compare pred1 pred2 in
         if tmp = 0 then compare_internal_term_array tm_arr1 tm_arr2 else tmp
-    | IForall ({ shift = shift1 }, pr1), IForall ({ shift = shift2 }, pr2)
-    | IExists ({ shift = shift1 }, pr1), IExists ({ shift = shift2 }, pr2) ->
+    | IForall ({ shift = shift1; _ }, pr1), IForall ({ shift = shift2; _ }, pr2)
+    | IExists ({ shift = shift1; _ }, pr1), IExists ({ shift = shift2; _ }, pr2)
+      ->
         let tmp = Int.compare shift1 shift2 in
         if tmp = 0 then compare pr1 pr2 else tmp
     | IEq (tm11, tm12), IEq (tm21, tm22) | INeq (tm11, tm12), INeq (tm21, tm22)
@@ -155,12 +155,12 @@ end = struct
     | IWand (ipr11, ipr12), IWand (ipr21, ipr22) ->
         let tmp = compare_internal_iprop ipr11 ipr21 in
         if tmp = 0 then compare_internal_iprop ipr12 ipr22 else tmp
-    | IHForall ({ shift = shift1 }, ipr1), IHForall ({ shift = shift2 }, ipr2)
-      ->
+    | ( IHForall ({ shift = shift1; _ }, ipr1),
+        IHForall ({ shift = shift2; _ }, ipr2) ) ->
         let tmp = Int.compare shift1 shift2 in
         if tmp = 0 then compare_internal_iprop ipr1 ipr2 else tmp
-    | IHExists ({ shift = shift1 }, ipr1), IHExists ({ shift = shift2 }, ipr2)
-      ->
+    | ( IHExists ({ shift = shift1; _ }, ipr1),
+        IHExists ({ shift = shift2; _ }, ipr2) ) ->
         let tmp = Int.compare shift1 shift2 in
         if tmp = 0 then compare_internal_iprop ipr1 ipr2 else tmp
     | _, _ -> Stdlib.compare ipr1 ipr2
@@ -219,7 +219,7 @@ let ( pp_internal_term,
       if n != 1 then sep ();
       repeat f sep (n - 1))
   in
-  let rec pp_internal_term_aux env fmt { desc = tm } =
+  let rec pp_internal_term_aux env fmt { desc = tm; _ } =
     match tm with
     | IVar var -> fprintf fmt "%s" (VarId.export var)
     | IBVar ind -> (
@@ -265,7 +265,7 @@ let ( pp_internal_term,
                ~pp_sep:(fun fmt () -> fprintf fmt " ")
                (pp_internal_term_aux env))
             tm_arr
-    | IForall ({ typed_str_list }, pr) ->
+    | IForall ({ typed_str_list; _ }, pr) ->
         fprintf fmt "forall %a, %a"
           (pp_typed_strs_list
              ~pp_sep:(fun fmt () -> fprintf fmt " ")
@@ -276,7 +276,7 @@ let ( pp_internal_term,
                 (fun acc (str, _) -> str :: acc)
                 env typed_str_list))
           pr
-    | IExists ({ typed_str_list }, pr) ->
+    | IExists ({ typed_str_list; _ }, pr) ->
         fprintf fmt "exists %a, %a"
           (pp_typed_strs_list
              ~pp_sep:(fun fmt () -> fprintf fmt " ")
@@ -322,7 +322,7 @@ let ( pp_internal_term,
           ipr1
           (pp_internal_iprop_aux env)
           ipr2
-    | IHForall ({ typed_str_list }, ipr) ->
+    | IHForall ({ typed_str_list; _ }, ipr) ->
         fprintf fmt "forall %a, %a"
           (pp_typed_strs_list
              ~pp_sep:(fun fmt () -> fprintf fmt " ")
@@ -333,7 +333,7 @@ let ( pp_internal_term,
                 (fun acc (str, _) -> str :: acc)
                 env typed_str_list))
           ipr
-    | IHExists ({ typed_str_list }, ipr) ->
+    | IHExists ({ typed_str_list; _ }, ipr) ->
         fprintf fmt "exists %a, %a"
           (pp_typed_strs_list
              ~pp_sep:(fun fmt () -> fprintf fmt " ")

@@ -47,7 +47,7 @@ let rec check_term symbol_table env = function
           match Hashtbl.find_opt symbol_table var with
           | Some { ity; kind = Const } -> ity
           | Some { ity = Tcustom _ as ity; kind = Constr } -> ity
-          | Some { ity } ->
+          | Some { ity; _ } ->
               raise
                 (TypeError
                    (var, Tcustom (asprintf "%a" pp_symbol_kind Const), ity))
@@ -81,7 +81,7 @@ let rec check_term symbol_table env = function
                 raise
                   (ArityError
                      (func, List.length param_ity_list, List.length tm_list))
-          | Some { ity } ->
+          | Some { ity; _ } ->
               raise
                 (TypeError
                    (func, Tcustom (asprintf "%a" pp_symbol_kind Func), ity))
@@ -117,7 +117,7 @@ let rec check_prop symbol_table env = function
                 raise
                   (ArityError
                      (pred, List.length param_ity_list, List.length tm_list))
-          | Some { ity } ->
+          | Some { ity; _ } ->
               raise
                 (TypeError
                    (pred, Tcustom (asprintf "%a" pp_symbol_kind Pred), ity))
@@ -148,7 +148,7 @@ and check_iprop symbol_table env = function
       | None -> (
           match Hashtbl.find_opt symbol_table atom with
           | Some { ity = Tiprop; kind = Const } -> ()
-          | Some { ity } -> raise (TypeError (atom, Tiprop, ity))
+          | Some { ity; _ } -> raise (TypeError (atom, Tiprop, ity))
           | None ->
               raise
                 (MissingDeclarationError
@@ -179,7 +179,7 @@ and check_iprop symbol_table env = function
                 raise
                   (ArityError
                      (hpred, List.length param_ity_list, List.length param_list))
-          | Some { ity } ->
+          | Some { ity; _ } ->
               raise
                 (TypeError
                    (hpred, Tcustom (asprintf "%a" pp_symbol_kind Pred), ity))
@@ -314,13 +314,12 @@ let validate symbol_table
                   when String.equal typ res_typ ->
                     List.iter
                       (function
-                        | Tiprop | Tprop | Tarrow _ ->
-                            raise (IllegalConstrDeclarationError constr)
                         | Tcustom param_typ ->
                             if not (Hashtbl.mem type_decls param_typ) then
                               raise
                                 (MissingDeclarationError
-                                   (asprintf "%a" pp_symbol_kind Type, param_typ)))
+                                   (asprintf "%a" pp_symbol_kind Type, param_typ))
+                        | _ -> raise (IllegalConstrDeclarationError constr))
                       param_ity_list
                 | Tcustom res_typ when String.equal typ res_typ -> ()
                 | _ -> raise (IllegalConstrDeclarationError constr)
@@ -369,13 +368,12 @@ let validate symbol_table
           (* Check if the parameter types of the function are declared, first-order, and different from iProp and Prop. *)
           List.iter
             (function
-              | Tiprop | Tprop | Tarrow _ ->
-                  raise (IllegalFuncDeclarationError func)
               | Tcustom param_typ ->
                   if not (Hashtbl.mem type_decls param_typ) then
                     raise
                       (MissingDeclarationError
-                         (asprintf "%a" pp_symbol_kind Type, param_typ)))
+                         (asprintf "%a" pp_symbol_kind Type, param_typ))
+              | _ -> raise (IllegalFuncDeclarationError func))
             param_ity_list
         in
         (* Check if the function is already declared. *)
@@ -406,13 +404,12 @@ let validate symbol_table
           (* Check if the parameter types of the predicate are declared, first-order, and different from iProp and Prop. *)
           List.iter
             (function
-              | Tiprop | Tprop | Tarrow _ ->
-                  raise (IllegalPredDeclarationError pred)
               | Tcustom param_typ ->
                   if not (Hashtbl.mem type_decls param_typ) then
                     raise
                       (MissingDeclarationError
-                         (asprintf "%a" pp_symbol_kind Type, param_typ)))
+                         (asprintf "%a" pp_symbol_kind Type, param_typ))
+              | _ -> raise (IllegalPredDeclarationError pred))
             param_ity_list
         in
         (* Check if the predicate is already declared. *)
@@ -463,6 +460,6 @@ let validate symbol_table
     decl_laws;
   List.iter (check_iprop symbol_table Env.empty) decl_init
 
-let check_form { decl_laws; decl_init } =
+let check_form { decl_laws; decl_init; _ } =
   List.iter check_law decl_laws;
   List.iter check_init decl_init

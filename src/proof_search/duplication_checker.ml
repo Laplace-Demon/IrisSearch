@@ -15,7 +15,7 @@ type iprop_map = state_set IpropMap.t
 
 let iprop_state_map : iprop_map ref = ref IpropMap.empty
 
-let register_state ({ ipr_mset } as st) =
+let register_state ({ ipr_mset; _ } as st) =
   let ind = !state_num in
   state_num := ind - 1;
   InfiniteArray.set state_array (-ind) st;
@@ -44,11 +44,11 @@ let dup_candidate ipr_mset =
     ipr_mset;
   !st_set
 
-let is_sub_state { ipr_mset = ipr_mset1; pr_set = pr_set1 }
-    { ipr_mset = ipr_mset2; pr_set = pr_set2 } =
+let is_sub_state { ipr_mset = ipr_mset1; pr_set = pr_set1; _ }
+    { ipr_mset = ipr_mset2; pr_set = pr_set2; _ } =
   SimpleIpropMset.subset ipr_mset1 ipr_mset2 && PropSet.subset pr_set1 pr_set2
 
-let is_dup ({ ipr_mset } as st) : bool =
+let is_dup ({ ipr_mset; _ } as st) : bool =
   match dup_candidate ipr_mset with
   | None ->
       let () = register_state st in

@@ -32,6 +32,7 @@ val free_vars_simple_internal_iprop :
   simple_internal_iprop -> (VarId.t * itype) list
 
 val free_vars_internal_iprop : internal_iprop -> (VarId.t * itype) list
+val free_vars_internal_prop_set : internal_prop_set -> (VarId.t * itype) list
 
 val free_vars_simple_internal_iprop_multiset :
   simple_internal_iprop_multiset -> (VarId.t * itype) list

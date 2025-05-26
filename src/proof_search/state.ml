@@ -10,10 +10,10 @@ type law = {
   extern : internal_iprop;
 }
 
-let pp_law_internal fmt { name_opt; intern } =
+let pp_law_internal fmt { name_opt; intern; _ } =
   Ast.pp_named pp_internal_iprop fmt (name_opt, intern)
 
-let pp_law fmt { name_opt; extern } =
+let pp_law fmt { name_opt; extern; _ } =
   Ast.pp_named pp_internal_iprop fmt (name_opt, extern)
 
 type global_state = {
@@ -63,7 +63,7 @@ let pp_local_var_list fmt = function
   | _ as local_var_list ->
       fprintf fmt "%a" (pp_typed_strs_list ()) (group_typed_str local_var_list)
 
-let pp_state fmt { local_var_list; ipr_mset; pr_set } =
+let pp_state fmt { local_var_list; ipr_mset; pr_set; _ } =
   let local_varname_list_rev = List.rev_map fst local_var_list in
   fprintf fmt "@[<v 4>locals@,%a@]@.@[<v 4>atoms@,%a@]@.@[<v 4>pures@,%a@]@."
     pp_local_var_list local_var_list

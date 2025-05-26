@@ -90,10 +90,10 @@ and internal_prop_to_z3 = function
       in
       mute := !mute + 1;
       ans
-  | IForall ({ typed_str_list }, pr) ->
+  | IForall ({ typed_str_list; _ }, pr) ->
       let pr = internal_prop_to_z3 pr in
       get_forall typed_str_list pr
-  | IExists ({ typed_str_list }, pr) ->
+  | IExists ({ typed_str_list; _ }, pr) ->
       let pr = internal_prop_to_z3 pr in
       get_exists typed_str_list pr
   | IEq (tm1, tm2) ->
@@ -201,7 +201,7 @@ let equality_solver st_opt tm1 tm2 =
   let assums =
     match st_opt with
     | None -> [ !facts; Boolean.mk_not ctx eq ]
-    | Some { local_var_list; pr_set } ->
+    | Some { local_var_list; pr_set; _ } ->
         (* pay attention to the semantics difference between this solver and the others, tm1 and tm2 are supposed to be in the state *)
         [
           !facts;
@@ -219,7 +219,7 @@ let consistent_solver st_opt =
   let assums =
     match st_opt with
     | None -> [ !facts ]
-    | Some { local_var_list; pr_set } ->
+    | Some { local_var_list; pr_set; _ } ->
         [
           !facts;
           internal_prop_to_z3 (iExists_raw (local_var_list, iAnd pr_set));
@@ -244,7 +244,7 @@ let implication_solver st_opt goal =
     let assums =
       match st_opt with
       | None -> [ !facts; Boolean.mk_not ctx goal ]
-      | Some { local_var_list; pr_set } ->
+      | Some { local_var_list; pr_set; _ } ->
           [
             !facts;
             internal_prop_to_z3 (iExists_raw (local_var_list, iAnd pr_set));

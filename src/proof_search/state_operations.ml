@@ -4,10 +4,9 @@ open Format
 open Internal
 open Internal_operations
 open State
-open Type
 open Freshname
 
-let state_size { ipr_mset; pr_set } =
+let state_size { ipr_mset; pr_set; _ } =
   (SimpleIpropMset.cardinal ipr_mset, PropSet.cardinal pr_set)
 
 let transform_law = function
@@ -96,10 +95,10 @@ let transform_law = function
                     free_vars))
           in
           iHForall
-            (new_binder_info, iWand (iSimple (ipr_mset, new_pr_set), ipr2))
-      | _ -> assert false)
+            (new_binder_info, iWand (iSimple (ipr_mset, new_pr_set), ipr2)))
+  | _ -> assert false
 
-let initial { decl_facts; decl_laws; decl_init } =
+let initial { decl_facts; decl_laws; decl_init; _ } =
   (* Build facts and extract persistent specifications. *)
   let () =
     let all_facts =
@@ -132,7 +131,7 @@ let initial { decl_facts; decl_laws; decl_init } =
 let retrieve_law law =
   let shift, ipr_prems, pr_prems, concls =
     match law.intern with
-    | IHForall ({ shift }, IWand (ISimple (ipr_prems, pr_prems), concls)) ->
+    | IHForall ({ shift; _ }, IWand (ISimple (ipr_prems, pr_prems), concls)) ->
         (shift, ipr_prems, pr_prems, concls)
     | IWand (ISimple (ipr_prems, pr_prems), concls) ->
         (0, ipr_prems, pr_prems, concls)
@@ -140,7 +139,7 @@ let retrieve_law law =
   in
   let exists_var_list, ipr_concls, pr_concls =
     match concls with
-    | IHExists ({ typed_str_list }, ISimple (ipr_concls, pr_concls)) ->
+    | IHExists ({ typed_str_list; _ }, ISimple (ipr_concls, pr_concls)) ->
         ( List.map
             (fun (str, ity) -> (generate ~base:str (), ity))
             typed_str_list,
@@ -157,7 +156,7 @@ let make_subst_task match_result = function
 
 open Monads.ListMonad
 
-let apply law ({ local_var_list; ipr_mset; pr_set } as st) =
+let apply law ({ local_var_list; ipr_mset; pr_set; _ } as st) =
   let shift, ipr_prems, pr_prems, exists_var_list, ipr_concls, pr_concls =
     retrieve_law law
   in

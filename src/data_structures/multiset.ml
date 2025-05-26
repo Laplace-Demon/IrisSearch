@@ -154,7 +154,7 @@ module Make2 (Ord1 : Baby.OrderedType) (Ord2 : Baby.OrderedType) = struct
 
   let empty = BabyMap.empty
   let is_empty = BabyMap.is_empty
-  let cardinal s = BabyMap.fold (fun e1 t acc -> acc + Mset.cardinal t) s 0
+  let cardinal s = BabyMap.fold (fun _ t acc -> acc + Mset.cardinal t) s 0
   let singleton (e1, e2) v = BabyMap.singleton e1 (Mset.singleton e2 v)
 
   let mem (e1, e2) s =

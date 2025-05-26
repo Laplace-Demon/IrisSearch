@@ -21,7 +21,7 @@ module Branch (State : Type) = struct
     br.succ <- succ;
     succ
 
-  let is_marked { solved } = solved
+  let is_marked { solved; _ } = solved
 
   let rec fwd_propagate br =
     if not br.solved then (
@@ -68,7 +68,7 @@ struct
     (* Graph node associated with this internal record. *)
     this : state;
     (* Length of best known path from a source node to this node. *)
-    mutable depth : int;
+    depth : int;
     (* Best known path from a source node to this node. *)
     mutable path : state list;
     (* The branch the node belongs to. *)
