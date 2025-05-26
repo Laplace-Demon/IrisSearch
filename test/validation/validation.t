@@ -81,3 +81,21 @@
   $ is ./form6
   validation error: illegal init declaration, iprop "(⊥ -* ⊥)" in init declaration should be simple
   [1]
+  $ is ./named_law1 --until-validation --show-instance
+  original instance
+  
+  consts
+      A B C : iProp
+  laws
+      first_law : (A * B -* C),
+      second_law : (B * C -* A),
+      third_law : (C * A -* B)
+  init
+      %empty
+  
+  
+  Validation succeeds.
+  
+  $ is ./named_law2 --until-validation
+  validation error: duplicate law declaration of second_law
+  [1]

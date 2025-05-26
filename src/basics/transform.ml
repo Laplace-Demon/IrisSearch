@@ -25,7 +25,11 @@ and uncurry_iprop = function
 
 let uncurry_transformation ins =
   let decl_facts = List.map uncurry_prop ins.decl_facts in
-  let decl_laws = List.map uncurry_iprop ins.decl_laws in
+  let decl_laws =
+    List.map
+      (fun (name_opt, ipr) -> (name_opt, uncurry_iprop ipr))
+      ins.decl_laws
+  in
   let decl_init = List.map uncurry_iprop ins.decl_init in
   { ins with decl_facts; decl_laws; decl_init }
 
@@ -64,6 +68,10 @@ and merge_quantifier_iprop = function
 
 let merge_quantifier_transformation ins =
   let decl_facts = List.map merge_quantifier_prop ins.decl_facts in
-  let decl_laws = List.map merge_quantifier_iprop ins.decl_laws in
+  let decl_laws =
+    List.map
+      (fun (name_opt, ipr) -> (name_opt, merge_quantifier_iprop ipr))
+      ins.decl_laws
+  in
   let decl_init = List.map merge_quantifier_iprop ins.decl_init in
   { ins with decl_facts; decl_laws; decl_init }

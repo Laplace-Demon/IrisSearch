@@ -1,0 +1,9 @@
+consts
+    A B C : iProp
+
+laws
+    first_law : A * B -* C,
+    second_law : B * C -* A,
+    second_law : C * A -* B
+
+init

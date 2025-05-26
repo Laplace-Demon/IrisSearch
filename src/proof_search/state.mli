@@ -11,7 +11,11 @@ type state = {
 val pp_state : formatter -> state -> unit
 val empty_state : state
 
-type law = { intern : internal_iprop; extern : internal_iprop }
+type law = {
+  name_opt : string option;
+  intern : internal_iprop;
+  extern : internal_iprop;
+}
 
 val pp_law : formatter -> law -> unit
 val pp_law_internal : formatter -> law -> unit

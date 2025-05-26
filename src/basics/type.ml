@@ -1,6 +1,11 @@
 open Format
 
-type itype = Tprop | Tiprop | Tcustom of string | Tarrow of itype list * itype
+type itype =
+  | Tprop
+  | Tiprop
+  | Tcustom of string
+  | Tarrow of itype list * itype
+  | Tlaw
 
 let rec itype_eqb ity1 ity2 =
   match (ity1, ity2) with
@@ -9,6 +14,7 @@ let rec itype_eqb ity1 ity2 =
   | Tcustom str1, Tcustom str2 -> String.equal str1 str2
   | Tarrow (ity_list1, ity1), Tarrow (ity_list2, ity2) ->
       List.equal itype_eqb ity_list1 ity_list2 && itype_eqb ity1 ity2
+  | Tlaw, Tlaw -> true
   | _, _ -> false
 
 let rec pp_itype fmt = function
@@ -25,6 +31,7 @@ let rec pp_itype fmt = function
                 ~pp_sep:(fun fmt () -> fprintf fmt " * ")
                 pp_itype fmt l)
         ity_list pp_itype ity
+  | Tlaw -> fprintf fmt "law"
 
 let group_typed_str : (string * itype) list -> (string list * itype) list =
   let rec group_typed_str_aux acc typed_str_list =

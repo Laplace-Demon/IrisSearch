@@ -4,10 +4,17 @@ open Type
 
 (** Definition of law, local and global states. *)
 
-type law = { intern : internal_iprop; extern : internal_iprop }
+type law = {
+  name_opt : string option;
+  intern : internal_iprop;
+  extern : internal_iprop;
+}
 
-let pp_law_internal fmt { intern } = pp_internal_iprop fmt intern
-let pp_law fmt { extern } = pp_internal_iprop fmt extern
+let pp_law_internal fmt { name_opt; intern } =
+  Ast.pp_named pp_internal_iprop fmt (name_opt, intern)
+
+let pp_law fmt { name_opt; extern } =
+  Ast.pp_named pp_internal_iprop fmt (name_opt, extern)
 
 type global_state = {
   mutable persistent : internal_prop_set;

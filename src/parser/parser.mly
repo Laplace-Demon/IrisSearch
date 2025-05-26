@@ -130,7 +130,9 @@ decl_laws:
 
 decl_law:
 | iprop
-  { $1 }
+  { None, $1 }
+| IDENT COLON iprop
+  { Some $1, $3 }
 
 decl_init:
 | DECL_INIT separated_list(COMMA, iprop)

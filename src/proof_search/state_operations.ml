@@ -117,9 +117,9 @@ let initial { decl_facts; decl_laws; decl_init } =
   let () =
     global_state.laws <-
       List.map
-        (fun ipr ->
+        (fun (name_opt, ipr) ->
           let ipr = iprop_to_internal_iprop Validate.symbol_table ipr in
-          { extern = ipr; intern = transform_law ipr })
+          { name_opt; extern = ipr; intern = transform_law ipr })
         decl_laws
   in
   let ipr_mset, pr_set =

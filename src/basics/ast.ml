@@ -142,6 +142,11 @@ and pp_iprop fmt = function
         (group_typed_str typed_str_list)
         pp_iprop ipr
 
+let pp_named pp fmt (name_opt, a) =
+  match name_opt with
+  | None -> pp fmt a
+  | Some name -> fprintf fmt "%s : %a" name pp a
+
 (** Free term variables occurring in iprop, prop and term. *)
 
 let rec term_free_var = function
@@ -188,7 +193,7 @@ type instance = {
   decl_preds : (string * itype) list;
   decl_consts : (string * itype) list;
   decl_facts : prop list;
-  decl_laws : iprop list;
+  decl_laws : (string option * iprop) list;
   decl_init : iprop list;
 }
 
@@ -251,7 +256,7 @@ let pp_instance fmt
            ~pp_sep:(fun fmt () ->
              pp_print_char fmt ',';
              pp_print_cut fmt ())
-           pp_iprop)
+           (pp_named pp_iprop))
         decl_laws
   in
   if List.is_empty decl_init then fprintf fmt "@[<v 4>init@,%%empty@]@."

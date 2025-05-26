@@ -21,7 +21,7 @@ type env = itype Env.t
     immutable map storing variables binded by quantifiers, env shadows
     symbol_table. *)
 
-type symbol_kind = Type | Constr | Func | Pred | Const
+type symbol_kind = Type | Constr | Func | Pred | Const | Law
 
 let pp_symbol_kind fmt = function
   | Type -> fprintf fmt "type"
@@ -29,6 +29,7 @@ let pp_symbol_kind fmt = function
   | Func -> fprintf fmt "function"
   | Pred -> fprintf fmt "predicate"
   | Const -> fprintf fmt "constant"
+  | Law -> fprintf fmt "law"
 
 type symbol_info = { ity : itype; kind : symbol_kind }
 
@@ -239,7 +240,8 @@ let check_law_right = function
                  quantified simple iprop"
                 pp_iprop ipr))
 
-let check_law = function
+let check_law (_, law) =
+  match law with
   | HForall (typed_str_list, Wand (ipr1, ipr2)) ->
       let binded_var_list = List.map fst typed_str_list in
       let free_var_list = iprop_free_var ipr1 in
@@ -448,7 +450,17 @@ let validate symbol_table
       decl_consts
   in
   List.iter (check_prop symbol_table Env.empty) decl_facts;
-  List.iter (check_iprop symbol_table Env.empty) decl_laws;
+  List.iter
+    (fun (name_opt, ipr) ->
+      (match name_opt with
+      | None -> ()
+      | Some name ->
+          if Hashtbl.mem symbol_table name then
+            raise
+              (DuplicateDeclarationError (asprintf "%a" pp_symbol_kind Law, name))
+          else Hashtbl.add symbol_table name { ity = Tlaw; kind = Law });
+      check_iprop symbol_table Env.empty ipr)
+    decl_laws;
   List.iter (check_iprop symbol_table Env.empty) decl_init
 
 let check_form { decl_laws; decl_init } =
