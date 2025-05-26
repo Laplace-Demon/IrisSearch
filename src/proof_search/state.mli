@@ -25,4 +25,4 @@ type global_state = {
 val global_state : global_state
 val pp_global_state : formatter -> unit -> unit
 
-exception Termination of string
+exception Inconsistent

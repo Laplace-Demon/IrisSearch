@@ -6,7 +6,9 @@
   ast
   duplication_checker
   equality_solver
+  path
   persistent_solver
+  priority_queue
   freshname
   internal
   internal_operations

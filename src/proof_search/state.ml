@@ -64,6 +64,6 @@ let pp_state fmt { local_var_list; ipr_mset; pr_set } =
     (pp_internal_prop_set_env local_varname_list_rev ~pp_sep:pp_print_cut)
     pr_set
 
-(** Definition of termination exception. *)
+(** Definition of inconsistent exception. *)
 
-exception Termination of string
+exception Inconsistent

@@ -186,12 +186,7 @@ let apply law ({ local_var_list; ipr_mset; pr_set } as st) =
     in
     (* check for termination *)
     let () =
-      if SimpleIpropMset.mem1 false_id ipr_concls then
-        raise
-          (Termination
-             Format.(
-               asprintf "@.@[<v 4>Applying law@,%a@.yields False.@]@." pp_law
-                 law))
+      if SimpleIpropMset.mem1 false_id ipr_concls then raise Inconsistent
     in
     (* strengthen conclusion *)
     let ipr_concls =
@@ -237,26 +232,22 @@ let apply law ({ local_var_list; ipr_mset; pr_set } as st) =
     let () =
       (* check consistency of facts *)
       match Z3_intf.consistent_solver (Some new_st) with
-      | Some unsat_core ->
-          raise
-            (Termination
-               Format.(asprintf "@.↓@.@.%a%s" pp_state new_st unsat_core))
+      | Some unsat_core -> raise Inconsistent
       | None -> ()
     in
     if is_dup new_st then fail else return new_st
   with Multiplicity.Underflow -> fail
 
 let successors st =
-  List.fold_left
-    (fun acc law ->
-      let succ = apply law st in
-      List.iter
-        (fun new_st -> Statistics.record_generated_state (state_size new_st))
-        succ;
-      choose succ acc)
-    fail global_state.laws
-
-let estimate = fun _ -> 0
+  ( List.fold_left
+      (fun acc law ->
+        let succ = apply law st in
+        List.iter
+          (fun new_st -> Statistics.record_generated_state (state_size new_st))
+          succ;
+        choose succ acc)
+      fail global_state.laws,
+    false )
 
 let consistent st =
   Option.is_none (Z3_intf.consistent_solver (Some st))

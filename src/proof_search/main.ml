@@ -1,6 +1,7 @@
 open Format
 open Ast
 open Internal
+open Path
 open State
 open State_operations
 open Search
@@ -53,24 +54,18 @@ let solve ?(until_validation = false) ?(until_transformation = false)
           }
         in
         let open Make (struct
-          type node = state
+          type state = State.state
 
           let source = source
           let successors = successors
-          let estimate = estimate
 
-          exception Termination = Termination
+          exception Inconsistent = Inconsistent
         end) in
         let () = set_max_depth max_depth in
         match search () with
         | Some path ->
             let () =
-              if show_path then
-                fprintf fmt "path@.@.%a%s"
-                  (pp_print_list
-                     ~pp_sep:(fun fmt () -> fprintf fmt "@.↓@.@.")
-                     pp_state)
-                  (List.rev path) (get_end_msg ())
+              if show_path then fprintf fmt "path@.@.%a" pp_state_path path
             in
             fprintf fmt "@.find solution@.@."
         | None -> fprintf fmt "@.no solution@.@."
