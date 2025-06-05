@@ -2,16 +2,6 @@ open Format
 open Internal
 open Type
 
-type state = {
-  local_var_list : (string * itype) list;
-  ipr_mset : simple_internal_iprop_multiset;
-  pr_set : internal_prop_set;
-  log : string;
-}
-
-val pp_state : formatter -> state -> unit
-val empty_state : state
-
 type law = {
   name_opt : string option;
   intern : internal_iprop;
@@ -29,5 +19,16 @@ type global_state = {
 
 val global_state : global_state
 val pp_global_state : formatter -> unit -> unit
+
+type state = {
+  local_var_list : (string * itype) list;
+  ipr_mset : simple_internal_iprop_multiset;
+  pr_set : internal_prop_set;
+  disj_list : simple_internal_iprop list;
+  log : string;
+}
+
+val pp_state : formatter -> state -> unit
+val empty_state : state
 
 exception Inconsistent of string

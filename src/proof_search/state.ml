@@ -35,18 +35,19 @@ let pp_global_state fmt () =
          pp_print_char fmt ',';
          pp_print_cut fmt ()))
     global_state.facts;
-  fprintf fmt "@[<v 4>laws@,%a@]@.@."
+  fprintf fmt "@[<v 4>laws@,%a@]@."
     (pp_print_list
        ~pp_sep:(fun fmt () ->
          pp_print_char fmt ',';
          pp_print_cut fmt ())
-       pp_law)
+       pp_law_internal)
     global_state.laws
 
 type state = {
   local_var_list : (string * itype) list;
   ipr_mset : simple_internal_iprop_multiset;
   pr_set : internal_prop_set;
+  disj_list : simple_internal_iprop list;
   log : string;
 }
 
@@ -55,6 +56,7 @@ let empty_state =
     local_var_list = [];
     ipr_mset = SimpleIpropMset.empty;
     pr_set = PropSet.empty;
+    disj_list = [];
     log = "empty";
   }
 
@@ -63,15 +65,49 @@ let pp_local_var_list fmt = function
   | _ as local_var_list ->
       fprintf fmt "%a" (pp_typed_strs_list ()) (group_typed_str local_var_list)
 
-let pp_state fmt { local_var_list; ipr_mset; pr_set; _ } =
+let pp_state fmt { local_var_list; ipr_mset; pr_set; disj_list; _ } =
   let local_varname_list_rev = List.rev_map fst local_var_list in
-  fprintf fmt "@[<v 4>locals@,%a@]@.@[<v 4>atoms@,%a@]@.@[<v 4>pures@,%a@]@."
-    pp_local_var_list local_var_list
-    (pp_simple_internal_iprop_multiset_env local_varname_list_rev
-       ~pp_sep:pp_print_cut)
-    ipr_mset
-    (pp_internal_prop_set_env local_varname_list_rev ~pp_sep:pp_print_cut)
-    pr_set
+  match (SimpleIpropMset.is_empty ipr_mset, List.is_empty disj_list) with
+  | _, true ->
+      fprintf fmt
+        "@[<v 4>locals@,%a@]@.@[<v 4>atoms@,%a@]@.@[<v 4>pures@,%a@]@."
+        pp_local_var_list local_var_list
+        (pp_simple_internal_iprop_multiset_env local_varname_list_rev
+           ~pp_sep:pp_print_cut)
+        ipr_mset
+        (pp_internal_prop_set_env local_varname_list_rev ~pp_sep:pp_print_cut)
+        pr_set
+  | true, false ->
+      fprintf fmt
+        "@[<v 4>locals@,%a@]@.@[<v 4>atoms@,%a@]@.@[<v 4>pures@,%a@]@."
+        pp_local_var_list local_var_list
+        (pp_print_list
+           ~pp_sep:(fun fmt () -> fprintf fmt " ∨ ")
+           (fun fmt ipr ->
+             (if simple_internal_iprop_cardinal ipr > 1 then fprintf fmt "(%a)"
+              else fprintf fmt "%a")
+               (pp_simple_internal_iprop_env local_varname_list_rev)
+               ipr))
+        disj_list
+        (pp_internal_prop_set_env local_varname_list_rev ~pp_sep:pp_print_cut)
+        pr_set
+  | false, false ->
+      fprintf fmt
+        "@[<v 4>locals@,%a@]@.@[<v 4>atoms@,%a * (%a)@]@.@[<v 4>pures@,%a@]@."
+        pp_local_var_list local_var_list
+        (pp_simple_internal_iprop_multiset_env local_varname_list_rev
+           ~pp_sep:pp_print_cut)
+        ipr_mset
+        (pp_print_list
+           ~pp_sep:(fun fmt () -> fprintf fmt " ∨ ")
+           (fun fmt ipr ->
+             (if simple_internal_iprop_cardinal ipr > 1 then fprintf fmt "(%a)"
+              else fprintf fmt "%a")
+               (pp_simple_internal_iprop_env local_varname_list_rev)
+               ipr))
+        disj_list
+        (pp_internal_prop_set_env local_varname_list_rev ~pp_sep:pp_print_cut)
+        pr_set
 
 (** Definition of inconsistent exception. *)
 

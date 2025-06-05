@@ -7,6 +7,15 @@ type itype =
   | Tarrow of itype list * itype
   | Tlaw
 
+let rec compare_itype ity1 ity2 =
+  match (ity1, ity2) with
+  | Tprop, Tprop | Tiprop, Tiprop | Tlaw, Tlaw -> 0
+  | Tcustom str1, Tcustom str2 -> String.compare str1 str2
+  | Tarrow (ity_list1, ity1), Tarrow (ity_list2, ity2) ->
+      let tmp = List.compare compare ity_list1 ity_list2 in
+      if tmp = 0 then compare_itype ity1 ity2 else tmp
+  | _, _ -> Stdlib.compare ity1 ity2
+
 let rec itype_eqb ity1 ity2 =
   match (ity1, ity2) with
   | Tprop, Tprop -> true

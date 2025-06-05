@@ -32,4 +32,4 @@
   z3_intf)
  (libraries baby menhirLib unionFind z3)
  (flags
-  (:standard -w)))
+  (:standard -w -a)))

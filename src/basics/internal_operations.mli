@@ -16,10 +16,10 @@ val iprop_to_internal_iprop :
 val prop_list_to_internal_prop_set :
   (string, symbol_info) Hashtbl.t -> prop list -> internal_prop_set
 
-val iprop_list_to_simple_internal_iprop_multiset_and_internal_prop_set :
+val iprop_list_to_simple_internal_iprop_and_disj_list :
   (string, symbol_info) Hashtbl.t ->
   iprop list ->
-  simple_internal_iprop_multiset * internal_prop_set
+  simple_internal_iprop * simple_internal_iprop list
 
 val free_vars_internal_term : internal_term -> (VarId.t * itype) list
 

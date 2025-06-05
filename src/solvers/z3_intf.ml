@@ -232,7 +232,7 @@ let consistent_solver st_opt =
       let unsat_core = Solver.get_unsat_core solver in
       Some
         Format.(
-          asprintf "@.@[<v 4>Unsat core:@,%a@]@."
+          asprintf "@.@[<v 4>Unsat core:@,%a@]"
             (pp_print_list pp_print_string)
             (List.map Expr.to_string unsat_core))
   | Solver.UNKNOWN -> None

@@ -11,8 +11,8 @@ let state_size { ipr_mset; pr_set; _ } =
 
 let transform_law = function
   | IHForall
-      ({ shift; typed_str_list }, IWand (ISimple ((ipr_mset, _) as ipr1), ipr2))
-    ->
+      ( { shift; typed_str_list },
+        IWand (ISimple (((ipr_mset, _) as ipr1), []), ipr2) ) ->
       let free_vars = free_vars_simple_internal_iprop_multiset ipr_mset in
       let free_vars_num = List.length free_vars in
       let new_binder_info =
@@ -53,8 +53,9 @@ let transform_law = function
                       iBVar (free_vars_num - 1 - ind + shift, ity) ))
                 free_vars))
       in
-      iHForall (new_binder_info, iWand (iSimple (ipr_mset, new_pr_set), ipr2))
-  | IWand (ISimple ((ipr_mset, _) as ipr1), ipr2) as law -> (
+      iHForall
+        (new_binder_info, iWand (iSimple ((ipr_mset, new_pr_set), []), ipr2))
+  | IWand (ISimple (((ipr_mset, _) as ipr1), []), ipr2) as law -> (
       let free_vars = free_vars_simple_internal_iprop_multiset ipr_mset in
       match List.length free_vars with
       | 0 -> law
@@ -95,7 +96,8 @@ let transform_law = function
                     free_vars))
           in
           iHForall
-            (new_binder_info, iWand (iSimple (ipr_mset, new_pr_set), ipr2)))
+            (new_binder_info, iWand (iSimple ((ipr_mset, new_pr_set), []), ipr2))
+      )
   | _ -> assert false
 
 let initial { decl_facts; decl_laws; decl_init; _ } =
@@ -122,33 +124,37 @@ let initial { decl_facts; decl_laws; decl_init; _ } =
           { name_opt; extern = ipr; intern = transform_law ipr })
         decl_laws
   in
-  let ipr_mset, pr_set =
-    iprop_list_to_simple_internal_iprop_multiset_and_internal_prop_set
-      Validate.symbol_table decl_init
+  let (ipr_mset, pr_set), disj_list =
+    iprop_list_to_simple_internal_iprop_and_disj_list Validate.symbol_table
+      decl_init
   in
-  { local_var_list = []; ipr_mset; pr_set; log = "initial" }
+  { local_var_list = []; ipr_mset; pr_set; disj_list; log = "initial" }
 
 let retrieve_law law =
   let shift, ipr_prems, pr_prems, concls =
     match law.intern with
-    | IHForall ({ shift; _ }, IWand (ISimple (ipr_prems, pr_prems), concls)) ->
+    | IHForall
+        ({ shift; _ }, IWand (ISimple ((ipr_prems, pr_prems), []), concls)) ->
         (shift, ipr_prems, pr_prems, concls)
-    | IWand (ISimple (ipr_prems, pr_prems), concls) ->
+    | IWand (ISimple ((ipr_prems, pr_prems), []), concls) ->
         (0, ipr_prems, pr_prems, concls)
     | _ -> assert false
   in
-  let exists_var_list, ipr_concls, pr_concls =
+  let exists_var_list, ipr_concls, pr_concls, disj_list =
     match concls with
-    | IHExists ({ typed_str_list; _ }, ISimple (ipr_concls, pr_concls)) ->
+    | IHExists
+        ({ typed_str_list; _ }, ISimple ((ipr_concls, pr_concls), disj_list)) ->
         ( List.map
             (fun (str, ity) -> (generate ~base:str (), ity))
             typed_str_list,
           ipr_concls,
-          pr_concls )
-    | ISimple (ipr_concls, pr_concls) -> ([], ipr_concls, pr_concls)
+          pr_concls,
+          disj_list )
+    | ISimple ((ipr_concls, pr_concls), disj_list) ->
+        ([], ipr_concls, pr_concls, disj_list)
     | _ -> assert false
   in
-  (shift, ipr_prems, pr_prems, exists_var_list, ipr_concls, pr_concls)
+  (shift, ipr_prems, pr_prems, exists_var_list, ipr_concls, pr_concls, disj_list)
 
 let make_subst_task match_result = function
   | IBVar ind -> match_result.(ind)
@@ -157,7 +163,13 @@ let make_subst_task match_result = function
 open Monads.ListMonad
 
 let apply law ({ local_var_list; ipr_mset; pr_set; _ } as st) =
-  let shift, ipr_prems, pr_prems, exists_var_list, ipr_concls, pr_concls =
+  let ( shift,
+        ipr_prems,
+        pr_prems,
+        exists_var_list,
+        ipr_concls,
+        pr_concls,
+        disj_list ) =
     retrieve_law law
   in
   try
@@ -189,25 +201,45 @@ let apply law ({ local_var_list; ipr_mset; pr_set; _ } as st) =
       if SimpleIpropMset.mem1 false_id ipr_concls then
         raise
           (Inconsistent
-             (asprintf "@.@[<v 4>Applying law@,%a@.yields False.@]@." pp_law law))
+             (asprintf "@[<v 4>Applying law@,%a@.yields False.@]" pp_law law))
     in
     (* strengthen conclusion *)
-    let ipr_concls =
+    let ipr_concls, disj_list =
       if is_inf then
-        SimpleIpropMset.map_multiplicity
-          (fun _ _ -> Multiplicity.inf)
-          ipr_concls
+        ( SimpleIpropMset.map_multiplicity
+            (fun _ _ -> Multiplicity.inf)
+            ipr_concls,
+          List.map
+            (fun (ipr_mset, pr_set) ->
+              ( SimpleIpropMset.map_multiplicity
+                  (fun _ _ -> Multiplicity.inf)
+                  ipr_mset,
+                pr_set ))
+            disj_list )
       else
-        SimpleIpropMset.map_multiplicity
-          (fun ipr count ->
-            (* we can use the new state *)
-            if Multiplicity.is_infinite count || Persistent_solver.solve ipr
-            then Multiplicity.inf
-            else count)
-          ipr_concls
+        ( SimpleIpropMset.map_multiplicity
+            (fun ipr count ->
+              (* we can use the new state *)
+              if Multiplicity.is_infinite count || Persistent_solver.solve ipr
+              then Multiplicity.inf
+              else count)
+            ipr_concls,
+          List.map
+            (fun (ipr_mset, pr_set) ->
+              ( SimpleIpropMset.map_multiplicity
+                  (fun ipr count ->
+                    (* we can use the new state *)
+                    if
+                      Multiplicity.is_infinite count
+                      || Persistent_solver.solve ipr
+                    then Multiplicity.inf
+                    else count)
+                  ipr_mset,
+                pr_set ))
+            disj_list )
     in
     (* subst quantified variables *)
-    let ipr_concls, pr_concls =
+    let ipr_concls, pr_concls, disj_list =
       let local_var_num = List.length local_var_list in
       let exists_match_result =
         Array.mapi
@@ -216,11 +248,12 @@ let apply law ({ local_var_list; ipr_mset; pr_set; _ } as st) =
       in
       let match_result = Array.append exists_match_result match_result in
       match Array.length match_result = 0 with
-      | true -> (ipr_concls, pr_concls)
+      | true -> (ipr_concls, pr_concls, disj_list)
       | false ->
           let subst_task = make_subst_task match_result in
           ( subst_simple_internal_iprop_multiset subst_task ipr_concls,
-            subst_internal_prop_set subst_task pr_concls )
+            subst_internal_prop_set subst_task pr_concls,
+            List.map (subst_simple_internal_iprop subst_task) disj_list )
     in
     let new_local_var_list = exists_var_list @ local_var_list in
     let new_ipr_mset = SimpleIpropMset.union ipr_concls ipr_mset_prems_elim in
@@ -230,30 +263,55 @@ let apply law ({ local_var_list; ipr_mset; pr_set; _ } as st) =
         local_var_list = new_local_var_list;
         ipr_mset = new_ipr_mset;
         pr_set = new_pr_set;
+        disj_list;
         log = asprintf "applying law %a" pp_law law;
       }
     in
     let () =
       (* check consistency of facts *)
       match Z3_intf.consistent_solver (Some new_st) with
-      | Some unsat_core ->
-          raise
-            (Inconsistent (asprintf "@.↓@.@.%a%s" pp_state new_st unsat_core))
+      | Some unsat_core -> raise (Inconsistent (asprintf "%s" unsat_core))
       | None -> ()
     in
     if is_dup new_st then fail else return new_st
   with Multiplicity.Underflow -> fail
 
+let case_analysis ({ local_var_list; ipr_mset; pr_set; disj_list; _ } as st) =
+  match disj_list with
+  | [] -> []
+  | _ ->
+      let local_varname_list_rev = List.rev_map fst local_var_list in
+      List.map
+        (fun ipr ->
+          let ipr_mset', pr_set' =
+            combine_simple_internal_iprop ipr (ipr_mset, pr_set)
+          in
+          {
+            st with
+            ipr_mset = ipr_mset';
+            pr_set = pr_set';
+            disj_list = [];
+            log =
+              asprintf "case analysis on %a"
+                (pp_internal_iprop_env local_varname_list_rev)
+                (iSimple (empty_simple_internal_iprop, disj_list));
+          })
+        disj_list
+
 let successors st =
-  ( List.fold_left
-      (fun acc law ->
-        let succ = apply law st in
-        List.iter
-          (fun new_st -> Statistics.record_generated_state (state_size new_st))
-          succ;
-        choose succ acc)
-      fail global_state.laws,
-    false )
+  let case_succ = case_analysis st in
+  if not (List.is_empty case_succ) then (case_succ, true)
+  else
+    ( List.fold_left
+        (fun acc law ->
+          let succ = apply law st in
+          List.iter
+            (fun new_st ->
+              Statistics.record_generated_state (state_size new_st))
+            succ;
+          choose succ acc)
+        fail global_state.laws,
+      false )
 
 let consistent st =
   Option.is_none (Z3_intf.consistent_solver (Some st))

@@ -48,7 +48,7 @@ type internal_prop =
 and simple_internal_iprop = simple_internal_iprop_multiset * internal_prop_set
 
 and internal_iprop =
-  | ISimple of simple_internal_iprop
+  | ISimple of simple_internal_iprop * simple_internal_iprop list
   | IWand of internal_iprop * internal_iprop
   | IHForall of binder_info * internal_iprop
   | IHExists of binder_info * internal_iprop
@@ -64,6 +64,12 @@ val compare_simple_internal_iprop :
   simple_internal_iprop -> simple_internal_iprop -> int
 
 val compare_internal_iprop : internal_iprop -> internal_iprop -> int
+val empty_simple_internal_iprop : simple_internal_iprop
+val is_simple_internal_iprop_empty : simple_internal_iprop -> bool
+val simple_internal_iprop_cardinal : simple_internal_iprop -> int
+
+val combine_simple_internal_iprop :
+  simple_internal_iprop -> simple_internal_iprop -> simple_internal_iprop
 
 (** Smart internal_term constructors. *)
 
@@ -94,7 +100,7 @@ val iNeq : internal_term * internal_term -> internal_prop
 (** Smart internal_iprop constructors. *)
 
 val iSimple :
-  simple_internal_iprop_multiset * internal_prop_set -> internal_iprop
+  simple_internal_iprop * simple_internal_iprop list -> internal_iprop
 
 val iWand : internal_iprop * internal_iprop -> internal_iprop
 val iHForall : binder_info * internal_iprop -> internal_iprop

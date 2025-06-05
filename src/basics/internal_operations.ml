@@ -96,56 +96,95 @@ let term_to_internal_term, prop_to_internal_prop, iprop_to_internal_iprop =
   and iprop_to_internal_iprop_aux ~env symbol_table = function
     | False ->
         iSimple
-          ( SimpleIpropMset.singleton (HPredId.import "⊥", [||]) Multiplicity.one,
-            PropSet.empty )
+          ( ( SimpleIpropMset.singleton
+                (HPredId.import "⊥", [||])
+                Multiplicity.one,
+              PropSet.empty ),
+            [] )
     | Atom atom ->
         iSimple
-          ( SimpleIpropMset.singleton
-              (HPredId.import atom, [||])
-              Multiplicity.one,
-            PropSet.empty )
+          ( ( SimpleIpropMset.singleton
+                (HPredId.import atom, [||])
+                Multiplicity.one,
+              PropSet.empty ),
+            [] )
     | Pure pr ->
         iSimple
-          ( SimpleIpropMset.empty,
-            PropSet.singleton (prop_to_internal_prop_aux ~env symbol_table pr)
-          )
+          ( ( SimpleIpropMset.empty,
+              PropSet.singleton (prop_to_internal_prop_aux ~env symbol_table pr)
+            ),
+            [] )
     | Star (ipr1, ipr2) ->
-        let ipr_mset1, pr_set1 =
+        let ipr1, ipr_disj1 =
           match iprop_to_internal_iprop_aux ~env symbol_table ipr1 with
-          | ISimple (ipr_mset, pr_set) -> (ipr_mset, pr_set)
+          | ISimple (ipr, ipr_disj) -> (ipr, ipr_disj)
           | _ -> assert false
         in
-        let ipr_mset2, pr_set2 =
+        let ipr2, ipr_disj2 =
           match iprop_to_internal_iprop_aux ~env symbol_table ipr2 with
-          | ISimple (ipr_mset, pr_set) -> (ipr_mset, pr_set)
+          | ISimple (ipr, ipr_disj) -> (ipr, ipr_disj)
           | _ -> assert false
+        in
+        let disj_list =
+          match (ipr_disj1, ipr_disj2) with
+          | [], _ -> ipr_disj2
+          | _, [] -> ipr_disj1
+          | _, _ ->
+              List.concat_map
+                (fun ipr1 ->
+                  List.map (combine_simple_internal_iprop ipr1) ipr_disj2)
+                ipr_disj1
+        in
+        iSimple (combine_simple_internal_iprop ipr1 ipr2, disj_list)
+    | HOr (ipr1, ipr2) ->
+        let ipr1, ipr_disj1 =
+          match iprop_to_internal_iprop_aux ~env symbol_table ipr1 with
+          | ISimple (ipr, ipr_disj) -> (ipr, ipr_disj)
+          | _ -> assert false
+        in
+        let ipr2, ipr_disj2 =
+          match iprop_to_internal_iprop_aux ~env symbol_table ipr2 with
+          | ISimple (ipr, ipr_disj) -> (ipr, ipr_disj)
+          | _ -> assert false
+        in
+        let ipr_disj_combine1 =
+          match ipr_disj1 with
+          | [] -> [ ipr1 ]
+          | _ -> List.map (combine_simple_internal_iprop ipr1) ipr_disj1
+        in
+        let ipr_disj_combine2 =
+          match ipr_disj2 with
+          | [] -> [ ipr2 ]
+          | _ -> List.map (combine_simple_internal_iprop ipr2) ipr_disj2
         in
         iSimple
-          ( SimpleIpropMset.union ipr_mset1 ipr_mset2,
-            PropSet.union pr_set1 pr_set2 )
+          (empty_simple_internal_iprop, ipr_disj_combine1 @ ipr_disj_combine2)
     | Wand (ipr1, ipr2) ->
         iWand
           ( iprop_to_internal_iprop_aux ~env symbol_table ipr1,
             iprop_to_internal_iprop_aux ~env symbol_table ipr2 )
     | Box ipr -> (
         match iprop_to_internal_iprop_aux ~env symbol_table ipr with
-        | ISimple (ipr_mset, pr_set) ->
-            iSimple
+        | ISimple (ipr, ipr_disj) ->
+            let to_inf (ipr_mset, pr_set) =
               ( SimpleIpropMset.map_multiplicity
                   (fun _ _ -> Multiplicity.inf)
                   ipr_mset,
                 pr_set )
+            in
+            iSimple (to_inf ipr, List.map to_inf ipr_disj)
         | _ -> assert false)
     | HPred (hpred, tm_list) ->
         iSimple
-          ( SimpleIpropMset.singleton
-              ( HPredId.import hpred,
-                Array.of_list
-                  (List.map
-                     (term_to_internal_term_aux ~env symbol_table)
-                     tm_list) )
-              Multiplicity.one,
-            PropSet.empty )
+          ( ( SimpleIpropMset.singleton
+                ( HPredId.import hpred,
+                  Array.of_list
+                    (List.map
+                       (term_to_internal_term_aux ~env symbol_table)
+                       tm_list) )
+                Multiplicity.one,
+              PropSet.empty ),
+            [] )
     | HForall (typed_str_list, ipr) ->
         iHForall_raw
           ( typed_str_list,
@@ -178,16 +217,24 @@ let prop_list_to_internal_prop_set symbol_table pr_list =
         | _ as pr -> PropSet.singleton pr))
     PropSet.empty pr_list
 
-let iprop_list_to_simple_internal_iprop_multiset_and_internal_prop_set
-    symbol_table iprl =
+let iprop_list_to_simple_internal_iprop_and_disj_list symbol_table iprl =
   List.fold_left
-    (fun (ipr_mset, pr_set) ipr ->
+    (fun (ipr_, disj_list_) ipr ->
       match iprop_to_internal_iprop symbol_table ipr with
-      | ISimple (ipr_mset', pr_set') ->
-          ( SimpleIpropMset.union ipr_mset ipr_mset',
-            PropSet.union pr_set pr_set' )
+      | ISimple (ipr', disj_list') ->
+          let disj_list =
+            match (disj_list_, disj_list') with
+            | [], _ -> disj_list'
+            | _, [] -> disj_list_
+            | _, _ ->
+                List.concat_map
+                  (fun disj ->
+                    List.map (combine_simple_internal_iprop disj) disj_list')
+                  disj_list_
+          in
+          (combine_simple_internal_iprop ipr_ ipr', disj_list)
       | _ -> assert false)
-    (SimpleIpropMset.empty, PropSet.empty)
+    (empty_simple_internal_iprop, [])
     iprl
 
 (** Free variables. *)
@@ -199,6 +246,11 @@ let ( free_vars_internal_term,
       free_vars_internal_iprop,
       free_vars_internal_prop_set,
       free_vars_simple_internal_iprop_multiset ) =
+  let compare_typed_var_id =
+   fun (var_id1, ity1) (var_id2, ity2) ->
+    let tmp = VarId.compare var_id1 var_id2 in
+    if tmp = 0 then compare_itype ity1 ity2 else tmp
+  in
   let rec free_vars_internal_term_aux acc { desc; ity } =
     match desc with
     | IVar var -> (var, ity) :: acc
@@ -224,7 +276,9 @@ let ( free_vars_internal_term,
     let acc' = free_vars_simple_internal_iprop_multiset_aux acc ipr_mset in
     free_vars_internal_prop_set_aux acc' pr_set
   and free_vars_internal_iprop_aux acc = function
-    | ISimple ipr -> free_vars_simple_internal_iprop_aux acc ipr
+    | ISimple (ipr, ipr_disj) ->
+        let acc' = free_vars_simple_internal_iprop_aux acc ipr in
+        List.fold_left free_vars_simple_internal_iprop_aux acc' ipr_disj
     | IWand (ipr1, ipr2) ->
         let acc' = free_vars_internal_iprop_aux acc ipr1 in
         free_vars_internal_iprop_aux acc' ipr2
@@ -238,13 +292,24 @@ let ( free_vars_internal_term,
       ipr_mset acc
   in
 
-  ( free_vars_internal_term_aux [],
-    free_vars_internal_term_array_aux [],
-    free_vars_internal_prop_aux [],
-    free_vars_simple_internal_iprop_aux [],
-    free_vars_internal_iprop_aux [],
-    free_vars_internal_prop_set_aux [],
-    free_vars_simple_internal_iprop_multiset_aux [] )
+  ( (fun tm ->
+      free_vars_internal_term_aux [] tm |> List.sort_uniq compare_typed_var_id),
+    (fun tm_arr ->
+      free_vars_internal_term_array_aux [] tm_arr
+      |> List.sort_uniq compare_typed_var_id),
+    (fun pr ->
+      free_vars_internal_prop_aux [] pr |> List.sort_uniq compare_typed_var_id),
+    (fun ipr ->
+      free_vars_simple_internal_iprop_aux [] ipr
+      |> List.sort_uniq compare_typed_var_id),
+    (fun ipr ->
+      free_vars_internal_iprop_aux [] ipr |> List.sort_uniq compare_typed_var_id),
+    (fun pr_set ->
+      free_vars_internal_prop_set_aux [] pr_set
+      |> List.sort_uniq compare_typed_var_id),
+    fun ipr_mset ->
+      free_vars_simple_internal_iprop_multiset_aux [] ipr_mset
+      |> List.sort_uniq compare_typed_var_id )
 
 (** Substitution. *)
 
@@ -309,6 +374,11 @@ let ( subst_internal_term,
     ( subst_simple_internal_iprop_multiset_aux shift subst_task ipr_mset,
       subst_internal_prop_set_aux shift subst_task pr_set )
   and subst_internal_iprop_aux shift subst_task = function
+    | ISimple (ipr, ipr_disj) ->
+        iSimple
+          ( subst_simple_internal_iprop_aux shift subst_task ipr,
+            List.map (subst_simple_internal_iprop_aux shift subst_task) ipr_disj
+          )
     | IWand (ipr1, ipr2) ->
         iWand
           ( subst_internal_iprop_aux shift subst_task ipr1,
@@ -318,7 +388,11 @@ let ( subst_internal_term,
           ( binder_info,
             subst_internal_iprop_aux (shift + binder_info.shift) subst_task ipr
           )
-    | _ as ipr -> ipr
+    | IHExists (binder_info, ipr) ->
+        iHExists
+          ( binder_info,
+            subst_internal_iprop_aux (shift + binder_info.shift) subst_task ipr
+          )
   and subst_internal_prop_set_aux shift subst_task pr_set =
     PropSet.map (subst_internal_prop_aux shift subst_task) pr_set
   and subst_simple_internal_iprop_multiset_aux shift subst_task ipr_mset =
@@ -350,8 +424,8 @@ let ( internal_term_match,
       simple_internal_iprop_multiset_match,
       internal_prop_set_substract_match,
       simple_internal_iprop_multiset_substract_match ) =
-  let rec internal_term_match_aux st_opt shift match_result { desc = pdesc; _ }
-      ({ desc; _ } as tm) =
+  let rec internal_term_match_aux st_opt shift match_result
+      ({ desc = pdesc; _ } as ptm) ({ desc; _ } as tm) =
     match (pdesc, desc) with
     | IVar var1, IVar var2 ->
         if VarId.equal var1 var2 then return match_result else fail
@@ -428,7 +502,7 @@ let ( internal_term_match,
     | _, _ -> fail
   and internal_iprop_match_aux st_opt shift match_result pipr ipr =
     match (pipr, ipr) with
-    | ISimple (ipr_mset1, pr_set1), ISimple (ipr_mset2, pr_set2) ->
+    | ISimple ((ipr_mset1, pr_set1), []), ISimple ((ipr_mset2, pr_set2), []) ->
         if
           SimpleIpropMset.cardinal ipr_mset1
           = SimpleIpropMset.cardinal ipr_mset2

@@ -47,6 +47,7 @@ end
 module Make (State : sig
   type state
 
+  val get_log : state -> string
   val source : state
   val successors : state -> state list * bool
 
@@ -82,7 +83,9 @@ struct
   module P = Priority_queue.Make (Node)
 
   let () =
-    let node = { this = source; depth = 0; path = []; branch = !root_br } in
+    let node =
+      { this = source; depth = 0; path = [ source ]; branch = !root_br }
+    in
     P.add node node.depth
 
   let get_succ node =
@@ -96,17 +99,24 @@ struct
               let new_depth = node.depth + 1 in
               assert (0 <= new_depth);
               Statistics.record_depth new_depth;
-              { this = st; depth = new_depth; path = []; branch = node.branch })
+              {
+                this = st;
+                depth = new_depth;
+                path = [ st ];
+                branch = node.branch;
+              })
             succ_states
         in
         let () =
           match is_branch with
           | true ->
+              node.branch.path <-
+                (List.rev node.path, get_log (List.hd succ_states));
               let br_list = Branch.add node.branch (List.length succ_nodes) in
               List.iter2 (fun node br -> node.branch <- br) succ_nodes br_list
           | false ->
               List.iter
-                (fun succ_node -> succ_node.path <- node.this :: node.path)
+                (fun succ_node -> succ_node.path <- succ_node.this :: node.path)
                 succ_nodes
         in
         succ_nodes
@@ -121,7 +131,6 @@ struct
             if not (Branch.is_marked node.branch) then (
               Statistics.record_visited_state ();
               try List.iter (fun succ -> P.add succ succ.depth) (get_succ node)
-              with Inconsistent msg ->
-                Branch.mark node.branch (node.this :: node.path) msg);
+              with Inconsistent msg -> Branch.mark node.branch node.path msg);
             search ())
 end

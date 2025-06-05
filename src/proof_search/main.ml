@@ -56,6 +56,7 @@ let solve ?(until_validation = false) ?(until_transformation = false)
         let open Make (struct
           type state = State.state
 
+          let get_log { log; _ } = log
           let source = source
           let successors = successors
 

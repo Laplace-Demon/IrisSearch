@@ -51,7 +51,7 @@ module rec Internal : sig
   and simple_internal_iprop = SimpleIpropMset.t * PropSet.t
 
   and internal_iprop =
-    | ISimple of simple_internal_iprop
+    | ISimple of simple_internal_iprop * simple_internal_iprop list
     | IWand of internal_iprop * internal_iprop
     | IHForall of binder_info * internal_iprop
     | IHExists of binder_info * internal_iprop
@@ -93,7 +93,7 @@ end = struct
   and simple_internal_iprop = SimpleIpropMset.t * PropSet.t
 
   and internal_iprop =
-    | ISimple of simple_internal_iprop
+    | ISimple of simple_internal_iprop * simple_internal_iprop list
     | IWand of internal_iprop * internal_iprop
     | IHForall of binder_info * internal_iprop
     | IHExists of binder_info * internal_iprop
@@ -151,7 +151,11 @@ end = struct
 
   and compare_internal_iprop ipr1 ipr2 =
     match (ipr1, ipr2) with
-    | ISimple ipr1, ISimple ipr2 -> compare_simple_internal_iprop ipr1 ipr2
+    | ISimple (ipr1, ipr_disj1), ISimple (ipr2, ipr_disj2) ->
+        let tmp = compare_simple_internal_iprop ipr1 ipr2 in
+        if tmp = 0 then
+          List.compare compare_simple_internal_iprop ipr_disj1 ipr_disj2
+        else tmp
     | IWand (ipr11, ipr12), IWand (ipr21, ipr22) ->
         let tmp = compare_internal_iprop ipr11 ipr21 in
         if tmp = 0 then compare_internal_iprop ipr12 ipr22 else tmp
@@ -200,6 +204,17 @@ include Internal
 
 type internal_prop_set = PropSet.t
 type simple_internal_iprop_multiset = SimpleIpropMset.t
+
+let empty_simple_internal_iprop = (SimpleIpropMset.empty, PropSet.empty)
+
+let is_simple_internal_iprop_empty (ipr_mset, pr_set) =
+  SimpleIpropMset.is_empty ipr_mset && PropSet.is_empty pr_set
+
+let simple_internal_iprop_cardinal (ipr_mset, pr_set) =
+  SimpleIpropMset.cardinal ipr_mset + PropSet.cardinal pr_set
+
+let combine_simple_internal_iprop (ipr_mset1, pr_set1) (ipr_mset2, pr_set2) =
+  (SimpleIpropMset.union ipr_mset1 ipr_mset2, PropSet.union pr_set1 pr_set2)
 
 let ( pp_internal_term,
       pp_internal_term_env,
@@ -313,9 +328,23 @@ let ( pp_internal_term,
           (pp_internal_prop_set_aux true env ~pp_sep:(fun fmt () ->
                fprintf fmt " * "))
           pr_set
-    | true, true -> assert false
+    | true, true -> ()
   and pp_internal_iprop_aux env fmt = function
-    | ISimple ipr -> pp_simple_internal_iprop_aux env fmt ipr
+    | ISimple (ipr, ipr_disj) ->
+        (if not (is_simple_internal_iprop_empty ipr || List.is_empty ipr_disj)
+         then fprintf fmt "%a * (%a)"
+         else fprintf fmt "%a%a")
+          (pp_simple_internal_iprop_aux env)
+          ipr
+          (pp_print_list
+             ~pp_sep:(fun fmt () -> fprintf fmt " ∨ ")
+             (fun fmt ipr ->
+               (if simple_internal_iprop_cardinal ipr > 1 then
+                  fprintf fmt "(%a)"
+                else fprintf fmt "%a")
+                 (pp_simple_internal_iprop_aux env)
+                 ipr))
+          ipr_disj
     | IWand (ipr1, ipr2) ->
         fprintf fmt "(%a -* %a)"
           (pp_internal_iprop_aux env)
@@ -440,7 +469,9 @@ let iNeq (tm1, tm2) = INeq (tm1, tm2)
 
 (** Smart internal_iprop constructors. *)
 
-let iSimple (ipr_mset, pr_set) = ISimple (ipr_mset, pr_set)
+let iSimple ((ipr_mset, pr_set), ipr_disj) =
+  ISimple ((ipr_mset, pr_set), ipr_disj)
+
 let iWand (ipr1, ipr2) = IWand (ipr1, ipr2)
 let iHForall (binder_info, ipr) = IHForall (binder_info, ipr)
 

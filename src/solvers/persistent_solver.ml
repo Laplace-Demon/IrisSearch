@@ -7,13 +7,13 @@ let solve : hpred_id * internal_term array -> bool =
   let knowledge = global_state.persistent in
   PropSet.exists
     (function
-      | IPersistent (ISimple (ipr_mset, _)) ->
+      | IPersistent (ISimple ((ipr_mset, _), _)) ->
           SimpleIpropMset.exists
             (fun (hpred', tm_arr') _ ->
               HPredId.equal hpred hpred'
               && compare_internal_term_array tm_arr tm_arr' = 0)
             ipr_mset
-      | IForall ({ shift; _ }, IPersistent (ISimple (ipr_mset, _))) ->
+      | IForall ({ shift; _ }, IPersistent (ISimple ((ipr_mset, _), _))) ->
           SimpleIpropMset.exists
             (fun (hpred', tm_arr') _ ->
               HPredId.equal hpred hpred'
