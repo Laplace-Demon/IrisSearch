@@ -69,11 +69,10 @@ let input_filename, in_channel, out_channel =
   (input_filename, in_channel, out_channel)
 
 let () =
-  let lexbuf = Lexing.from_channel in_channel in
   let formatter = formatter_of_out_channel out_channel in
+  let () = fprintf formatter "@." in
+  let lexbuf = Lexing.from_channel in_channel in
   let finally () =
-    if !show_statistics then
-      fprintf formatter "%a" (Statistics.pp_stat ~avg:1) ();
     close_in in_channel;
     close_out out_channel
   in
@@ -82,55 +81,58 @@ let () =
         let ins = Parser.instance Lexer.token lexbuf in
         let () =
           if !show_instance then
-            fprintf formatter "original instance@.@.%a@." Ast.pp_instance ins
+            fprintf formatter "  original instance@\n@\n%a@\n" Ast.pp_instance
+              ins
         in
-        if !until_parsing then fprintf formatter "@.Parsing succeeds.@.@."
+        if !until_parsing then fprintf formatter "Parsing succeeds.@\n@."
         else
           Main.solve ~until_validation:!until_validation
             ~until_transformation:!until_transformation
             ~show_transformed_instance:!show_transformed_instance
-            ~show_state:!show_state ~show_path:!show_path ~max_depth:!max_depth
-            formatter ins)
+            ~show_state:!show_state ~show_path:!show_path
+            ~show_statistics:!show_statistics ~max_depth:!max_depth formatter
+            ins)
   with
   | Lexer.Lexing_error s ->
-      eprintf "%s: lexing error: %s@." input_filename s;
+      eprintf "%s: lexing error: %s@\n@." input_filename s;
       exit 1
   | Parser.Error ->
-      eprintf "%s%a: parsing error@." input_filename Lexer.print_position lexbuf;
+      eprintf "%s%a: parsing error@\n@." input_filename Lexer.print_position
+        lexbuf;
       exit 1
   | Validate.IllegalConstrDeclarationError str ->
-      eprintf "validation error: illegal constructor declaration of %s@." str;
+      eprintf "validation error: illegal constructor declaration of %s@\n@." str;
       exit 1
   | Validate.IllegalFuncDeclarationError str ->
-      eprintf "validation error: illegal function declaration of %s@." str;
+      eprintf "validation error: illegal function declaration of %s@\n@." str;
       exit 1
   | Validate.IllegalPredDeclarationError str ->
-      eprintf "validation error: illegal predicate declaration of %s@." str;
+      eprintf "validation error: illegal predicate declaration of %s@\n@." str;
       exit 1
   | Validate.IllegalConstDeclarationError str ->
-      eprintf "validation error: illegal constant declaration of %s@." str;
+      eprintf "validation error: illegal constant declaration of %s@\n@." str;
       exit 1
   | Validate.IllegalLawDeclarationError str ->
-      eprintf "validation error: illegal law declaration, %s@." str;
+      eprintf "validation error: illegal law declaration, %s@\n@." str;
       exit 1
   | Validate.IllegalInitDeclarationError str ->
-      eprintf "validation error: illegal init declaration, %s@." str;
+      eprintf "validation error: illegal init declaration, %s@\n@." str;
       exit 1
   | Validate.DuplicateDeclarationError (kind, str) ->
-      eprintf "validation error: duplicate %s declaration of %s@." kind str;
+      eprintf "validation error: duplicate %s declaration of %s@\n@." kind str;
       exit 1
   | Validate.MissingDeclarationError (kind, str) ->
-      eprintf "validation error: missing %s declaration of %s@." kind str;
+      eprintf "validation error: missing %s declaration of %s@\n@." kind str;
       exit 1
   | Validate.TypeError (str, ity1, ity2) ->
-      eprintf "validation error: %s should have type %a, but has type %a@." str
-        Type.pp_itype ity1 Type.pp_itype ity2;
+      eprintf "validation error: %s should have type %a, but has type %a@\n@."
+        str Type.pp_itype ity1 Type.pp_itype ity2;
       exit 1
   | Validate.ArityError (str, a1, a2) ->
-      eprintf "validation error: %s should have arity %i, but has arity %i@."
+      eprintf "validation error: %s should have arity %i, but has arity %i@\n@."
         str a1 a2;
       exit 1
   | e ->
       let bt = Printexc.get_backtrace () in
-      eprintf "exception: %s@.backtrace:@.%s@." (Printexc.to_string e) bt;
+      eprintf "exception: %s@\nbacktrace:@\n%s@\n@." (Printexc.to_string e) bt;
       exit 1

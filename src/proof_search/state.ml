@@ -26,7 +26,7 @@ let global_state =
   { persistent = PropSet.empty; facts = PropSet.empty; laws = [] }
 
 let pp_global_state fmt () =
-  fprintf fmt "@[<v 4>facts@,%a@,%a@]@.@."
+  fprintf fmt "@[<v 4>facts@,%a@,%a@]@."
     (pp_internal_prop_set ~pp_sep:(fun fmt () ->
          pp_print_char fmt ',';
          pp_print_cut fmt ()))
@@ -70,7 +70,7 @@ let pp_state fmt { local_var_list; ipr_mset; pr_set; disj_list; _ } =
   match (SimpleIpropMset.is_empty ipr_mset, List.is_empty disj_list) with
   | _, true ->
       fprintf fmt
-        "@[<v 4>locals@,%a@]@.@[<v 4>atoms@,%a@]@.@[<v 4>pures@,%a@]@."
+        "@[<v 4>locals@,%a@]@\n@[<v 4>atoms@,%a@]@\n@[<v 4>pures@,%a@]@\n"
         pp_local_var_list local_var_list
         (pp_simple_internal_iprop_multiset_env local_varname_list_rev
            ~pp_sep:pp_print_cut)
@@ -79,7 +79,7 @@ let pp_state fmt { local_var_list; ipr_mset; pr_set; disj_list; _ } =
         pr_set
   | true, false ->
       fprintf fmt
-        "@[<v 4>locals@,%a@]@.@[<v 4>atoms@,%a@]@.@[<v 4>pures@,%a@]@."
+        "@[<v 4>locals@,%a@]@\n@[<v 4>atoms@,%a@]@\n@[<v 4>pures@,%a@]@\n"
         pp_local_var_list local_var_list
         (pp_print_list
            ~pp_sep:(fun fmt () -> fprintf fmt " ∨ ")

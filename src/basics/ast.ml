@@ -209,12 +209,12 @@ let pp_instance fmt
     } =
   let () =
     if not (List.is_empty decl_types) then
-      fprintf fmt "@[<v 4>types@,%a@]@."
+      fprintf fmt "@[<v 4>types@,%a@]@\n"
         (pp_print_list (fun fmt (str, constr_list) ->
              match constr_list with
              | [] -> fprintf fmt "%s" str
              | _ ->
-                 fprintf fmt "@[<v 4>%s =@,%a@]" str
+                 fprintf fmt "@[<v 2>%s =@,%a@]" str
                    (pp_print_list (fun fmt (constr, ity) ->
                         fprintf fmt "| %s : %a" constr pp_itype ity))
                    constr_list))
@@ -222,26 +222,26 @@ let pp_instance fmt
   in
   let () =
     if not (List.is_empty decl_funcs) then
-      fprintf fmt "@[<v 4>funcs@,%a@]@."
+      fprintf fmt "@[<v 4>funcs@,%a@]@\n"
         (pp_print_list (fun fmt (str, ity) ->
              fprintf fmt "%s : %a" str pp_itype ity))
         decl_funcs
   in
   let () =
     if not (List.is_empty decl_preds) then
-      fprintf fmt "@[<v 4>preds@,%a@]@."
+      fprintf fmt "@[<v 4>preds@,%a@]@\n"
         (pp_print_list (fun fmt (str, ity) ->
              fprintf fmt "%s : %a" str pp_itype ity))
         decl_preds
   in
   let () =
     if not (List.is_empty decl_consts) then
-      fprintf fmt "@[<v 4>consts@,%a@]@." (pp_typed_strs_list ())
+      fprintf fmt "@[<v 4>consts@,%a@]@\n" (pp_typed_strs_list ())
         (group_typed_str decl_consts)
   in
   let () =
     if not (List.is_empty decl_facts) then
-      fprintf fmt "@[<v 4>facts@,%a@]@."
+      fprintf fmt "@[<v 4>facts@,%a@]@\n"
         (pp_print_list
            ~pp_sep:(fun fmt () ->
              pp_print_char fmt ',';
@@ -251,7 +251,7 @@ let pp_instance fmt
   in
   let () =
     if not (List.is_empty decl_laws) then
-      fprintf fmt "@[<v 4>laws@,%a@]@."
+      fprintf fmt "@[<v 4>laws@,%a@]@\n"
         (pp_print_list
            ~pp_sep:(fun fmt () ->
              pp_print_char fmt ',';
@@ -259,9 +259,9 @@ let pp_instance fmt
            (pp_named pp_iprop))
         decl_laws
   in
-  if List.is_empty decl_init then fprintf fmt "@[<v 4>init@,%%empty@]@."
+  if List.is_empty decl_init then fprintf fmt "@[<v 4>init@,%%empty@]@\n"
   else
-    fprintf fmt "@[<v 4>init@,%a@]@."
+    fprintf fmt "@[<v 4>init@,%a@]@\n"
       (pp_print_list
          ~pp_sep:(fun fmt () ->
            pp_print_char fmt ',';

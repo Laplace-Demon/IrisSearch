@@ -12,35 +12,36 @@ let () = Printexc.record_backtrace true
 
 let solve ?(until_validation = false) ?(until_transformation = false)
     ?(show_transformed_instance = false) ?(show_state = false)
-    ?(show_path = false) ?(max_depth = 20) fmt ins =
+    ?(show_path = false) ?(show_statistics = false) ?(max_depth = 20) fmt ins =
   let () = validate symbol_table ins in
-  if until_validation then fprintf fmt "@.Validation succeeds.@.@."
+  if until_validation then fprintf fmt "Validation succeeds.@\n@."
   else
     let ins = uncurry_transformation ins in
     let () =
       if show_transformed_instance then
-        fprintf fmt "instance after uncurry_transformation@.@.%a@." pp_instance
-          ins
+        fprintf fmt "  instance after uncurry_transformation@\n@\n%a@\n"
+          pp_instance ins
     in
     let ins = merge_quantifier_transformation ins in
     let () =
       if show_transformed_instance then
-        fprintf fmt "instance after merge_quantifier_transformation@.@.%a@."
+        fprintf fmt
+          "  instance after merge_quantifier_transformation@\n@\n%a@\n"
           pp_instance ins
     in
-    if until_transformation then fprintf fmt "@.Transformation succeeds.@.@."
+    if until_transformation then fprintf fmt "Transformation succeeds.@\n@."
     else
       let () = check_form ins in
       let source = initial ins in
       let () =
         if show_state then (
-          fprintf fmt "global state@.@.%a@." pp_global_state ();
-          fprintf fmt "initial state@.@.%a@." pp_state source)
+          fprintf fmt "  global state@\n@\n%a@\n" pp_global_state ();
+          fprintf fmt "  initial state@\n@\n%a@\n" pp_state source)
       in
       let () = Z3_intf.init () in
       (* check if the initial state is consistent *)
       if not (consistent source) then
-        fprintf fmt "@.initial state inconsistent@.@."
+        fprintf fmt "Initial state is inconsistent.@\n@."
       else
         let source =
           {
@@ -63,10 +64,16 @@ let solve ?(until_validation = false) ?(until_transformation = false)
           exception Inconsistent = Inconsistent
         end) in
         let () = set_max_depth max_depth in
-        match search () with
+        let path_opt = search () in
+        let () =
+          if show_statistics then
+            fprintf fmt "%a@\n" (Statistics.pp_stat ~avg:1) ()
+        in
+        match path_opt with
         | Some path ->
             let () =
-              if show_path then fprintf fmt "path@.@.%a" pp_state_path path
+              if show_path then
+                fprintf fmt "  path@\n@\n%a@\n" pp_state_path path
             in
-            fprintf fmt "@.find solution@.@."
-        | None -> fprintf fmt "@.no solution@.@."
+            fprintf fmt "  find solution@\n@."
+        | None -> fprintf fmt "  no solution@\n@."
