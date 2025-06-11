@@ -47,11 +47,10 @@ end
 module Make (State : sig
   type state
 
-  val get_log : state -> string
   val source : state
   val successors : state -> state list * bool
 
-  exception Inconsistent of string
+  exception Inconsistent of state option * string
 end) =
 struct
   let max_depth = ref 20
@@ -110,8 +109,7 @@ struct
         let () =
           match is_branch with
           | true ->
-              node.branch.path <-
-                (List.rev node.path, get_log (List.hd succ_states));
+              node.branch.path <- (List.rev node.path, "");
               let br_list = Branch.add node.branch (List.length succ_nodes) in
               List.iter2 (fun node br -> node.branch <- br) succ_nodes br_list
           | false ->
@@ -131,6 +129,9 @@ struct
             if not (Branch.is_marked node.branch) then (
               Statistics.record_visited_state ();
               try List.iter (fun succ -> P.add succ succ.depth) (get_succ node)
-              with Inconsistent msg -> Branch.mark node.branch node.path msg);
+              with Inconsistent (st_opt, msg) ->
+                if Option.is_some st_opt then
+                  node.path <- Option.get st_opt :: node.path;
+                Branch.mark node.branch node.path msg);
             search ())
 end

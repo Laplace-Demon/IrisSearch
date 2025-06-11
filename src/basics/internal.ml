@@ -346,7 +346,7 @@ let ( pp_internal_term,
                  ipr))
           ipr_disj
     | IWand (ipr1, ipr2) ->
-        fprintf fmt "(%a -* %a)"
+        fprintf fmt "%a -* %a"
           (pp_internal_iprop_aux env)
           ipr1
           (pp_internal_iprop_aux env)

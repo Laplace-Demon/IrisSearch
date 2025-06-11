@@ -3,11 +3,10 @@ open Path
 module Make (State : sig
   type state
 
-  val get_log : state -> string
   val source : state
   val successors : state -> state list * bool
 
-  exception Inconsistent of string
+  exception Inconsistent of state option * string
 end) : sig
   open State
 

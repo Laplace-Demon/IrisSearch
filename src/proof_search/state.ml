@@ -26,21 +26,21 @@ let global_state =
   { persistent = PropSet.empty; facts = PropSet.empty; laws = [] }
 
 let pp_global_state fmt () =
-  fprintf fmt "@[<v 4>facts@,%a@,%a@]@."
+  fprintf fmt "@[<v 4>facts@,%a@]@\n"
     (pp_internal_prop_set ~pp_sep:(fun fmt () ->
          pp_print_char fmt ',';
          pp_print_cut fmt ()))
-    global_state.persistent
-    (pp_internal_prop_set ~pp_sep:(fun fmt () ->
-         pp_print_char fmt ',';
-         pp_print_cut fmt ()))
-    global_state.facts;
-  fprintf fmt "@[<v 4>laws@,%a@]@."
-    (pp_print_list
-       ~pp_sep:(fun fmt () ->
-         pp_print_char fmt ',';
-         pp_print_cut fmt ())
-       pp_law_internal)
+    (PropSet.union global_state.facts global_state.persistent);
+  fprintf fmt "@[<v 4>laws@,%a@]@\n"
+    (fun fmt -> function
+      | [] -> pp_print_string fmt "%empty"
+      | _ as laws ->
+          (pp_print_list
+             ~pp_sep:(fun fmt () ->
+               pp_print_char fmt ',';
+               pp_print_cut fmt ())
+             pp_law)
+            fmt laws)
     global_state.laws
 
 type state = {
@@ -76,7 +76,7 @@ let pp_state fmt { local_var_list; ipr_mset; pr_set; disj_list; _ } =
            ~pp_sep:pp_print_cut)
         ipr_mset
         (pp_internal_prop_set_env local_varname_list_rev ~pp_sep:pp_print_cut)
-        pr_set
+        (PropSet.union global_state.facts pr_set)
   | true, false ->
       fprintf fmt
         "@[<v 4>locals@,%a@]@\n@[<v 4>atoms@,%a@]@\n@[<v 4>pures@,%a@]@\n"
@@ -90,10 +90,10 @@ let pp_state fmt { local_var_list; ipr_mset; pr_set; disj_list; _ } =
                ipr))
         disj_list
         (pp_internal_prop_set_env local_varname_list_rev ~pp_sep:pp_print_cut)
-        pr_set
+        (PropSet.union global_state.facts pr_set)
   | false, false ->
       fprintf fmt
-        "@[<v 4>locals@,%a@]@.@[<v 4>atoms@,%a * (%a)@]@.@[<v 4>pures@,%a@]@."
+        "@[<v 4>locals@,%a@]@\n@[<v 4>atoms@,%a@,%a@]@\n@[<v 4>pures@,%a@]@\n"
         pp_local_var_list local_var_list
         (pp_simple_internal_iprop_multiset_env local_varname_list_rev
            ~pp_sep:pp_print_cut)
@@ -107,8 +107,8 @@ let pp_state fmt { local_var_list; ipr_mset; pr_set; disj_list; _ } =
                ipr))
         disj_list
         (pp_internal_prop_set_env local_varname_list_rev ~pp_sep:pp_print_cut)
-        pr_set
+        (PropSet.union global_state.facts pr_set)
 
 (** Definition of inconsistent exception. *)
 
-exception Inconsistent of string
+exception Inconsistent of state option * string

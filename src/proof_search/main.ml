@@ -57,7 +57,6 @@ let solve ?(until_validation = false) ?(until_transformation = false)
         let open Make (struct
           type state = State.state
 
-          let get_log { log; _ } = log
           let source = source
           let successors = successors
 
@@ -71,9 +70,6 @@ let solve ?(until_validation = false) ?(until_transformation = false)
         in
         match path_opt with
         | Some path ->
-            let () =
-              if show_path then
-                fprintf fmt "  path@\n@\n%a@\n" pp_state_path path
-            in
-            fprintf fmt "  find solution@\n@."
-        | None -> fprintf fmt "  no solution@\n@."
+            let () = if show_path then fprintf fmt "%a@\n" pp_state_path path in
+            fprintf fmt "  find refutation@\n@."
+        | None -> fprintf fmt "  no refutation@\n@."

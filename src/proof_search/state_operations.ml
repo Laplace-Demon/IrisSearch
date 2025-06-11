@@ -128,7 +128,7 @@ let initial { decl_facts; decl_laws; decl_init; _ } =
     iprop_list_to_simple_internal_iprop_and_disj_list Validate.symbol_table
       decl_init
   in
-  { local_var_list = []; ipr_mset; pr_set; disj_list; log = "initial" }
+  { local_var_list = []; ipr_mset; pr_set; disj_list; log = "  path" }
 
 let retrieve_law law =
   let shift, ipr_prems, pr_prems, concls =
@@ -201,7 +201,7 @@ let apply law ({ local_var_list; ipr_mset; pr_set; _ } as st) =
       if SimpleIpropMset.mem1 false_id ipr_concls then
         raise
           (Inconsistent
-             (asprintf "@[<v 4>Applying law@,%a@.yields False.@]" pp_law law))
+             (None, asprintf "Applying law (%a) yields False." pp_law law))
     in
     (* strengthen conclusion *)
     let ipr_concls, disj_list =
@@ -264,13 +264,13 @@ let apply law ({ local_var_list; ipr_mset; pr_set; _ } as st) =
         ipr_mset = new_ipr_mset;
         pr_set = new_pr_set;
         disj_list;
-        log = asprintf "applying law %a" pp_law law;
+        log = asprintf "  ↓ Applying law (%a)." pp_law law;
       }
     in
     let () =
       (* check consistency of facts *)
       match Z3_intf.consistent_solver (Some new_st) with
-      | Some unsat_core -> raise (Inconsistent (asprintf "%s" unsat_core))
+      | Some unsat_core -> raise (Inconsistent (Some new_st, unsat_core))
       | None -> ()
     in
     if is_dup new_st then fail else return new_st
@@ -281,8 +281,8 @@ let case_analysis ({ local_var_list; ipr_mset; pr_set; disj_list; _ } as st) =
   | [] -> []
   | _ ->
       let local_varname_list_rev = List.rev_map fst local_var_list in
-      List.map
-        (fun ipr ->
+      List.mapi
+        (fun i ipr ->
           let ipr_mset', pr_set' =
             combine_simple_internal_iprop ipr (ipr_mset, pr_set)
           in
@@ -292,9 +292,10 @@ let case_analysis ({ local_var_list; ipr_mset; pr_set; disj_list; _ } as st) =
             pr_set = pr_set';
             disj_list = [];
             log =
-              asprintf "case analysis on %a"
+              asprintf "Splitting on %a, case %i:"
                 (pp_internal_iprop_env local_varname_list_rev)
-                (iSimple (empty_simple_internal_iprop, disj_list));
+                (iSimple (empty_simple_internal_iprop, disj_list))
+                (i + 1);
           })
         disj_list
 

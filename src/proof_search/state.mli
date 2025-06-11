@@ -31,4 +31,4 @@ type state = {
 val pp_state : formatter -> state -> unit
 val empty_state : state
 
-exception Inconsistent of string
+exception Inconsistent of state option * string

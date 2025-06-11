@@ -121,7 +121,7 @@ and pp_iprop fmt = function
   | Pure pr -> fprintf fmt "⌜ %a ⌝" pp_prop pr
   | Star (ipr1, ipr2) -> fprintf fmt "%a * %a" pp_iprop ipr1 pp_iprop ipr2
   | HOr (ipr1, ipr2) -> fprintf fmt "%a ∨ %a" pp_iprop ipr1 pp_iprop ipr2
-  | Wand (ipr1, ipr2) -> fprintf fmt "(%a -* %a)" pp_iprop ipr1 pp_iprop ipr2
+  | Wand (ipr1, ipr2) -> fprintf fmt "%a -* %a" pp_iprop ipr1 pp_iprop ipr2
   | Box ipr -> fprintf fmt "□ %a" pp_iprop ipr
   | HPred (str, tm_list) ->
       fprintf fmt "%s %a" str
