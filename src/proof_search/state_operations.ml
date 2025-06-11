@@ -1,9 +1,9 @@
 open Ast
-open Duplication_checker
 open Format
 open Internal
 open Internal_operations
 open State
+open Subsumption_checker
 open Freshname
 
 let state_size { ipr_mset; pr_set; _ } =
@@ -273,7 +273,7 @@ let apply law ({ local_var_list; ipr_mset; pr_set; _ } as st) =
       | Some unsat_core -> raise (Inconsistent (Some new_st, unsat_core))
       | None -> ()
     in
-    if is_dup new_st then fail else return new_st
+    if subsume new_st then fail else return new_st
   with Multiplicity.Underflow -> fail
 
 let case_analysis ({ local_var_list; ipr_mset; pr_set; disj_list; _ } as st) =

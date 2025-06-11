@@ -32,7 +32,7 @@ let register_state ({ ipr_mset; _ } as st) =
 
 let get_state ind = InfiniteArray.get state_array (-ind)
 
-let dup_candidate ipr_mset =
+let candidate ipr_mset =
   let st_set = ref None in
   SimpleIpropMset.iter1
     (fun hpred ->
@@ -48,8 +48,8 @@ let is_sub_state { ipr_mset = ipr_mset1; pr_set = pr_set1; _ }
     { ipr_mset = ipr_mset2; pr_set = pr_set2; _ } =
   SimpleIpropMset.subset ipr_mset1 ipr_mset2 && PropSet.subset pr_set1 pr_set2
 
-let is_dup ({ ipr_mset; _ } as st) : bool =
-  match dup_candidate ipr_mset with
+let subsume ({ ipr_mset; _ } as st) : bool =
+  match candidate ipr_mset with
   | None ->
       let () = register_state st in
       false
@@ -61,7 +61,7 @@ let is_dup ({ ipr_mset; _ } as st) : bool =
             is_sub_state st st')
           st_set
       then (
-        Statistics.record_duplication ();
+        Statistics.record_subsumption ();
         true)
       else
         let () = register_state st in

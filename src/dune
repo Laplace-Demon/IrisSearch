@@ -4,7 +4,6 @@
  (public_name is)
  (modules
   ast
-  duplication_checker
   equality_solver
   path
   persistent_solver
@@ -25,6 +24,7 @@
   state
   state_operations
   statistics
+  subsumption_checker
   term_equality_solver
   transform
   type
