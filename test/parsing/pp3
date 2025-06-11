@@ -1,0 +1,21 @@
+types
+    gname
+    nat
+    loc
+    val =
+      | inl : nat -> val
+      | inr : nat -> val
+
+preds
+    pointsto : loc * val -> iProp
+    pending : gname -> iProp
+    shot : gname * nat -> iProp
+
+consts
+    x : loc
+    y : val
+    γ : gname
+    zero : nat
+
+init
+    pointsto x y * ((⌜ y = inl(zero) ⌝ * pending γ) ∨ (∃ n : nat, ⌜ y = inr(n) ⌝ * shot γ n))

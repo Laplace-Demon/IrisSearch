@@ -1,0 +1,10 @@
+types
+    t
+
+consts
+    a b c d : t
+
+facts
+    a = b → ((c = d → a = c) → b = d)
+
+init

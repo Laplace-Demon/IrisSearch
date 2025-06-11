@@ -1,16 +1,16 @@
   $ is ./trans --show-path
-  path
+  
+    path
   
   locals
       %empty
   atoms
       %empty
   pures
-      %empty
+      l2 = l3
+      l1 = l2
   
-  Applying law
-      (⌜ l1 = l3 ⌝ -* ⊥)
-  yields False.
+  Applying law (⌜ l1 = l3 ⌝ -* ⊥) yields False.
   
-  find solution
+    find refutation
   

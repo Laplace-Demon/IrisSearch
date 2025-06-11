@@ -1,5 +1,6 @@
   $ is ./exclusive2 --show-path
-  path
+  
+    path
   
   locals
       %empty
@@ -7,11 +8,9 @@
       token γ2
       token γ1
   pures
-      %empty
+      γ1 = γ2
   
-  Applying law
-      forall γ : gname, (token γ * token γ -* ⊥)
-  yields False.
+  Applying law (forall γ : gname, token γ * token γ -* ⊥) yields False.
   
-  find solution
+    find refutation
   

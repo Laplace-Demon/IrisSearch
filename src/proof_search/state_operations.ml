@@ -292,7 +292,7 @@ let case_analysis ({ local_var_list; ipr_mset; pr_set; disj_list; _ } as st) =
             pr_set = pr_set';
             disj_list = [];
             log =
-              asprintf "Splitting on %a, case %i:"
+              asprintf "Splitting on (%a), branch %i:"
                 (pp_internal_iprop_env local_varname_list_rev)
                 (iSimple (empty_simple_internal_iprop, disj_list))
                 (i + 1);

@@ -1,4 +1,4 @@
   $ is ./persistent1
   
-  find solution
+    find refutation
   

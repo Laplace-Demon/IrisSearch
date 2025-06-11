@@ -88,7 +88,151 @@ and iprop_eqb ipr1 ipr2 =
       && iprop_eqb ipr1 ipr2
   | _, _ -> false
 
-let rec pp_prop fmt = function
+(** Precendences from lower to higher *)
+
+let prop_prec = function
+  | Forall _ | Exists _ -> 0
+  | Imply _ -> 2
+  | Or _ -> 4
+  | And _ -> 6
+  | Persistent _ | Not _ -> 8
+  | Pred _ | Eq _ | Neq _ -> 10
+
+let iprop_prec = function
+  | HForall _ | HExists _ -> 0
+  | Wand _ -> 2
+  | HOr _ -> 4
+  | Star _ -> 6
+  | Box _ -> 8
+  | False | Atom _ | Pure _ | HPred _ -> 10
+
+let min_prec = -1
+
+(** Associativities *)
+
+let is_prop_left_assoc = function _ -> false
+let is_prop_right_assoc = function Imply _ -> true | _ -> false
+let is_iprop_left_assoc = function _ -> false
+let is_iprop_right_assoc = function Wand _ -> true | _ -> false
+
+(** Precedence-aware pretty-printing functions *)
+
+let rec pp_prop_prec prec fmt pr =
+  let curr_prec = prop_prec pr in
+  let is_paren = curr_prec <= prec in
+  if is_paren then fprintf fmt "(";
+  (match pr with
+  | Persistent ipr -> fprintf fmt "Persistent %a" (pp_iprop_prec curr_prec) ipr
+  | Not pr -> fprintf fmt "¬ %a" (pp_prop_prec curr_prec) pr
+  | And (pr1, pr2) ->
+      let left_prec =
+        if is_prop_right_assoc pr then curr_prec else curr_prec - 1
+      in
+      let right_prec =
+        if is_prop_left_assoc pr then curr_prec else curr_prec - 1
+      in
+      fprintf fmt "%a ∧ %a" (pp_prop_prec left_prec) pr1
+        (pp_prop_prec right_prec) pr2
+  | Or (pr1, pr2) ->
+      let left_prec =
+        if is_prop_right_assoc pr then curr_prec else curr_prec - 1
+      in
+      let right_prec =
+        if is_prop_left_assoc pr then curr_prec else curr_prec - 1
+      in
+      fprintf fmt "%a ∨ %a" (pp_prop_prec left_prec) pr1
+        (pp_prop_prec right_prec) pr2
+  | Imply (pr1, pr2) ->
+      let left_prec =
+        if is_prop_right_assoc pr then curr_prec else curr_prec - 1
+      in
+      let right_prec =
+        if is_prop_left_assoc pr then curr_prec else curr_prec - 1
+      in
+      fprintf fmt "%a → %a" (pp_prop_prec left_prec) pr1
+        (pp_prop_prec right_prec) pr2
+  | Pred (str, tm_list) ->
+      fprintf fmt "%s %a" str
+        (pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt " ") pp_term)
+        tm_list
+  | Forall (typed_str_list, pr) ->
+      fprintf fmt "forall %a, %a"
+        (pp_typed_strs_list
+           ~pp_sep:(fun fmt () -> fprintf fmt " ")
+           ~pp_paren:true ())
+        (group_typed_str typed_str_list)
+        (pp_prop_prec min_prec) pr
+  | Exists (typed_str_list, pr) ->
+      fprintf fmt "exists %a, %a"
+        (pp_typed_strs_list
+           ~pp_sep:(fun fmt () -> fprintf fmt " ")
+           ~pp_paren:true ())
+        (group_typed_str typed_str_list)
+        (pp_prop_prec min_prec) pr
+  | Eq (tm1, tm2) -> fprintf fmt "%a = %a" pp_term tm1 pp_term tm2
+  | Neq (tm1, tm2) -> fprintf fmt "%a ≠ %a" pp_term tm1 pp_term tm2);
+  if is_paren then fprintf fmt ")"
+
+and pp_iprop_prec prec fmt ipr =
+  let curr_prec = iprop_prec ipr in
+  let is_paren = curr_prec <= prec in
+  if is_paren then fprintf fmt "(";
+  (match ipr with
+  | False -> fprintf fmt "⊥"
+  | Atom str -> fprintf fmt "%s" str
+  | Pure pr -> fprintf fmt "⌜ %a ⌝" (pp_prop_prec min_prec) pr
+  | Star (ipr1, ipr2) ->
+      let left_prec =
+        if is_iprop_right_assoc ipr then curr_prec else curr_prec - 1
+      in
+      let right_prec =
+        if is_iprop_left_assoc ipr then curr_prec else curr_prec - 1
+      in
+      fprintf fmt "%a * %a" (pp_iprop_prec left_prec) ipr1
+        (pp_iprop_prec right_prec) ipr2
+  | HOr (ipr1, ipr2) ->
+      let left_prec =
+        if is_iprop_right_assoc ipr then curr_prec else curr_prec - 1
+      in
+      let right_prec =
+        if is_iprop_left_assoc ipr then curr_prec else curr_prec - 1
+      in
+      fprintf fmt "%a ∨ %a" (pp_iprop_prec left_prec) ipr1
+        (pp_iprop_prec right_prec) ipr2
+  | Wand (ipr1, ipr2) ->
+      let left_prec =
+        if is_iprop_right_assoc ipr then curr_prec else curr_prec - 1
+      in
+      let right_prec =
+        if is_iprop_left_assoc ipr then curr_prec else curr_prec - 1
+      in
+      fprintf fmt "%a -* %a" (pp_iprop_prec left_prec) ipr1
+        (pp_iprop_prec right_prec) ipr2
+  | Box ipr -> fprintf fmt "□ %a" (pp_iprop_prec curr_prec) ipr
+  | HPred (str, tm_list) ->
+      fprintf fmt "%s %a" str
+        (pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt " ") pp_term)
+        tm_list
+  | HForall (typed_str_list, ipr) ->
+      fprintf fmt "forall %a, %a"
+        (pp_typed_strs_list
+           ~pp_sep:(fun fmt () -> fprintf fmt " ")
+           ~pp_paren:true ())
+        (group_typed_str typed_str_list)
+        (pp_iprop_prec min_prec) ipr
+  | HExists (typed_str_list, ipr) ->
+      fprintf fmt "exists %a, %a"
+        (pp_typed_strs_list
+           ~pp_sep:(fun fmt () -> fprintf fmt " ")
+           ~pp_paren:true ())
+        (group_typed_str typed_str_list)
+        (pp_iprop_prec min_prec) ipr);
+  if is_paren then fprintf fmt ")"
+
+let pp_prop = pp_prop_prec min_prec
+let pp_iprop = pp_iprop_prec min_prec
+
+(* let rec pp_prop fmt = function
   | Persistent ipr -> fprintf fmt "Persistent %a" pp_iprop ipr
   | Not pr -> fprintf fmt "¬ %a" pp_prop pr
   | And (pr1, pr2) -> fprintf fmt "%a ∧ %a" pp_prop pr1 pp_prop pr2
@@ -140,7 +284,7 @@ and pp_iprop fmt = function
            ~pp_sep:(fun fmt () -> fprintf fmt " ")
            ~pp_paren:true ())
         (group_typed_str typed_str_list)
-        pp_iprop ipr
+        pp_iprop ipr *)
 
 let pp_named pp fmt (name_opt, a) =
   match name_opt with

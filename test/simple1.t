@@ -1,4 +1,4 @@
   $ is ./simple1
   
-  find solution
+    find refutation
   

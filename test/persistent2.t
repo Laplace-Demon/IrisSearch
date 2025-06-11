@@ -1,5 +1,6 @@
   $ is ./persistent2 --show-path
-  path
+  
+    path
   
   locals
       %empty
@@ -8,7 +9,7 @@
   pures
       %empty
   
-    ↓ applying law (B -* A)
+    ↓ Applying law (B -* A).
   
   locals
       %empty
@@ -18,7 +19,7 @@
   pures
       %empty
   
-    ↓ applying law (A -* C)
+    ↓ Applying law (A -* C).
   
   locals
       %empty
@@ -29,9 +30,7 @@
   pures
       %empty
   
-  Applying law
-      (A * A * A * A * A * A * A * A * A * A * A * A * A * A * A * B * B * B * B * B * B * B * B * B * C * C * C * C * C * C * C * C * C * C * C -* ⊥)
-  yields False.
+  Applying law (A * A * A * A * A * A * A * A * A * A * A * A * A * A * A * B * B * B * B * B * B * B * B * B * C * C * C * C * C * C * C * C * C * C * C -* ⊥) yields False.
   
-  find solution
+    find refutation
   

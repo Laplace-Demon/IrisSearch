@@ -1,5 +1,6 @@
   $ is ./law_trans2 --show-path
-  path
+  
+    path
   
   locals
       %empty
@@ -10,9 +11,7 @@
   pures
       null = l0
   
-  Applying law
-      forall (v : val) (vs : list), (mlist null Cons(v, vs) -* ⊥)
-  yields False.
+  Applying law (forall (v : val) (vs : list), mlist null Cons(v, vs) -* ⊥) yields False.
   
-  find solution
+    find refutation
   

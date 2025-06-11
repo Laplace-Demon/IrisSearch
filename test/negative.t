@@ -1,4 +1,4 @@
   $ is ./negative
   
-  no solution
+    no refutation
   

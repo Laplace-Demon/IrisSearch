@@ -1,14 +1,17 @@
   $ is ./law_trans1 --show-path
-  path
+  
+    path
   
   locals
       %empty
   atoms
       □ (P b d)
   pures
-      %empty
+      b = c
+      a = b
+      c = d
   
-    ↓ applying law forall t : T, (P t t -* Dup t)
+    ↓ Applying law (forall t : T, P t t -* Dup t).
   
   locals
       %empty
@@ -16,11 +19,11 @@
       □ (P b d)
       □ (Dup b)
   pures
-      %empty
+      b = c
+      a = b
+      c = d
   
-  Applying law
-      (Dup a -* ⊥)
-  yields False.
+  Applying law (Dup a -* ⊥) yields False.
   
-  find solution
+    find refutation
   

@@ -1,5 +1,6 @@
   $ is ./exclusive1 --show-path
-  path
+  
+    path
   
   locals
       %empty
@@ -8,9 +9,7 @@
   pures
       %empty
   
-  Applying law
-      (P * P -* ⊥)
-  yields False.
+  Applying law (P * P -* ⊥) yields False.
   
-  find solution
+    find refutation
   

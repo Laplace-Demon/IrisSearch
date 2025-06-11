@@ -1,5 +1,6 @@
   $ is ./diseq1 --show-path
-  path
+  
+    path
   
   locals
       %empty
@@ -8,10 +9,9 @@
       P b
   pures
       c = b
+      a ≠ c
   
-  Applying law
-      forall x y : T, (P y * P x * ⌜ x ≠ y ⌝ -* ⊥)
-  yields False.
+  Applying law (forall x y : T, P y * P x * ⌜ x ≠ y ⌝ -* ⊥) yields False.
   
-  find solution
+    find refutation
   

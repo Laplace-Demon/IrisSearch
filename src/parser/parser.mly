@@ -19,13 +19,12 @@
 
 (** Low precedence *)
 %nonassoc FORALL EXISTS
-%right WAND
-%left STAR
-%nonassoc BOX
-
 %right ARROW
+%right WAND
 %left OR
 %left AND
+%left STAR
+%nonassoc BOX
 %nonassoc NOT PERSISTENT EXCLUSIVE
 (** High precedence *)
 

@@ -1,5 +1,6 @@
   $ is ./gen_heap1 --show-path
-  path
+  
+    path
   
   locals
       %empty
@@ -9,9 +10,12 @@
       pointsto l3 q3 v3
       pointsto l4 q4 v4
   pures
-      %empty
+      l1 = l2
+      v1 = Loc(l3)
+      v2 = Loc(l4)
+      v3 ≠ v4
   
-    ↓ applying law forall (l : loc) (dq1 dq2 : dfrac) (v1 v2 : val), (pointsto l dq2 v2 * pointsto l dq1 v1 -* ⌜ v1 = v2 ⌝)
+    ↓ Applying law (forall (l : loc) (dq1 dq2 : dfrac) (v1 v2 : val), pointsto l dq2 v2 * pointsto l dq1 v1 -* ⌜ v1 = v2 ⌝).
   
   locals
       %empty
@@ -19,21 +23,29 @@
       pointsto l3 q3 v3
       pointsto l4 q4 v4
   pures
+      l1 = l2
       v1 = v2
+      v1 = Loc(l3)
+      v2 = Loc(l4)
+      v3 ≠ v4
   
-  ↓
+    ↓ Applying law (forall (l : loc) (dq1 dq2 : dfrac) (v1 v2 : val), pointsto l dq2 v2 * pointsto l dq1 v1 -* ⌜ v1 = v2 ⌝).
   
   locals
       %empty
   atoms
       %empty
   pures
+      l1 = l2
       v1 = v2
+      v1 = Loc(l3)
+      v2 = Loc(l4)
       v4 = v3
+      v3 ≠ v4
   
   Unsat core:
       (and (= l1 l2) (= v1 (Loc l3)) (= v2 (Loc l4)) (distinct v3 v4))
       (and (= v1 v2) (= v4 v3))
   
-  find solution
+    find refutation
   

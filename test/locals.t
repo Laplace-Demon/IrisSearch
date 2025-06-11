@@ -1,5 +1,6 @@
   $ is ./locals --show-path
-  path
+  
+    path
   
   locals
       %empty
@@ -8,7 +9,7 @@
   pures
       %empty
   
-    ↓ applying law forall (a : A) (b : B), (P1 a b -* exists (aa : A) (bb : B), P2 aa bb)
+    ↓ Applying law (forall (a : A) (b : B), P1 a b -* exists (aa : A) (bb : B), P2 aa bb).
   
   locals
       aa_0 : A
@@ -19,7 +20,7 @@
   pures
       %empty
   
-    ↓ applying law forall (a : A) (b : B), (P2 a b -* exists (aa : A) (bb : B), P3 aa bb)
+    ↓ Applying law (forall (a : A) (b : B), P2 a b -* exists (aa : A) (bb : B), P3 aa bb).
   
   locals
       aa_5 : A
@@ -33,7 +34,7 @@
   pures
       %empty
   
-    ↓ applying law forall (a : A) (b : B), (P3 a b -* exists (aa : A) (bb : B), P4 aa bb)
+    ↓ Applying law (forall (a : A) (b : B), P3 a b -* exists (aa : A) (bb : B), P4 aa bb).
   
   locals
       aa_10 : A
@@ -50,7 +51,7 @@
   pures
       %empty
   
-    ↓ applying law forall (a : A) (b : B), (P4 a b -* exists (aa : A) (bb : B), P5 aa bb)
+    ↓ Applying law (forall (a : A) (b : B), P4 a b -* exists (aa : A) (bb : B), P5 aa bb).
   
   locals
       aa_19 : A
@@ -70,9 +71,7 @@
   pures
       %empty
   
-  Applying law
-      forall (a : A) (b : B), (P5 a b -* ⊥)
-  yields False.
+  Applying law (forall (a : A) (b : B), P5 a b -* ⊥) yields False.
   
-  find solution
+    find refutation
   
