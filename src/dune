@@ -4,6 +4,7 @@
  (public_name is)
  (modules
   ast
+  branch
   equality_solver
   path
   persistent_solver

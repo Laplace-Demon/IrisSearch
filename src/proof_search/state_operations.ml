@@ -160,6 +160,8 @@ let make_subst_task match_result = function
   | IBVar ind -> match_result.(ind)
   | _ -> None
 
+type successors = { succ_or : state list; succ_and : state list }
+
 open Monads.ListMonad
 
 let apply law ({ local_var_list; ipr_mset; pr_set; _ } as st) =
