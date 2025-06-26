@@ -1,10 +1,14 @@
+open Branch
+open Format
 open Path
 
 module Make (State : sig
   type state
 
+  val pp_state : formatter -> state -> unit
   val source : state
-  val successors : state -> state list * bool
+  val state_br : state -> state branch
+  val successors : state -> state list
 
   exception Inconsistent of state option * string
 end) : sig

@@ -1,5 +1,6 @@
 open Internal
 open Internal_operations
+open Pattern_match
 open State
 
 let solve : hpred_id * internal_term array -> bool =

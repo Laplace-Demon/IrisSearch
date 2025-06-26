@@ -1,9 +1,11 @@
 open Ast
+open Branch
 open Format
 open Internal
 open Internal_operations
 open State
 open Subsumption_checker
+open Pattern_match
 open Freshname
 
 let state_size { ipr_mset; pr_set; _ } =
@@ -128,7 +130,15 @@ let initial { decl_facts; decl_laws; decl_init; _ } =
     iprop_list_to_simple_internal_iprop_and_disj_list Validate.symbol_table
       decl_init
   in
-  { local_var_list = []; ipr_mset; pr_set; disj_list; log = "  path" }
+  {
+    local_var_list = [];
+    ipr_mset;
+    pr_set;
+    disj_list = [ disj_list ];
+    (* TODO *)
+    branch = init_branch;
+    log = "  path";
+  }
 
 let retrieve_law law =
   let shift, ipr_prems, pr_prems, concls =
@@ -164,7 +174,7 @@ type successors = { succ_or : state list; succ_and : state list }
 
 open Monads.ListMonad
 
-let apply law ({ local_var_list; ipr_mset; pr_set; _ } as st) =
+let apply law st =
   let ( shift,
         ipr_prems,
         pr_prems,
@@ -182,14 +192,14 @@ let apply law ({ local_var_list; ipr_mset; pr_set; _ } as st) =
           if not (Z3_intf.implication_solver (Some st) pr_prems) then fail
           else
             let ipr_mset_prems_elim, is_inf =
-              SimpleIpropMset.diff ipr_mset ipr_prems
+              SimpleIpropMset.diff st.ipr_mset ipr_prems
             in
             return (ipr_mset_prems_elim, is_inf, [||])
       | false ->
           let match_init = Array.init shift (fun _ -> None) in
           let* match_result, ipr_mset_prems_elim, is_inf =
             simple_internal_iprop_multiset_match (Some st) match_init ipr_prems
-              ipr_mset
+              st.ipr_mset
           in
           if match_result_complete match_result then
             let subst_task = make_subst_task match_result in
@@ -242,7 +252,7 @@ let apply law ({ local_var_list; ipr_mset; pr_set; _ } as st) =
     in
     (* subst quantified variables *)
     let ipr_concls, pr_concls, disj_list =
-      let local_var_num = List.length local_var_list in
+      let local_var_num = List.length st.local_var_list in
       let exists_match_result =
         Array.mapi
           (fun i (_, ity) -> Some (iBVar (i + local_var_num, ity)))
@@ -257,15 +267,15 @@ let apply law ({ local_var_list; ipr_mset; pr_set; _ } as st) =
             subst_internal_prop_set subst_task pr_concls,
             List.map (subst_simple_internal_iprop subst_task) disj_list )
     in
-    let new_local_var_list = exists_var_list @ local_var_list in
+    let new_local_var_list = exists_var_list @ st.local_var_list in
     let new_ipr_mset = SimpleIpropMset.union ipr_concls ipr_mset_prems_elim in
-    let new_pr_set = PropSet.union pr_concls pr_set in
+    let new_pr_set = PropSet.union pr_concls st.pr_set in
     let new_st =
       {
+        st with
         local_var_list = new_local_var_list;
         ipr_mset = new_ipr_mset;
         pr_set = new_pr_set;
-        disj_list;
         log = asprintf "  ↓ Applying law (%a)." pp_law law;
       }
     in
@@ -278,43 +288,68 @@ let apply law ({ local_var_list; ipr_mset; pr_set; _ } as st) =
     if subsume new_st then fail else return new_st
   with Multiplicity.Underflow -> fail
 
-let case_analysis ({ local_var_list; ipr_mset; pr_set; disj_list; _ } as st) =
-  match disj_list with
-  | [] -> []
-  | _ ->
-      let local_varname_list_rev = List.rev_map fst local_var_list in
+let case_analysis st disj_index =
+  match List.nth_opt st.disj_list disj_index with
+  | None -> assert false
+  | Some disj ->
+      let new_disj_list =
+        List.filteri
+          (fun disj_index' _ -> not (Int.equal disj_index disj_index'))
+          st.disj_list
+      in
       List.mapi
         (fun i ipr ->
           let ipr_mset', pr_set' =
-            combine_simple_internal_iprop ipr (ipr_mset, pr_set)
+            combine_simple_internal_iprop ipr (st.ipr_mset, st.pr_set)
           in
           {
             st with
             ipr_mset = ipr_mset';
             pr_set = pr_set';
-            disj_list = [];
+            disj_list = new_disj_list;
             log =
-              asprintf "Splitting on (%a), branch %i:"
-                (pp_internal_iprop_env local_varname_list_rev)
-                (iSimple (empty_simple_internal_iprop, disj_list))
-                (i + 1);
+              (let local_varname_list_rev =
+                 List.rev_map fst st.local_var_list
+               in
+               asprintf "Splitting on (%a), branch %i:"
+                 (pp_internal_iprop_env local_varname_list_rev)
+                 (iSimple (empty_simple_internal_iprop, disj))
+                 (i + 1));
           })
-        disj_list
+        disj
+
+let case_analysis_hint st : int list =
+  List.init (List.length st.disj_list) (fun i -> i)
+
+let default_case_analysis_hint = [ 0 ]
 
 let successors st =
-  let case_succ = case_analysis st in
-  if not (List.is_empty case_succ) then (case_succ, true)
-  else
-    ( List.fold_left
-        (fun acc law ->
-          let succ = apply law st in
-          List.iter
-            (fun new_st ->
-              Statistics.record_generated_state (state_size new_st))
-            succ;
-          choose succ acc)
-        fail global_state.laws,
-      false )
+  let from_law_application =
+    List.fold_left
+      (fun acc law ->
+        let succ = apply law st in
+        List.iter
+          (fun new_st -> Statistics.record_generated_state (state_size new_st))
+          succ;
+        choose succ acc)
+      fail global_state.laws
+  in
+  let from_case_analysis =
+    let* disj_index =
+      match case_analysis_hint st with
+      | []
+        when (not (List.is_empty st.disj_list))
+             && List.is_empty from_law_application ->
+          default_case_analysis_hint
+      | hint -> hint
+    in
+    let succ = case_analysis st disj_index in
+    let succ_br = add_br st.branch (List.length succ) in
+    List.map2
+      (fun succ' succ_br' -> { succ' with branch = succ_br' })
+      succ succ_br
+  in
+  choose from_law_application from_case_analysis
 
 let consistent st =
   Option.is_none (Z3_intf.consistent_solver (Some st))

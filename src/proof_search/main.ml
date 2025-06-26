@@ -1,7 +1,6 @@
 open Format
 open Ast
 open Internal
-open Path
 open State
 open State_operations
 open Search
@@ -57,7 +56,9 @@ let solve ?(until_validation = false) ?(until_transformation = false)
         let open Make (struct
           type state = State.state
 
+          let pp_state = pp_state
           let source = source
+          let state_br = state_br
           let successors = successors
 
           exception Inconsistent = Inconsistent
