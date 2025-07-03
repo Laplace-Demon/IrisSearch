@@ -4,7 +4,6 @@ type stat = {
   mutable generated_state_count : int;
   generated_state_size_distribution : (int * int, int) Hashtbl.t;
   mutable visited_state_count : int;
-  search_depth_distribution : (int, int) Hashtbl.t;
   mutable subsumption_count : int;
   operation_distribution : (string, int) Hashtbl.t;
 }
@@ -14,7 +13,6 @@ let stat_recorder =
     generated_state_count = 1;
     generated_state_size_distribution = Hashtbl.create 17;
     visited_state_count = 0;
-    search_depth_distribution = Hashtbl.create 17;
     subsumption_count = 0;
     operation_distribution = Hashtbl.create 17;
   }
@@ -23,7 +21,6 @@ let reset () =
   stat_recorder.generated_state_count <- 1;
   Hashtbl.reset stat_recorder.generated_state_size_distribution;
   stat_recorder.visited_state_count <- 0;
-  Hashtbl.reset stat_recorder.search_depth_distribution;
   stat_recorder.subsumption_count <- 0;
   Hashtbl.reset stat_recorder.operation_distribution
 
@@ -39,12 +36,6 @@ let record_generated_state size =
 
 let record_visited_state () =
   stat_recorder.visited_state_count <- stat_recorder.visited_state_count + 1
-
-let record_depth depth =
-  match Hashtbl.find_opt stat_recorder.search_depth_distribution depth with
-  | Some count ->
-      Hashtbl.replace stat_recorder.search_depth_distribution depth (count + 1)
-  | None -> Hashtbl.add stat_recorder.search_depth_distribution depth 1
 
 let record_subsumption () =
   stat_recorder.subsumption_count <- stat_recorder.subsumption_count + 1

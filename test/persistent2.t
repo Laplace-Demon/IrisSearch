@@ -2,6 +2,8 @@
   
     path
   
+  state 0
+  
   locals
       %empty
   atoms
@@ -10,6 +12,8 @@
       %empty
   
     ↓ Applying law (B -* A).
+  
+  state 1
   
   locals
       %empty
@@ -20,6 +24,8 @@
       %empty
   
     ↓ Applying law (A -* C).
+  
+  state 2
   
   locals
       %empty

@@ -2,6 +2,8 @@
   
     path
   
+  state 0
+  
   locals
       %empty
   atoms
@@ -17,6 +19,8 @@
   
     ↓ Applying law (forall (l1 l2 : loc) (dq1 dq2 : dfrac) (v1 v2 : val), pointsto l2 dq2 v2 * pointsto l1 dq1 v1 * ⌜ l1 = l2 ⌝ -* ⌜ v1 = v2 ⌝).
   
+  state 1
+  
   locals
       %empty
   atoms
@@ -30,6 +34,8 @@
       v3 ≠ v4
   
     ↓ Applying law (forall (l1 l2 : loc) (dq1 dq2 : dfrac) (v1 v2 : val), pointsto l2 dq2 v2 * pointsto l1 dq1 v1 * ⌜ l1 = l2 ⌝ -* ⌜ v1 = v2 ⌝).
+  
+  state 3
   
   locals
       %empty

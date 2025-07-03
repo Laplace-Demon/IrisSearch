@@ -2,6 +2,8 @@
   
     path
   
+  state 0
+  
   locals
       %empty
   atoms

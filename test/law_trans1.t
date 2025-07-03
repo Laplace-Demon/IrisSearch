@@ -2,6 +2,8 @@
   
     path
   
+  state 0
+  
   locals
       %empty
   atoms
@@ -12,6 +14,8 @@
       c = d
   
     ↓ Applying law (forall t : T, P t t -* Dup t).
+  
+  state 1
   
   locals
       %empty

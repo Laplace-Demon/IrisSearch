@@ -10,6 +10,7 @@ let show_transformed_instance = ref false
 let show_state = ref false
 let show_path = ref false
 let show_statistics = ref false
+let debug = ref false
 let max_depth = ref 20
 
 let input_filename, in_channel, out_channel =
@@ -50,6 +51,7 @@ let input_filename, in_channel, out_channel =
             Arg.Set show_statistics;
           ],
         "\n\tPrint all the information above.\n" );
+      ("--debug", Arg.Set debug, "\n\tPrint debug message in debug.txt.\n");
       ( "--max-depth",
         Arg.Int (fun d -> max_depth := d),
         "\n\tSet maximum search depth.\n" );
@@ -90,8 +92,8 @@ let () =
             ~until_transformation:!until_transformation
             ~show_transformed_instance:!show_transformed_instance
             ~show_state:!show_state ~show_path:!show_path
-            ~show_statistics:!show_statistics ~max_depth:!max_depth formatter
-            ins)
+            ~show_statistics:!show_statistics ~debug:!debug
+            ~max_depth:!max_depth formatter ins)
   with
   | Lexer.Lexing_error s ->
       eprintf "%s: lexing error: %s@\n@." input_filename s;

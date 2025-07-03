@@ -2,6 +2,8 @@
   
     path
   
+  state 0
+  
   locals
       %empty
   atoms
@@ -10,6 +12,8 @@
       a1 ≠ a2
   
     ↓ Applying law (forall x y : A, P x y -* ⌜ x = y ⌝).
+  
+  state 1
   
   locals
       %empty

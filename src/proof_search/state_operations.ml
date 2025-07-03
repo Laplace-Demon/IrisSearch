@@ -1,15 +1,19 @@
 open Ast
-open Branch
+open Edge_info
 open Format
 open Internal
 open Internal_operations
 open State
-open Subsumption_checker
+open Redundancy_checker
 open Pattern_match
 open Freshname
 
 let state_size { ipr_mset; pr_set; _ } =
   (SimpleIpropMset.cardinal ipr_mset, PropSet.cardinal pr_set)
+
+(** Definition of inconsistent exception. *)
+
+exception Inconsistent of (state * edge_info) option * edge_info
 
 let transform_law = function
   | IHForall
@@ -120,25 +124,19 @@ let initial { decl_facts; decl_laws; decl_init; _ } =
   (* Build laws. *)
   let () =
     global_state.laws <-
-      List.map
-        (fun (name_opt, ipr) ->
+      List.mapi
+        (fun index (name_opt, ipr) ->
           let ipr = iprop_to_internal_iprop Validate.symbol_table ipr in
-          { name_opt; extern = ipr; intern = transform_law ipr })
+          { index; name_opt; extern = ipr; intern = transform_law ipr })
         decl_laws
   in
   let (ipr_mset, pr_set), disj_list =
     iprop_list_to_simple_internal_iprop_and_disj_list Validate.symbol_table
       decl_init
   in
-  {
-    local_var_list = [];
-    ipr_mset;
-    pr_set;
-    disj_list = [ disj_list ];
-    (* TODO *)
-    branch = init_branch;
-    log = "  path";
-  }
+  make_state
+    ([], ipr_mset, pr_set, if List.is_empty disj_list then [] else [ disj_list ])
+  |> fst
 
 let retrieve_law law =
   let shift, ipr_prems, pr_prems, concls =
@@ -170,8 +168,17 @@ let make_subst_task match_result = function
   | IBVar ind -> match_result.(ind)
   | _ -> None
 
-type successors = { succ_or : state list; succ_and : state list }
+module Successor = struct
+  type successor = {
+    succ_or : (state * edge_info) list;
+    succ_and : (state * edge_info) list;
+  }
 
+  let get_succ_or { succ_or; _ } = succ_or
+  let get_succ_and { succ_and; _ } = succ_and
+end
+
+open Successor
 open Monads.ListMonad
 
 let apply law st =
@@ -211,9 +218,13 @@ let apply law st =
     (* check for termination *)
     let () =
       if SimpleIpropMset.mem1 false_id ipr_concls then
-        raise
-          (Inconsistent
-             (None, asprintf "Applying law (%a) yields False." pp_law law))
+        let edge_info =
+          {
+            simple = asprintf "law %i" law.index;
+            verbose = asprintf "Applying law (%a) yields False." pp_law law;
+          }
+        in
+        raise (Inconsistent (None, edge_info))
     in
     (* strengthen conclusion *)
     let ipr_concls, disj_list =
@@ -270,22 +281,30 @@ let apply law st =
     let new_local_var_list = exists_var_list @ st.local_var_list in
     let new_ipr_mset = SimpleIpropMset.union ipr_concls ipr_mset_prems_elim in
     let new_pr_set = PropSet.union pr_concls st.pr_set in
-    let new_st =
+    let new_disj_list =
+      match disj_list with [] -> st.disj_list | _ -> disj_list :: st.disj_list
+    in
+    let new_st, is_fresh =
+      make_state (new_local_var_list, new_ipr_mset, new_pr_set, new_disj_list)
+    in
+    let edge_info =
       {
-        st with
-        local_var_list = new_local_var_list;
-        ipr_mset = new_ipr_mset;
-        pr_set = new_pr_set;
-        log = asprintf "  ↓ Applying law (%a)." pp_law law;
+        simple = asprintf "law %i" law.index;
+        verbose = asprintf "  ↓ Applying law (%a)." pp_law law;
       }
     in
     let () =
       (* check consistency of facts *)
-      match Z3_intf.consistent_solver (Some new_st) with
-      | Some unsat_core -> raise (Inconsistent (Some new_st, unsat_core))
-      | None -> ()
+      if is_fresh then
+        match Z3_intf.consistent_solver (Some new_st) with
+        | Some unsat_core ->
+            let final_edge_info =
+              { simple = "smt solver"; verbose = unsat_core }
+            in
+            raise (Inconsistent (Some (new_st, edge_info), final_edge_info))
+        | None -> ()
     in
-    if subsume new_st then fail else return new_st
+    return (new_st, edge_info)
   with Multiplicity.Underflow -> fail
 
 let case_analysis st disj_index =
@@ -299,23 +318,26 @@ let case_analysis st disj_index =
       in
       List.mapi
         (fun i ipr ->
-          let ipr_mset', pr_set' =
+          let ipr_mset, pr_set =
             combine_simple_internal_iprop ipr (st.ipr_mset, st.pr_set)
           in
-          {
-            st with
-            ipr_mset = ipr_mset';
-            pr_set = pr_set';
-            disj_list = new_disj_list;
-            log =
-              (let local_varname_list_rev =
-                 List.rev_map fst st.local_var_list
-               in
-               asprintf "Splitting on (%a), branch %i:"
-                 (pp_internal_iprop_env local_varname_list_rev)
-                 (iSimple (empty_simple_internal_iprop, disj))
-                 (i + 1));
-          })
+          let new_st, _ =
+            make_state (st.local_var_list, ipr_mset, pr_set, new_disj_list)
+          in
+          let edge_info =
+            {
+              simple = asprintf "case %i" i;
+              verbose =
+                (let local_varname_list_rev =
+                   List.rev_map fst st.local_var_list
+                 in
+                 asprintf "Splitting on (%a), branch %i:"
+                   (pp_internal_iprop_env local_varname_list_rev)
+                   (iSimple (empty_simple_internal_iprop, disj))
+                   (i + 1));
+            }
+          in
+          (new_st, edge_info))
         disj
 
 let case_analysis_hint st : int list =
@@ -329,7 +351,8 @@ let successors st =
       (fun acc law ->
         let succ = apply law st in
         List.iter
-          (fun new_st -> Statistics.record_generated_state (state_size new_st))
+          (fun (new_st, _) ->
+            Statistics.record_generated_state (state_size new_st))
           succ;
         choose succ acc)
       fail global_state.laws
@@ -343,13 +366,9 @@ let successors st =
           default_case_analysis_hint
       | hint -> hint
     in
-    let succ = case_analysis st disj_index in
-    let succ_br = add_br st.branch (List.length succ) in
-    List.map2
-      (fun succ' succ_br' -> { succ' with branch = succ_br' })
-      succ succ_br
+    case_analysis st disj_index
   in
-  choose from_law_application from_case_analysis
+  { succ_or = from_law_application; succ_and = from_case_analysis }
 
 let consistent st =
   Option.is_none (Z3_intf.consistent_solver (Some st))

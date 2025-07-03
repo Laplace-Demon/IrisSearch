@@ -2,6 +2,8 @@
   
     path
   
+  state 0
+  
   locals
       %empty
   atoms
@@ -10,6 +12,8 @@
       %empty
   
     ↓ Applying law (forall (a : A) (b : B), P1 a b -* exists (aa : A) (bb : B), P2 aa bb).
+  
+  state 1
   
   locals
       aa_0 : A
@@ -21,6 +25,8 @@
       %empty
   
     ↓ Applying law (forall (a : A) (b : B), P2 a b -* exists (aa : A) (bb : B), P3 aa bb).
+  
+  state 3
   
   locals
       aa_5 : A
@@ -35,6 +41,8 @@
       %empty
   
     ↓ Applying law (forall (a : A) (b : B), P3 a b -* exists (aa : A) (bb : B), P4 aa bb).
+  
+  state 6
   
   locals
       aa_10 : A
@@ -52,6 +60,8 @@
       %empty
   
     ↓ Applying law (forall (a : A) (b : B), P4 a b -* exists (aa : A) (bb : B), P5 aa bb).
+  
+  state 12
   
   locals
       aa_19 : A

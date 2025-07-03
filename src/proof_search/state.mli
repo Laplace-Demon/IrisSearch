@@ -1,9 +1,10 @@
 open Format
-open Branch
 open Internal
 open Type
+open Path
 
 type law = {
+  index : int;
   name_opt : string option;
   intern : internal_iprop;
   extern : internal_iprop;
@@ -22,19 +23,16 @@ val global_state : global_state
 val pp_global_state : formatter -> unit -> unit
 
 type state = {
+  index : int;
   local_var_list : (string * itype) list;
   ipr_mset : simple_internal_iprop_multiset;
   pr_set : internal_prop_set;
   disj_list : simple_internal_iprop list list;
-  branch : state branch;
-  log : string;
 }
 
-val state_br : state -> state branch
-val state_info : state -> string
-val init_branch : state branch
+val get_index : state -> int
 val empty_state : state
-val pp_state : formatter -> state -> unit
-val pp_state_path : formatter -> state Path.path -> unit
-
-exception Inconsistent of state option * string
+val pp_state : ?pp_index:bool -> formatter -> state -> unit
+val pp_state_path : formatter -> state path -> unit
+val pp_state_debug : formatter -> state -> unit
+val pp_laws_debug : formatter -> unit -> unit
